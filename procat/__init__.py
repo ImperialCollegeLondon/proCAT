@@ -1,7 +1,1 @@
-"""The main module for proCAT."""
-
-from contextlib import suppress
-from importlib.metadata import PackageNotFoundError, version
-
-with suppress(PackageNotFoundError):
-    __version__ = version(__name__)
+"""init in proCAT package directory."""
