@@ -1,0 +1,44 @@
+name: Test and build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ${{matrix.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version: ['3.13']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{matrix.python-version}}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r dev-requirements.txt
+          pip install -e .
+
+      - name: Run mypy
+        run: mypy .
+
+      - name: Run tests
+        run: pytest
+
+      - name: Install doc dependencies
+        run: pip install -r doc-requirements.txt
+
+      - name: Check that documentation builds cleanly with MkDocs
+        if: matrix.os == 'ubuntu-latest'
+        run: mkdocs build --strict

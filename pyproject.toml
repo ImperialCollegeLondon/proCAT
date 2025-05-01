@@ -1,0 +1,72 @@
+[project]
+name = "procat"
+dynamic = ["version"]
+description = "Project Charging and Analytics Tool"
+authors = [
+    { name = "Diego Alonso Alvarez", email = "d.alonso-alvarez@imperial.ac.uk" },
+    { name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "mypy",
+    "pip-tools",
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+]
+doc = [
+    "mkdocs",
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "mkdocs-material",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mkdocs-section-index",
+]
+
+[tool.mypy]
+disallow_any_explicit = true
+disallow_any_generics = true
+warn_unreachable = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+exclude = [".venv/", "docs/"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+addopts = "-v -p no:warnings --cov=procat --cov-report=html --doctest-modules --ignore=procat/__main__.py --ignore=docs/"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "D",   # pydocstyle
+    "E",   # pycodestyle
+    "F",   # Pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "RUF"  # ruff
+]
+pydocstyle.convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "D100",  # Missing docstring in public module
+    "D104"   # Missing docstring in public package
+]
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = ["htmlcov"] # Exclude the coverage report file from setuptools package finder
