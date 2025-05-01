@@ -1,5 +1,4 @@
-"""
-WSGI config for procat project.
+"""WSGI config for procat project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +10,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'procat.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "procat.settings")
 
 application = get_wsgi_application()
