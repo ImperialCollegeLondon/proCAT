@@ -1,5 +1,5 @@
 site_name: proCAT
-watch: [procat]
+watch: [main]
 
 theme:
   name: material
