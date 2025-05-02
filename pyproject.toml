@@ -38,7 +38,7 @@ disallow_any_generics = true
 warn_unreachable = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
-exclude = [".venv/", "docs/"]
+exclude = [".venv/", "docs/", "main/migrations/"]
 
 [tool.django-stubs]
 django_settings_module = "procat.settings"
@@ -53,6 +53,7 @@ DJANGO_SETTINGS_MODULE = "procat.settings"
 FAIL_INVALID_TEMPLATE_VARS = true
 
 [tool.ruff]
+exclude = ["main/migrations"]
 target-version = "py312"
 
 [tool.ruff.lint]
