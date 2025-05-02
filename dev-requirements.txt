@@ -83,6 +83,8 @@ virtualenv==20.30.0
     # via pre-commit
 wheel==0.45.1
     # via pip-tools
+whitenoise==6.9.0
+    # via procat (pyproject.toml)
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
