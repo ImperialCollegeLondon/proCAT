@@ -17,6 +17,7 @@ dev = [
     "pre-commit",
     "pytest",
     "pytest-cov",
+    "pytest-django",
     "pytest-mock",
     "django-stubs[compatible-mypy]"
 ]

@@ -61,8 +61,11 @@ pytest==8.3.5
     # via
     #   procat (pyproject.toml)
     #   pytest-cov
+    #   pytest-django
     #   pytest-mock
 pytest-cov==6.1.1
+    # via procat (pyproject.toml)
+pytest-django==4.11.1
     # via procat (pyproject.toml)
 pytest-mock==3.14.0
     # via procat (pyproject.toml)
