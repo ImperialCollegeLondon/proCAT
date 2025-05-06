@@ -115,3 +115,5 @@ urllib3==2.4.0
     # via requests
 watchdog==6.0.0
     # via mkdocs
+whitenoise==6.9.0
+    # via procat (pyproject.toml)
