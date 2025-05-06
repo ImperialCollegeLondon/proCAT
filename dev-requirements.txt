@@ -20,9 +20,12 @@ distlib==0.3.9
     # via virtualenv
 django==5.2
     # via
+    #   django-bootstrap5
     #   django-stubs
     #   django-stubs-ext
     #   procat (pyproject.toml)
+django-bootstrap5==25.1
+    # via procat (pyproject.toml)
 django-stubs[compatible-mypy]==5.2.0
     # via procat (pyproject.toml)
 django-stubs-ext==5.2.0

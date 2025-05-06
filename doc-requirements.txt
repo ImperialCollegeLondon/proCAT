@@ -21,6 +21,10 @@ colorama==0.4.6
     #   griffe
     #   mkdocs-material
 django==5.2
+    # via
+    #   django-bootstrap5
+    #   procat (pyproject.toml)
+django-bootstrap5==25.1
     # via procat (pyproject.toml)
 ghp-import==2.1.0
     # via mkdocs

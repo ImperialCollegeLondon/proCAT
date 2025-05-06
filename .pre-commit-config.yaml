@@ -29,6 +29,7 @@ repos:
       - id: mypy
         additional_dependencies:
           - django-stubs
+          - django_bootstrap5
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.44.0
     hooks:

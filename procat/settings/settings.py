@@ -121,7 +121,7 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom settings
-INSTALLED_APPS += ["main"]
+INSTALLED_APPS += ["main", "django_bootstrap5"]
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 STATIC_ROOT = BASE_DIR / "staticfiles"
