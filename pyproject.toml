@@ -50,6 +50,7 @@ disallow_untyped_defs = false
 [tool.pytest.ini_options]
 addopts = "-v -p no:warnings --cov=procat --cov-report=html --doctest-modules --ignore=procat/__main__.py --ignore=docs/ --ignore=procat/settings/"
 DJANGO_SETTINGS_MODULE = "procat.settings"
+FAIL_INVALID_TEMPLATE_VARS = true
 
 [tool.ruff]
 target-version = "py312"
