@@ -16,16 +16,24 @@ click==8.1.8
     # via pip-tools
 coverage[toml]==7.8.0
     # via pytest-cov
+crispy-bootstrap5==2025.4
+    # via procat (pyproject.toml)
 distlib==0.3.9
     # via virtualenv
 django==5.2
     # via
+    #   crispy-bootstrap5
     #   django-bootstrap5
+    #   django-crispy-forms
     #   django-stubs
     #   django-stubs-ext
     #   procat (pyproject.toml)
 django-bootstrap5==25.1
     # via procat (pyproject.toml)
+django-crispy-forms==2.4
+    # via
+    #   crispy-bootstrap5
+    #   procat (pyproject.toml)
 django-stubs[compatible-mypy]==5.2.0
     # via procat (pyproject.toml)
 django-stubs-ext==5.2.0

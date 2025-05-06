@@ -6,12 +6,20 @@
 #
 asgiref==3.8.1
     # via django
+crispy-bootstrap5==2025.4
+    # via procat (pyproject.toml)
 django==5.2
     # via
+    #   crispy-bootstrap5
     #   django-bootstrap5
+    #   django-crispy-forms
     #   procat (pyproject.toml)
 django-bootstrap5==25.1
     # via procat (pyproject.toml)
+django-crispy-forms==2.4
+    # via
+    #   crispy-bootstrap5
+    #   procat (pyproject.toml)
 sqlparse==0.5.3
     # via django
 whitenoise==6.9.0
