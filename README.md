@@ -105,5 +105,5 @@ python package version specifiers, i.e. `"black<23"` or `"pip-tools!=6.12.2"`
 [pytest]: https://pytest.org/
 [GitHub Actions]: https://github.com/features/actions
 [pre-commit.ci]: https://pre-commit.ci
-[Docker]: [https://docs.docker.com/desktop/]
+[Docker]: https://docs.docker.com/desktop/
 [virtual environment]: https://docs.python.org/3/library/venv.html
