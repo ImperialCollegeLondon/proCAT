@@ -5,12 +5,9 @@ A Django web app for hosting the Project Charging and Analytics Tool (ProCAT).
 This Django project uses:
 
 - [`pip-tools`][pip-tools] for packaging and dependency management.
-- [`pre-commit`](https://pre-commit.com/) for various linting, formatting and static type checking.
-  - Pre-commit hooks are automatically kept updated with [pre-commit.ci](https://pre-commit.ci).
-- [`pytest`](https://pytest.org/) and [GitHub Actions](https://github.com/features/actions).
-
-[`pip-tools`][pip-tools] is chosen as a lightweight dependency manager that adheres to
-the [latest standards] using `pyproject.toml`.
+- [`pre-commit`][pre-commit] for various linting, formatting and static type checking.
+  - Pre-commit hooks are automatically kept updated with [pre-commit.ci][pre-commit.ci].
+- [`pytest`][pytest] and [GitHub Actions][GitHub Actions].
 
 ## Installation
 
@@ -76,7 +73,7 @@ To get started:
 
 The app can be run within a Docker container and a `docker-compose.yml` file is provided to make this easy for development.
 
-Ensure you have [Docker](https://docs.docker.com/desktop/) installed and simply run:
+Ensure you have [Docker][Docker] installed and simply run:
 
 ```bash
 docker compose up
@@ -104,5 +101,9 @@ Versions can be restricted from updating within the `pyproject.toml` using stand
 python package version specifiers, i.e. `"black<23"` or `"pip-tools!=6.12.2"`
 
 [pip-tools]: https://pip-tools.readthedocs.io/en/stable/
-[latest standards]: https://peps.python.org/pep-0621/
+[pre-commit]: https://pre-commit.com/
+[pytest]: https://pytest.org/
+[GitHub Actions]: https://github.com/features/actions
+[pre-commit.ci]: https://pre-commit.ci
+[Docker]: [https://docs.docker.com/desktop/]
 [virtual environment]: https://docs.python.org/3/library/venv.html
