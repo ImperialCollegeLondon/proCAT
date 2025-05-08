@@ -33,3 +33,16 @@ class LoginRequiredMixin:
         response = client.get(self._get_url())
         assert response.status_code == HTTPStatus.FOUND
         assert response.url.startswith(settings.LOGIN_URL)
+
+
+class PermissionRequiredMixin(LoginRequiredMixin):
+    """Mixin for tests that require authentication and correct user permissions.
+
+    Note: Using this requires the test class to define:
+        - A `_get_url` method
+    """
+
+    def test_permission_denied(self, auth_client):
+        """Test authenticated users missing permissions are blocked."""
+        response = auth_client.get(self._get_url())
+        assert response.status_code == HTTPStatus.FORBIDDEN
