@@ -28,13 +28,19 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r dev-requirements.txt
+          pip install pytest-cov
           pip install -e .
 
       - name: Run mypy
         run: mypy .
 
       - name: Run tests
-        run: pytest
+        run: pytest --cov --cov-branch --cov-report=xml
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Install doc dependencies
         run: pip install -r doc-requirements.txt
