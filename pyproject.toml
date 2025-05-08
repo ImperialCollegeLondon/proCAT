@@ -68,10 +68,7 @@ select = [
 pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = [
-    "D100",  # Missing docstring in public module
-    "D104"   # Missing docstring in public package
-]
+"tests/*" = ["D104"] # Missing docstring in public package
 
 [build-system]
 requires = ["setuptools", "setuptools-scm"]
