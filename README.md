@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/ImperialCollegeLondon/proCAT/graph/badge.svg?token=A9KNEMYXXN)](https://codecov.io/gh/ImperialCollegeLondon/proCAT)
+
 # proCAT
 
 A Django web app for hosting the Project Charging and Analytics Tool (ProCAT).
