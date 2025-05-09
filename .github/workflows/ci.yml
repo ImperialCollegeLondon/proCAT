@@ -36,6 +36,13 @@ jobs:
       - name: Run tests
         run: pytest
 
+      - name: Upload coverage reports to Codecov
+        if: ${{ github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.user.login != 'pre-commit-ci[bot]' }}
+        uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Install doc dependencies
         run: pip install -r doc-requirements.txt
 
