@@ -1,8 +1,19 @@
-from pytest_django.asserts import assertTemplateUsed
+"""Test suite for the main views.
+
+This test module includes tests for main views of the app ensuring that:
+  - The correct templates are used.
+  - The correct status codes are returned.
+"""
+
+from django.urls import reverse
+
+from .view_utils import TemplateOkMixin
 
 
-def test_index(client):
-    """Test the index view."""
-    with assertTemplateUsed(template_name="main/index.html"):
-        response = client.get("/")
-    assert response.status_code == 200
+class TestIndex(TemplateOkMixin):
+    """Test suite for the index view."""
+
+    _template_name = "main/index.html"
+
+    def _get_url(self):
+        return reverse("index")
