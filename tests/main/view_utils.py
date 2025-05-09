@@ -32,7 +32,7 @@ class LoginRequiredMixin:
         """Test for redirect to the login page if the user is not logged in."""
         response = client.get(self._get_url())
         assert response.status_code == HTTPStatus.FOUND
-        assert response.url.startswith(settings.LOGIN_URL)
+        assert response.url == settings.LOGIN_URL + "?next=" + self._get_url()
 
 
 class PermissionRequiredMixin(LoginRequiredMixin):
@@ -45,4 +45,4 @@ class PermissionRequiredMixin(LoginRequiredMixin):
     def test_permission_denied(self, auth_client):
         """Test authenticated users missing permissions are blocked."""
         response = auth_client.get(self._get_url())
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        assert response.status_code == HTTPStatus.FORBIDDEN  # TODO: check url
