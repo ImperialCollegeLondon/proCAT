@@ -19,11 +19,11 @@ class Department(models.Model):
     """
 
     _FACULTY = (
-        ("engineering", "Faculty of Engineering"),
-        ("medicine", "Faculty of Medicine"),
-        ("fons", "Faculty of Natural Sciences"),
-        ("ibs", "Imperial Business School"),
-        ("other", "Other"),
+        ("Faculty of Engineering", "Faculty of Engineering"),
+        ("Faculty of Medicine", "Faculty of Medicine"),
+        ("Faculty of Natural Sciences", "Faculty of Natural Sciences"),
+        ("Imperial Business School", "Imperial Business School"),
+        ("Other", "Other"),
     )
 
     name = models.CharField(
@@ -41,3 +41,7 @@ class Department(models.Model):
         choices=_FACULTY,
         help_text="Faculty the department belongs to.",
     )
+
+    def __str__(self) -> str:
+        """String representation of the Department object."""
+        return f"{self.name} - {self.faculty}"
