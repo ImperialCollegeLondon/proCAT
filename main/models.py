@@ -74,3 +74,75 @@ class ActivityCode(models.Model):
     def __str__(self) -> str:
         """String representation of the Activity Code object."""
         return f"{self.code} - {self.description}"
+
+
+class Project(models.Model):
+    """Software project details."""
+
+    _NATURE = (("Support", "Support"), ("Standard", "Standard"))
+    _STATUS = (
+        ("Draft", "Draft"),
+        ("Not started", "Not started"),
+        ("Active", "Active"),
+        ("Completted", "Completted"),
+    )
+    _CHARGING = (
+        ("Actual", "Actual"),
+        ("Pro-rata", "Pro-rata"),
+        ("Manual", "Manual"),
+    )
+
+    name = models.CharField(
+        "Name",
+        unique=True,
+        blank=False,
+        null=False,
+        help_text="Name of the project.",
+    )
+    nature = models.CharField(
+        "Nature",
+        blank=False,
+        null=False,
+        choices=_NATURE,
+        help_text="Nature of the project.  Typically, support projects cannot be "
+        "allocated to sprints easily, the work there is more lightweight and ad hoc, "
+        "sometimes at short notice.",
+    )
+    pi = models.CharField(
+        "Principal Investigator",
+        blank=False,
+        null=False,
+        help_text="Name of the principal investigator responsible for the project. "
+        "It should be the actual grant holder, not the main point of contact",
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.PROTECT,
+        blank=False,
+        null=False,
+        help_text="The department in which the research project is based, primarily.",
+    )
+    start_date = models.DateField("Start date", help_text="Start date for the project.")
+    end_date = models.DateField("End date", help_text="End date for the project.")
+    lead = models.ForeignKey(
+        User, on_delete=models.PROTECT, help_text="Project lead from the RSE side."
+    )
+    status = models.CharField(
+        "Status",
+        blank=False,
+        null=False,
+        default="Draft",
+        choices=_STATUS,
+        help_text="Status of the project. Unless the status is 'Draft', most other "
+        "fields are mandatory.",
+    )
+    charging = models.CharField(
+        "Charging method",
+        blank=False,
+        null=False,
+        default="Actual",
+        choices=_CHARGING,
+        help_text="Method for charging the costs of the project. 'Actual' is based"
+        " on timesheet records. 'Pro-rata' charges the same amount every month. "
+        "Finally, in 'Manual' the charges are scheduled manually.",
+    )
