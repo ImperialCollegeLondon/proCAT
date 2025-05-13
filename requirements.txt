@@ -8,7 +8,7 @@ asgiref==3.8.1
     # via django
 crispy-bootstrap5==2025.4
     # via procat (pyproject.toml)
-django==5.2
+django==5.2.1
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
