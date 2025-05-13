@@ -45,3 +45,32 @@ class Department(models.Model):
     def __str__(self) -> str:
         """String representation of the Department object."""
         return f"{self.name} - {self.faculty}"
+
+
+class ActivityCode(models.Model):
+    """Activity code to use during charging."""
+
+    code = models.IntegerField(
+        "Code",
+        unique=True,
+        blank=False,
+        null=False,
+        help_text="Code for the activity to use during charging.",
+    )
+    description = models.CharField(
+        "Description",
+        unique=True,
+        blank=False,
+        null=False,
+        help_text="Description of the code.",
+    )
+    notes = models.TextField(
+        "Notes",
+        blank=False,
+        null=False,
+        help_text="Longer explanation about when to use the code.",
+    )
+
+    def __str__(self) -> str:
+        """String representation of the Activity Code object."""
+        return f"{self.code} - {self.description}"
