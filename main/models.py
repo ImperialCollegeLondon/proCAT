@@ -1,6 +1,7 @@
 """Models module for main app."""
 
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -122,10 +123,18 @@ class Project(models.Model):
         null=False,
         help_text="The department in which the research project is based, primarily.",
     )
-    start_date = models.DateField("Start date", help_text="Start date for the project.")
-    end_date = models.DateField("End date", help_text="End date for the project.")
+    start_date = models.DateField(
+        "Start date", null=True, blank=True, help_text="Start date for the project."
+    )
+    end_date = models.DateField(
+        "End date", null=True, blank=True, help_text="End date for the project."
+    )
     lead = models.ForeignKey(
-        User, on_delete=models.PROTECT, help_text="Project lead from the RSE side."
+        User,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        help_text="Project lead from the RSE side.",
     )
     status = models.CharField(
         "Status",
@@ -157,6 +166,6 @@ class Project(models.Model):
             return super().clean()
 
         if not self.start_date or not self.end_date or not self.lead:
-            raise ValueError(
+            raise ValidationError(
                 "All fields are mandatory except if Project status id 'Draft'."
             )
