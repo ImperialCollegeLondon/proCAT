@@ -146,3 +146,17 @@ class Project(models.Model):
         " on timesheet records. 'Pro-rata' charges the same amount every month. "
         "Finally, in 'Manual' the charges are scheduled manually.",
     )
+
+    def __str__(self) -> str:
+        """String representation of the Project object."""
+        return self.name
+
+    def clean(self) -> None:
+        """Ensure that all fields have a value unless the status is 'Draft'."""
+        if self.status == "Draft":
+            return super().clean()
+
+        if not self.start_date or not self.end_date or not self.lead:
+            raise ValueError(
+                "All fields are mandatory except if Project status id 'Draft'."
+            )
