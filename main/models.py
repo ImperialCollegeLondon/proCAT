@@ -161,7 +161,10 @@ class Project(models.Model):
         return self.name
 
     def clean(self) -> None:
-        """Ensure that all fields have a value unless the status is 'Draft'."""
+        """Ensure that all fields have a value unless the status is 'Draft'.
+
+        It also checks that, if present, the end date is after the start date.
+        """
         if self.status == "Draft":
             return super().clean()
 
@@ -169,3 +172,6 @@ class Project(models.Model):
             raise ValidationError(
                 "All fields are mandatory except if Project status id 'Draft'."
             )
+
+        if self.end_date <= self.start_date:
+            raise ValidationError("The end date must be after the start date.")
