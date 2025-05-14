@@ -11,7 +11,7 @@ admin.site.register(ActivityCode)
 
 
 @admin.register(Project)
-class ProjectAdmin(admin.ModelAdmin):
+class ProjectAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     """Admin class for the Project model."""
 
     list_display = (
