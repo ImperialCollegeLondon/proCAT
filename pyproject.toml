@@ -13,7 +13,8 @@ dependencies = [
     "django-crispy-forms",
     "whitenoise",
     "crispy-bootstrap5",
-    "django_tables2"
+    "django_tables2",
+    "django-filter"
 ]
 
 [project.optional-dependencies]
