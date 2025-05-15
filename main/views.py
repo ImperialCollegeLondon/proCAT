@@ -5,7 +5,8 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
-from django_tables2 import SingleTableView
+from django_filters.views import FilterView
+from django_tables2 import SingleTableMixin
 
 from . import forms, models, tables
 
@@ -27,9 +28,10 @@ class RegistrationView(CreateView):  # type: ignore [type-arg]
     template_name = "registration/register.html"
 
 
-class ProjectsListView(LoginRequiredMixin, SingleTableView):
+class ProjectsListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     """View to display the list of projects."""
 
     model = models.Project
     table_class = tables.ProjectTable
     template_name = "main/projects.html"
+    filterset_fields = ("nature", "department", "status", "charging")
