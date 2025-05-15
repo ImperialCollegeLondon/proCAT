@@ -7,7 +7,7 @@ This test module includes tests for main views of the app ensuring that:
 
 from django.urls import reverse
 
-from .view_utils import TemplateOkMixin
+from .view_utils import LoginRequiredMixin, TemplateOkMixin
 
 
 class TestIndex(TemplateOkMixin):
@@ -17,3 +17,12 @@ class TestIndex(TemplateOkMixin):
 
     def _get_url(self):
         return reverse("main:index")
+
+
+class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
+    """Test suite for the projects view."""
+
+    _template_name = "main/projects.html"
+
+    def _get_url(self):
+        return reverse("main:projects")
