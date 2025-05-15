@@ -7,13 +7,25 @@
     </a>
     <ul class="navbar-nav">
       {% if user.is_authenticated %}
+        <!-- We welcome the user and include a few useful links -->
         <li class="nav-item">
           <a class="nav-link">Welcome: {{ user.username }}</a>
         </li>
-      {% endif %}
-      {% if user.is_superuser %}
+        {% if user.is_superuser %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin:index' %}">Admin site</a>
+          </li>
+        {% endif %}
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'admin:index' %}">Admin site</a>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <input class="nav-link logout-button" type="submit" value="Logout" />
+          </form>
+        </li>
+      {% else %}
+        <!-- Otherwise we just show options to register and login -->
+        <li>
+          <a class="nav-link" href="{% url 'login' %}">Login</a>
         </li>
       {% endif %}
     </ul>
