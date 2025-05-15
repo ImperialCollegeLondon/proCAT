@@ -16,4 +16,4 @@ class TestIndex(TemplateOkMixin):
     _template_name = "main/index.html"
 
     def _get_url(self):
-        return reverse("index")
+        return reverse("main:index")
