@@ -25,6 +25,9 @@
       {% else %}
         <!-- Otherwise we just show options to register and login -->
         <li>
+          <a class="nav-link" href="{% url 'main:auth_register' %}">Register</a>
+        </li>
+        <li>
           <a class="nav-link" href="{% url 'login' %}">Login</a>
         </li>
       {% endif %}
