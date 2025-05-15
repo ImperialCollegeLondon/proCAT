@@ -38,6 +38,7 @@ django==5.2.1
     #   django-crispy-forms
     #   django-stubs
     #   django-stubs-ext
+    #   django-tables2
     #   procat (pyproject.toml)
 django-bootstrap5==25.1
     # via procat (pyproject.toml)
@@ -49,6 +50,8 @@ django-stubs[compatible-mypy]==5.2.0
     # via procat (pyproject.toml)
 django-stubs-ext==5.2.0
     # via django-stubs
+django-tables2==2.7.5
+    # via procat (pyproject.toml)
 djlint==1.36.4
     # via procat (pyproject.toml)
 editorconfig==0.17.0

@@ -7,7 +7,14 @@ authors = [
     { name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk" }
 ]
 requires-python = ">=3.13"
-dependencies = ["django", "django-bootstrap5", "django-crispy-forms", "whitenoise", "crispy-bootstrap5"]
+dependencies = [
+    "django",
+    "django-bootstrap5",
+    "django-crispy-forms",
+    "whitenoise",
+    "crispy-bootstrap5",
+    "django_tables2"
+]
 
 [project.optional-dependencies]
 dev = [
@@ -47,6 +54,10 @@ django_settings_module = "procat.settings"
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["django_tables2.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-v -p no:warnings --cov=main --cov=procat --cov-branch --cov-report=xml --cov-report=html --doctest-modules --ignore=procat/__main__.py --ignore=docs/ --ignore=procat/settings/"

@@ -1,11 +1,13 @@
 """Views for the main app."""
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
+from django_tables2 import SingleTableView
 
-from . import forms
+from . import forms, models, tables
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -23,3 +25,11 @@ class RegistrationView(CreateView):  # type: ignore [type-arg]
     form_class = forms.CustomUserCreationForm
     success_url = reverse_lazy("login")
     template_name = "registration/register.html"
+
+
+class ProjectsListView(LoginRequiredMixin, SingleTableView):
+    """View to display the list of projects."""
+
+    model = models.Project
+    table_class = tables.ProjectTable
+    template_name = "main/projects.html"
