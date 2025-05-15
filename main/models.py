@@ -1,5 +1,7 @@
 """Models module for main app."""
 
+from datetime import datetime
+
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -175,3 +177,57 @@ class Project(models.Model):
 
         if self.end_date <= self.start_date:
             raise ValidationError("The end date must be after the start date.")
+
+    @property
+    def days_left(self) -> int | None:
+        """Provide the calendar days left until the end of the project.
+
+        Only relevant for active projects.
+
+        Returns:
+            The number of days left or None if the project is not Active.
+        """
+        if self.status == "Active" and self.end_date:
+            return (self.end_date - datetime.now().date()).days
+
+        return None
+
+    @property
+    def effort_left(self) -> int | None:
+        """Provide the days worth of effort left.
+
+        TODO: Placeholder. To be implemented when funding is implemented.
+
+        Returns:
+            The number of days worth of effort left, or None if there is no funding
+            information.
+        """
+        return None
+
+    @property
+    def fraction_days_left(self) -> float | None:
+        """Provide the percentage of calendar days left until the end of the project.
+
+        Only relevant for active projects.
+
+        Returns:
+            Percentage of days left or None if the project is not Active.
+        """
+        if self.days_left and self.end_date and self.start_date:
+            return round(
+                self.days_left / (self.end_date - self.start_date).days * 100, 1
+            )
+
+        return None
+
+    @property
+    def fraction_effort_left(self) -> float | None:
+        """Provide the percentage of days worth of effort left.
+
+        TODO: Placeholder. To be implemented when funding is implemented.
+
+        Returns:
+            Percentage of days worth of effort left, or None if there is no funding
+            information.
+        """
+        return 42

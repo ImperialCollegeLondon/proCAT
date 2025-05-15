@@ -22,4 +22,8 @@ class ProjectAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "charging",
         "start_date",
         "end_date",
+        "days_left",
+        "fraction_days_left",
+        "effort_left",
+        "fraction_effort_left",
     )
