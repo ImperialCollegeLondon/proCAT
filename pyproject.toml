@@ -7,7 +7,14 @@ authors = [
     { name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk" }
 ]
 requires-python = ">=3.13"
-dependencies = ["django", "django-bootstrap5", "django-crispy-forms", "whitenoise", "crispy-bootstrap5"]
+dependencies = [
+    "django",
+    "django-bootstrap5",
+    "django-crispy-forms",
+    "whitenoise",
+    "crispy-bootstrap5",
+    "django_tables2"
+]
 
 [project.optional-dependencies]
 dev = [
