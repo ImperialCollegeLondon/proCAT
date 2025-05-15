@@ -55,6 +55,10 @@ django_settings_module = "procat.settings"
 module = "tests.*"
 disallow_untyped_defs = false
 
+[[tool.mypy.overrides]]
+module = ["django_tables2.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 addopts = "-v -p no:warnings --cov=main --cov=procat --cov-branch --cov-report=xml --cov-report=html --doctest-modules --ignore=procat/__main__.py --ignore=docs/ --ignore=procat/settings/"
 DJANGO_SETTINGS_MODULE = "procat.settings"
