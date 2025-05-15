@@ -9,4 +9,5 @@ app_name = "main"
 urlpatterns = [
     path("", views.index, name="index"),
     path("register/", views.RegistrationView.as_view(), name="auth_register"),
+    path("projects/", views.ProjectsListView.as_view(), name="projects"),
 ]
