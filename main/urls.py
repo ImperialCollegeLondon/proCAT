@@ -4,4 +4,9 @@ from django.urls import path
 
 from . import views
 
-urlpatterns = [path("", views.index, name="index")]
+app_name = "main"
+
+urlpatterns = [
+    path("", views.index, name="index"),
+    path("register/", views.RegistrationView.as_view(), name="auth_register"),
+]

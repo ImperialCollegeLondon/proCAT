@@ -19,7 +19,8 @@ dev = [
     "pytest-cov",
     "pytest-django",
     "pytest-mock",
-    "django-stubs[compatible-mypy]"
+    "django-stubs[compatible-mypy]",
+    "djlint"
 ]
 doc = [
     "mkdocs",
@@ -69,6 +70,11 @@ pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D104"] # Missing docstring in public package
+
+[tool.djlint]
+profile = "django"
+preserve_blank_lines = true
+indent = 2
 
 [build-system]
 requires = ["setuptools", "setuptools-scm"]

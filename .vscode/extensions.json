@@ -4,6 +4,7 @@
         "ms-python.python",
         "editorconfig.editorconfig",
         "davidanson.vscode-markdownlint",
-        "charliermarsh.ruff"
+        "charliermarsh.ruff",
+        "monosans.djlint"
     ]
 }
