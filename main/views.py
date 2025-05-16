@@ -40,7 +40,7 @@ class ProjectsListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     filterset_fields = ("nature", "department", "status", "charging")
 
 
-class ProjectDetailView(UpdateView):  # type: ignore [type-arg]
+class ProjectDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
     """Detail view based on a read-only form view.
 
     While there is a generic Detail View, it is not rendered nicely easily as the
@@ -50,7 +50,7 @@ class ProjectDetailView(UpdateView):  # type: ignore [type-arg]
 
     model = models.Project
     template_name = "main/project_detail.html"
-    fields = "__all__"
+    fields = "__all__"  # type: ignore [assignment]
 
     def get_form(self, form_class: Any | None = None) -> ModelForm:  # type: ignore
         """Customize form to make it read-only.

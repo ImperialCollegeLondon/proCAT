@@ -11,6 +11,8 @@ from .models import Project
 class ProjectTable(tables.Table):
     """Table for Project listing."""
 
+    name = tables.Column(linkify=("main:project_detail", {"pk": tables.A("pk")}))
+
     class Meta:
         """Meta class for the table."""
 
