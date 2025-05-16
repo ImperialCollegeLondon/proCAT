@@ -1,5 +1,7 @@
 """Tests for the models."""
 
+from datetime import datetime, timedelta
+
 import pytest
 
 
@@ -38,8 +40,6 @@ class TestProject:
 
     def test_clean_when_not_draft(self, user):
         """Test the clean method."""
-        from datetime import datetime, timedelta
-
         from django.core.exceptions import ValidationError
 
         from main import models
@@ -75,3 +75,27 @@ class TestProject:
             status="Active",
         )
         project.clean()
+
+    @pytest.mark.parametrize(
+        ["status", "start_date", "end_date", "output"],
+        [
+            ["Draft", None, None, None],
+            ["Active", datetime.now().date(), None, None],
+            ["Active", None, datetime.now().date(), None],
+            ["Draft", datetime.now().date(), datetime.now().date(), None],
+            [
+                "Active",
+                datetime.now().date(),
+                datetime.now().date() + timedelta(days=1),
+                (0, 100.0),
+            ],
+        ],
+    )
+    def test_weeks_to_deadline(self, status, start_date, end_date, output):
+        """Test the weeks_to_deadline method."""
+        from main import models
+
+        project = models.Project(
+            name="ProCAT", status=status, start_date=start_date, end_date=end_date
+        )
+        assert project.weeks_to_deadline == output
