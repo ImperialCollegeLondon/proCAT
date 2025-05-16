@@ -190,7 +190,7 @@ class Project(models.Model):
         if self.status == "Active" and self.end_date and self.start_date:
             left = (self.end_date - datetime.now().date()).days / 7
             total = (self.end_date - self.start_date).days / 7
-            return int(left), round(left / total * 100, 2)
+            return int(left), round(left / total * 100, 1)
 
         return None
 
