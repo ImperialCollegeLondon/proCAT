@@ -82,7 +82,7 @@ pytest-mock==3.14.0
     # via procat (pyproject.toml)
 pyyaml==6.0.2
     # via pre-commit
-ruff==0.11.9
+ruff==0.11.10
     # via procat (pyproject.toml)
 sqlparse==0.5.3
     # via django
