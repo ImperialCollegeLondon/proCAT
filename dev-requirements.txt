@@ -12,12 +12,23 @@ build==1.2.2.post1
     # via pip-tools
 cfgv==3.4.0
     # via pre-commit
-click==8.2.0
-    # via pip-tools
+click==8.1.8
+    # via
+    #   djlint
+    #   pip-tools
+colorama==0.4.6
+    # via
+    #   build
+    #   click
+    #   djlint
+    #   pytest
+    #   tqdm
 coverage[toml]==7.8.0
     # via pytest-cov
 crispy-bootstrap5==2025.4
     # via procat (pyproject.toml)
+cssbeautifier==1.15.4
+    # via djlint
 distlib==0.3.9
     # via virtualenv
 django==5.2.1
@@ -38,12 +49,24 @@ django-stubs[compatible-mypy]==5.2.0
     # via procat (pyproject.toml)
 django-stubs-ext==5.2.0
     # via django-stubs
+djlint==1.36.4
+    # via procat (pyproject.toml)
+editorconfig==0.17.0
+    # via
+    #   cssbeautifier
+    #   jsbeautifier
 filelock==3.18.0
     # via virtualenv
 identify==2.6.10
     # via pre-commit
 iniconfig==2.1.0
     # via pytest
+jsbeautifier==1.15.4
+    # via
+    #   cssbeautifier
+    #   djlint
+json5==0.12.0
+    # via djlint
 mypy==1.15.0
     # via
     #   django-stubs
@@ -56,6 +79,8 @@ packaging==25.0
     # via
     #   build
     #   pytest
+pathspec==0.12.1
+    # via djlint
 pip-tools==7.4.1
     # via procat (pyproject.toml)
 platformdirs==4.3.8
@@ -81,18 +106,30 @@ pytest-django==4.11.1
 pytest-mock==3.14.0
     # via procat (pyproject.toml)
 pyyaml==6.0.2
-    # via pre-commit
-ruff==0.11.10
+    # via
+    #   djlint
+    #   pre-commit
+regex==2024.11.6
+    # via djlint
+ruff==0.11.9
     # via procat (pyproject.toml)
+six==1.17.0
+    # via
+    #   cssbeautifier
+    #   jsbeautifier
 sqlparse==0.5.3
     # via django
-types-pyyaml==6.0.12.20250516
+tqdm==4.67.1
+    # via djlint
+types-pyyaml==6.0.12.20250402
     # via django-stubs
 typing-extensions==4.13.2
     # via
     #   django-stubs
     #   django-stubs-ext
     #   mypy
+tzdata==2025.2
+    # via django
 virtualenv==20.31.2
     # via pre-commit
 wheel==0.45.1

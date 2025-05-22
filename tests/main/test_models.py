@@ -48,7 +48,7 @@ class TestProject:
         project = models.Project(name="ProCAT", status="Active")
         with pytest.raises(
             ValidationError,
-            match="All fields are mandatory except if Project status is 'Draft'.",
+            match="All fields are mandatory except if Project status id 'Draft'.",
         ):
             project.clean()
 

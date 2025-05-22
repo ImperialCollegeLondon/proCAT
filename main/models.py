@@ -85,7 +85,7 @@ class Project(models.Model):
         ("Draft", "Draft"),
         ("Not started", "Not started"),
         ("Active", "Active"),
-        ("Completed", "Completed"),
+        ("Completted", "Completted"),
     )
     _CHARGING = (
         ("Actual", "Actual"),
@@ -170,7 +170,7 @@ class Project(models.Model):
 
         if not self.start_date or not self.end_date or not self.lead:
             raise ValidationError(
-                "All fields are mandatory except if Project status is 'Draft'."
+                "All fields are mandatory except if Project status id 'Draft'."
             )
 
         if self.end_date <= self.start_date:

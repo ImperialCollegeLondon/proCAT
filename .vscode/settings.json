@@ -1,6 +1,9 @@
 {
+    "[django-html][html]": {
+        "editor.defaultFormatter": "monosans.djlint",
+        "editor.foldingStrategy": "indentation"
+    },
     "[python]": {
-        "editor.formatOnSave": true,
         "editor.defaultFormatter": "charliermarsh.ruff"
     },
     "editor.rulers": [
@@ -8,5 +11,5 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "editor.formatOnSave": false
+    "editor.formatOnSave": true
 }
