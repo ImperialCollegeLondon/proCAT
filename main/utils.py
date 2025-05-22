@@ -26,7 +26,7 @@ ACTIVITY_CODES = (
     {
         "code": 165138,
         "description": "FACILITIES USAGE (Internal funds)",
-        "notes": "Used is charge to non-research accounts - NOT P accounts",
+        "notes": "Used if charged to non-research accounts - NOT P accounts",
     },
 )
 
