@@ -1,5 +1,7 @@
 """Models module for main app."""
 
+from datetime import datetime
+
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -175,3 +177,31 @@ class Project(models.Model):
 
         if self.end_date <= self.start_date:
             raise ValidationError("The end date must be after the start date.")
+
+    @property
+    def weeks_to_deadline(self) -> tuple[int, float] | None:
+        """Provide the number of weeks left until project deadline.
+
+        Only relevant for active projects.
+
+        Returns:
+            The number of weeks left or None if the project is not Active.
+        """
+        if self.status == "Active" and self.end_date and self.start_date:
+            left = (self.end_date - datetime.now().date()).days / 7
+            total = (self.end_date - self.start_date).days / 7
+            return int(left), round(left / total * 100, 1)
+
+        return None
+
+    @property
+    def days_left(self) -> tuple[int, float] | None:
+        """Provide the days worth of effort left.
+
+        TODO: Placeholder. To be implemented when funding is implemented.
+
+        Returns:
+            The number of days worth of effort left, or None if there is no funding
+            information.
+        """
+        return 42, 48.0
