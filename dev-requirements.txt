@@ -91,7 +91,7 @@ pip-tools==7.4.1
     # via procat (pyproject.toml)
 platformdirs==4.3.8
     # via virtualenv
-pluggy==1.5.0
+pluggy==1.6.0
     # via pytest
 pre-commit==4.2.0
     # via procat (pyproject.toml)
