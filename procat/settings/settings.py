@@ -124,6 +124,7 @@ INSTALLED_APPS += [
     "crispy_forms",
     "crispy_bootstrap5",
     "django_tables2",
+    "django_filters",
 ]
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")

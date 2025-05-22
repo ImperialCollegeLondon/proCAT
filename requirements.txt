@@ -3,6 +3,7 @@
 # by the following command:
 #
 #    pip-compile --output-file=requirements.txt pyproject.toml
+#    pip-compile --output-file=requirements.txt pyproject.toml
 #
 asgiref==3.8.1
     # via django
@@ -13,6 +14,7 @@ django==5.2.1
     #   crispy-bootstrap5
     #   django-bootstrap5
     #   django-crispy-forms
+    #   django-filter
     #   django-tables2
     #   procat (pyproject.toml)
 django-bootstrap5==25.1
@@ -21,9 +23,13 @@ django-crispy-forms==2.4
     # via
     #   crispy-bootstrap5
     #   procat (pyproject.toml)
+django-filter==25.1
+    # via procat (pyproject.toml)
 django-tables2==2.7.5
     # via procat (pyproject.toml)
 sqlparse==0.5.3
+    # via django
+tzdata==2025.2
     # via django
 tzdata==2025.2
     # via django

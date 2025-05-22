@@ -13,7 +13,8 @@ dependencies = [
     "django-crispy-forms",
     "whitenoise",
     "crispy-bootstrap5",
-    "django_tables2"
+    "django_tables2",
+    "django-filter"
 ]
 
 [project.optional-dependencies]
@@ -56,7 +57,7 @@ module = "tests.*"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = ["django_tables2.*"]
+module = ["django_tables2.*", "django_filters.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
