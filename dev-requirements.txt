@@ -12,7 +12,7 @@ build==1.2.2.post1
     # via pip-tools
 cfgv==3.4.0
     # via pre-commit
-click==8.1.8
+click==8.2.0
     # via pip-tools
 coverage[toml]==7.8.0
     # via pytest-cov
@@ -60,7 +60,7 @@ pip-tools==7.4.1
     # via procat (pyproject.toml)
 platformdirs==4.3.8
     # via virtualenv
-pluggy==1.5.0
+pluggy==1.6.0
     # via pytest
 pre-commit==4.2.0
     # via procat (pyproject.toml)
@@ -82,11 +82,11 @@ pytest-mock==3.14.0
     # via procat (pyproject.toml)
 pyyaml==6.0.2
     # via pre-commit
-ruff==0.11.9
+ruff==0.11.10
     # via procat (pyproject.toml)
 sqlparse==0.5.3
     # via django
-types-pyyaml==6.0.12.20250402
+types-pyyaml==6.0.12.20250516
     # via django-stubs
 typing-extensions==4.13.2
     # via
