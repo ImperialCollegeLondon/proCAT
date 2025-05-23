@@ -205,3 +205,115 @@ class Project(models.Model):
             information.
         """
         return 42, 48.0
+
+
+class Funding(models.Model):
+    """Funding associated with a project."""
+
+    _SOURCES = (("Internal", "Internal"), ("External", "External"))
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False,
+        help_text="The project that the funding relates to.",
+    )
+
+    source = models.CharField(
+        "Source",
+        blank=False,
+        null=False,
+        choices=_SOURCES,
+        help_text="'Internal' refers to projects from within ICT or community"
+        " projects. If not 'Internal', all fields are mandatory.",
+    )
+
+    funding_body = models.CharField(
+        "Funding body",
+        blank=True,
+        null=True,
+        help_text="The organisation or department providing the funding.",
+    )
+
+    project_code = models.CharField(
+        "Project code",
+        blank=True,
+        null=True,
+        help_text="The funding code designated to the project.",
+    )
+
+    activity_code = models.ForeignKey(
+        ActivityCode,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        help_text="The activity code to use for charging.",
+    )
+
+    expiry_date = models.DateField(
+        "Expiry date",
+        null=True,
+        blank=True,
+        help_text="Account expiry date, meaning the latest that charges can be made to"
+        " the account.",
+    )
+
+    budget = models.DecimalField(
+        "Budget",
+        blank=False,
+        null=False,
+        max_digits=6,
+        decimal_places=2,
+        help_text="The total budget for the funding.",
+    )
+
+    daily_rate = models.DecimalField(
+        "Daily rate",
+        default=389.00,
+        blank=False,
+        null=False,
+        max_digits=6,
+        decimal_places=2,
+        help_text="The current daily rate, which defaults to 389.00.",
+    )
+
+    def __str__(self) -> str:
+        """String representation of the Funding object."""
+        return f"{self.funding_body} - {self.project_code}"
+
+    def clean(self) -> None:
+        """Ensure that all fields have a value unless the source is 'Internal'."""
+        if self.source == "Internal":
+            return super().clean()
+
+        if (
+            not self.funding_body
+            or not self.project_code
+            or not self.activity_code
+            or not self.expiry_date
+        ):
+            raise ValidationError(
+                "All fields are mandatory except if source is 'Internal'."
+            )
+
+    @property
+    def effort(self) -> int:
+        """Provide the effort in days, calculated based on the budget and daily rate.
+
+        Returns:
+            The total number of days of effort provided by the funding.
+        """
+        days_effort = int(self.budget / self.daily_rate)
+        return days_effort
+
+    @property
+    def effort_left(self) -> int:
+        """Provide the effort left in days.
+
+        TODO: Placeholder. To be implemented when synced with Clockify.
+
+        Returns:
+            The number of days worth of effort left.
+        """
+        return 42
