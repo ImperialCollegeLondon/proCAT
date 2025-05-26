@@ -23,7 +23,7 @@ colorama==0.4.6
     #   djlint
     #   pytest
     #   tqdm
-coverage[toml]==7.8.0
+coverage[toml]==7.8.2
     # via pytest-cov
 crispy-bootstrap5==2025.4
     # via procat (pyproject.toml)
