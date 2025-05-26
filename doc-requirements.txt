@@ -79,7 +79,7 @@ mkdocs==1.6.1
     #   mkdocs-section-index
     #   mkdocstrings
     #   procat (pyproject.toml)
-mkdocs-autorefs==1.4.1
+mkdocs-autorefs==1.4.2
     # via
     #   mkdocstrings
     #   mkdocstrings-python
