@@ -63,7 +63,7 @@ editorconfig==0.17.0
     #   jsbeautifier
 filelock==3.18.0
     # via virtualenv
-identify==2.6.10
+identify==2.6.12
     # via pre-commit
 iniconfig==2.1.0
     # via pytest
