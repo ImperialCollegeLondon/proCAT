@@ -99,3 +99,57 @@ class TestProject:
             name="ProCAT", status=status, start_date=start_date, end_date=end_date
         )
         assert project.weeks_to_deadline == output
+
+
+class TestFunding:
+    """Tests for the funding model."""
+
+    def test_model_str(self):
+        """Test the object string for the funding model."""
+        from main import models
+
+        project = models.Project(name="ProCAT")
+        funding = models.Funding(project=project, budget=10000.00, project_code="1234")
+        assert str(funding) == "ProCAT - £10000.0 - 1234"
+
+    def test_effort(self):
+        """Test effort calculated from budget and daily rate."""
+        from main import models
+
+        funding = models.Funding(budget=10000.00, daily_rate=389.00)
+        assert funding.effort == 26
+
+    def test_clean_when_internal(self):
+        """Test the clean method."""
+        from main import models
+
+        funding = models.Funding(source="Internal")
+        funding.clean()
+
+    def test_clean_when_external(self):
+        """Test the clean method."""
+        from django.core.exceptions import ValidationError
+
+        from main import models
+
+        # test with missing fields
+        funding = models.Funding(source="External")
+        with pytest.raises(
+            ValidationError,
+            match="All fields are mandatory except if source is 'Internal'.",
+        ):
+            funding.clean()
+
+        # all fields present
+        activity_code = models.ActivityCode(
+            code="1234", description="Some code", notes="None"
+        )
+
+        funding = models.Funding(
+            source="External",
+            funding_body="EPSRC",
+            project_code="1234",
+            activity_code=activity_code,
+            expiry_date=datetime.now().date(),
+        )
+        funding.clean()
