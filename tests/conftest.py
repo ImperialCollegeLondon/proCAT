@@ -47,3 +47,30 @@ def project(user, department):
         end_date=datetime.now().date() + timedelta(days=42),
         status="Active",
     )[0]
+
+
+@pytest.fixture
+def activity_code():
+    """Provides a default activity code object."""
+    from main import models
+
+    return models.ActivityCode.objects.get_or_create(
+        code="1234", description="Some code", notes="None"
+    )[0]
+
+
+@pytest.fixture
+def funding(project, activity_code):
+    """Provides a default funding object."""
+    from main import models
+
+    return models.Funding.objects.get_or_create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        project_code="1234",
+        activity_code=activity_code,
+        expiry_date=datetime.now().date() + timedelta(days=42),
+        budget=10000.00,
+        daily_rate=389.00,
+    )[0]
