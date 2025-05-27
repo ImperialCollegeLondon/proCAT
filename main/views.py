@@ -40,7 +40,7 @@ class ProjectsListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     filterset_fields = ("nature", "department", "status", "charging")
 
 
-class FundingListView(LoginRequiredMixin, SingleTableMixin, ListView):
+class FundingListView(LoginRequiredMixin, SingleTableMixin, ListView):  # type: ignore [type-arg]
     """View to display the funding list for all projects."""
 
     model = models.Funding
