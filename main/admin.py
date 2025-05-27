@@ -19,10 +19,8 @@ class FundingAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "project_code",
         "funding_body",
         "source",
-        "activity_code",
         "expiry_date",
         "budget",
-        "daily_rate",
         "effort",
         "effort_left",
     )
