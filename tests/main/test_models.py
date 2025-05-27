@@ -108,15 +108,16 @@ class TestFunding:
         """Test the object string for the funding model."""
         from main import models
 
-        funding = models.Funding(funding_body="EPSRC", project_code="1234")
-        assert str(funding) == "EPSRC - 1234"
+        project = models.Project(name="ProCAT")
+        funding = models.Funding(project=project, budget=10000.00, project_code="1234")
+        assert str(funding) == "ProCAT - £10000.0 - 1234"
 
     def test_effort(self):
         """Test effort calculated from budget and daily rate."""
         from main import models
 
         funding = models.Funding(budget=10000.00, daily_rate=389.00)
-        assert funding.effort == 25
+        assert funding.effort == 26
 
     def test_clean_when_internal(self):
         """Test the clean method."""

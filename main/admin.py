@@ -8,7 +8,24 @@ from .models import ActivityCode, Department, Funding, Project, User
 admin.site.register(User, UserAdmin)
 admin.site.register(Department)
 admin.site.register(ActivityCode)
-admin.site.register(Funding)
+
+
+@admin.register(Funding)
+class FundingAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    """Admin class for the Funding model."""
+
+    list_display = (
+        "project",
+        "project_code",
+        "funding_body",
+        "source",
+        "activity_code",
+        "expiry_date",
+        "budget",
+        "daily_rate",
+        "effort",
+        "effort_left",
+    )
 
 
 @admin.register(Project)

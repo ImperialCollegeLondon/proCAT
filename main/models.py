@@ -278,9 +278,14 @@ class Funding(models.Model):
         help_text="The current daily rate, which defaults to 389.00.",
     )
 
+    class Meta:
+        """Meta class for the model."""
+
+        verbose_name_plural = "funding"
+
     def __str__(self) -> str:
         """String representation of the Funding object."""
-        return f"{self.funding_body} - {self.project_code}"
+        return f"{self.project} - £{self.budget} - {self.project_code}"
 
     def clean(self) -> None:
         """Ensure that all fields have a value unless the source is 'Internal'."""
@@ -304,7 +309,7 @@ class Funding(models.Model):
         Returns:
             The total number of days of effort provided by the funding.
         """
-        days_effort = int(self.budget / self.daily_rate)
+        days_effort = round(self.budget / self.daily_rate)
         return days_effort
 
     @property
