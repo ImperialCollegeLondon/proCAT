@@ -4,6 +4,7 @@ from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -340,8 +341,9 @@ class Capacity(models.Model):
         default=0.7,
         blank=False,
         null=False,
-        max_digits=2,
+        max_digits=3,
         decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
         help_text="Capacity fraction of 1 FTE devoted to project work.",
     )
 
