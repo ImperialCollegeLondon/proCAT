@@ -153,3 +153,45 @@ class TestFunding:
             expiry_date=datetime.now().date(),
         )
         funding.clean()
+
+
+class TestCapacity:
+    """Tests for the capacity model."""
+
+    def test_model_str(self, user):
+        """Test the object string for the capacity model."""
+        from main import models
+
+        capacity = models.Capacity(
+            user=user, value=0.5, start_date=datetime.now().date()
+        )
+        assert (
+            str(capacity)
+            == f"From {datetime.now().date()}, the capacity of {user!s} is 0.5."
+        )
+
+    @pytest.mark.parametrize(
+        ["value", "is_valid"],
+        [
+            [-0.5, False],
+            [0.0, True],
+            [0.5, True],
+            [1.0, True],
+            [1.5, False],
+        ],
+    )
+    def test_value(self, user, value, is_valid):
+        """Test that the value of capacity can only between 0 and 1."""
+        from django.core.exceptions import ValidationError
+
+        from main import models
+
+        capacity = models.Capacity(
+            user=user, value=value, start_date=datetime.now().date()
+        )
+        if is_valid:
+            # Should not raise
+            capacity.full_clean()
+        else:
+            with pytest.raises(ValidationError):
+                capacity.full_clean()
