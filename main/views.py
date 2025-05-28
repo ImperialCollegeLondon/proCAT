@@ -90,5 +90,5 @@ class FundingDetailView(CustomBaseDetailView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add funding name to the context, so it is easy to retrieve."""
         context = super().get_context_data(**kwargs)
-        context["funding_name"] = self.get_object().project_code
+        context["funding_name"] = str(self.get_object())
         return context

@@ -80,7 +80,7 @@ class TestFundingDetailView(LoginRequiredMixin, TemplateOkMixin):
         response = auth_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
         assert "form" in response.context
-        assert response.context["funding_name"] == funding.project_code
+        assert response.context["funding_name"] == str(funding)
 
         # The form should be readonly
         form = response.context["form"]
