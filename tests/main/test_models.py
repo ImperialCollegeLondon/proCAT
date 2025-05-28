@@ -110,7 +110,7 @@ class TestFunding:
 
         project = models.Project(name="ProCAT")
         funding = models.Funding(project=project, budget=10000.00, project_code="1234")
-        assert str(funding) == "ProCAT - £10000.0 - 1234"
+        assert str(funding) == "ProCAT - £10000.00 - 1234"
 
     def test_effort(self):
         """Test effort calculated from budget and daily rate."""
