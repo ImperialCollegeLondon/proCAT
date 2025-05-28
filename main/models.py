@@ -355,8 +355,8 @@ class Capacity(models.Model):
     class Meta:
         """Meta class for the model."""
 
-        verbose_name_plural = "capacity"
+        verbose_name_plural = "capacities"
 
     def __str__(self) -> str:
         """String representation of the Capacity object."""
-        return f"From {self.start_date}, capacity of {self.user} is {self.value}."
+        return f"From {self.start_date}, the capacity of {self.user} is {self.value}."
