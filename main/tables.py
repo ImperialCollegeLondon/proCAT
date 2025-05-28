@@ -80,3 +80,6 @@ class CapacityTable(tables.Table):
             "value",
             "start_date",
         )
+        attrs: ClassVar[dict[str, str]] = {
+            "class": "table table-striped table-hover table-responsive",
+        }
