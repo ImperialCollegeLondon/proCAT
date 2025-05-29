@@ -1,5 +1,6 @@
 """Tables needed by ProCAT."""
 
+from decimal import Decimal
 from typing import ClassVar
 
 import django_tables2 as tables
@@ -84,6 +85,6 @@ class CapacityTable(tables.Table):
             "class": "table table-striped table-hover table-responsive",
         }
 
-    def render_value(self, value) -> str:
+    def render_value(self, value: Decimal) -> str:
         """Render the value as a percentage."""
         return f"{value * 100:.0f}%"
