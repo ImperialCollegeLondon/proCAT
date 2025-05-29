@@ -83,3 +83,7 @@ class CapacityTable(tables.Table):
         attrs: ClassVar[dict[str, str]] = {
             "class": "table table-striped table-hover table-responsive",
         }
+
+    def render_value(self, value):
+        """Render the value as a percentage."""
+        return f"{value * 100:.0f}%"
