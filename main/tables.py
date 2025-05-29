@@ -1,11 +1,12 @@
 """Tables needed by ProCAT."""
 
+from decimal import Decimal
 from typing import ClassVar
 
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
 
-from .models import Project
+from .models import Capacity, Project
 
 
 class ProjectTable(tables.Table):
@@ -66,3 +67,24 @@ class ProjectTable(tables.Table):
         return mark_safe(
             f'<span class="{base_class} bg-success">{num} ({frac}%)</span>'
         )
+
+
+class CapacityTable(tables.Table):
+    """Table for Capacity listing."""
+
+    class Meta:
+        """Meta class for the table."""
+
+        model = Capacity
+        fields = (
+            "user",
+            "value",
+            "start_date",
+        )
+        attrs: ClassVar[dict[str, str]] = {
+            "class": "table table-striped table-hover table-responsive",
+        }
+
+    def render_value(self, value: Decimal) -> str:
+        """Render the value as a percentage."""
+        return f"{value * 100:.0f}%"
