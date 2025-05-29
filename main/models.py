@@ -286,7 +286,7 @@ class Funding(models.Model):
 
     def __str__(self) -> str:
         """String representation of the Funding object."""
-        return f"{self.project} - £{self.budget} - {self.project_code}"
+        return f"{self.project} - £{self.budget:.2f} - {self.project_code}"
 
     def clean(self) -> None:
         """Ensure that all fields have a value unless the source is 'Internal'."""

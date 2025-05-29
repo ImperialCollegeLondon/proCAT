@@ -40,7 +40,15 @@ class ProjectsListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     filterset_fields = ("nature", "department", "status", "charging")
 
 
-class ProjectDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
+class CapacitiesListView(LoginRequiredMixin, SingleTableView):
+    """View to display the list of capacities."""
+
+    model = models.Capacity
+    table_class = tables.CapacityTable
+    template_name = "main/capacities.html"
+
+
+class CustomBaseDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
     """Detail view based on a read-only form view.
 
     While there is a generic Detail View, it is not rendered nicely easily as the
@@ -48,8 +56,6 @@ class ProjectDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-a
     instead, which can easily be styled, and make the form read only.
     """
 
-    model = models.Project
-    template_name = "main/project_detail.html"
     fields = "__all__"  # type: ignore [assignment]
 
     def get_form(self, form_class: Any | None = None) -> ModelForm:  # type: ignore
@@ -69,6 +75,13 @@ class ProjectDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-a
 
         return form
 
+
+class ProjectDetailView(CustomBaseDetailView):
+    """View to view details of a project."""
+
+    model = models.Project
+    template_name = "main/project_detail.html"
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add project name to the context, so it is easy to retrieve."""
         context = super().get_context_data(**kwargs)
@@ -76,9 +89,14 @@ class ProjectDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-a
         return context
 
 
-class CapacitiesListView(LoginRequiredMixin, SingleTableView):
-    """View to display the list of capacities."""
+class FundingDetailView(CustomBaseDetailView):
+    """View to view details of project funding."""
 
-    model = models.Capacity
-    table_class = tables.CapacityTable
-    template_name = "main/capacities.html"
+    model = models.Funding
+    template_name = "main/funding_detail.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
+        """Add funding name to the context, so it is easy to retrieve."""
+        context = super().get_context_data(**kwargs)
+        context["funding_name"] = str(self.get_object())
+        return context

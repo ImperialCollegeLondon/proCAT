@@ -31,6 +31,15 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
         return reverse("main:projects")
 
 
+class TestCapacitiesListView(LoginRequiredMixin, TemplateOkMixin):
+    """Test suite for the capacities view."""
+
+    _template_name = "main/capacities.html"
+
+    def _get_url(self):
+        return reverse("main:capacities")
+
+
 @pytest.mark.usefixtures("project")
 class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
     """Test suite for the projects view."""
@@ -60,10 +69,30 @@ class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
             assert form.fields[field].widget.attrs["readonly"]
 
 
-class TestCapacitiesListView(LoginRequiredMixin, TemplateOkMixin):
-    """Test suite for the capacities view."""
+@pytest.mark.usefixtures("funding")
+class TestFundingDetailView(LoginRequiredMixin, TemplateOkMixin):
+    """Test suite for the funding view."""
 
-    _template_name = "main/capacities.html"
+    _template_name = "main/funding_detail.html"
 
     def _get_url(self):
-        return reverse("main:capacities")
+        from main import models
+
+        funding = models.Funding.objects.get(project_code="1234")
+
+        return reverse("main:funding_detail", kwargs={"pk": funding.pk})
+
+    def test_get(self, auth_client, funding):
+        """Tests the get method and the data provided."""
+        endpoint = reverse("main:funding_detail", kwargs={"pk": funding.pk})
+
+        response = auth_client.get(endpoint)
+        assert response.status_code == HTTPStatus.OK
+        assert "form" in response.context
+        assert response.context["funding_name"] == str(funding)
+
+        # The form should be readonly
+        form = response.context["form"]
+        for field in form.fields.keys():
+            assert form.fields[field].widget.attrs["disabled"]
+            assert form.fields[field].widget.attrs["readonly"]
