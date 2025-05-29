@@ -58,3 +58,32 @@ class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
         for field in form.fields.keys():
             assert form.fields[field].widget.attrs["disabled"]
             assert form.fields[field].widget.attrs["readonly"]
+
+
+@pytest.mark.usefixtures("funding")
+class TestFundingDetailView(LoginRequiredMixin, TemplateOkMixin):
+    """Test suite for the funding view."""
+
+    _template_name = "main/funding_detail.html"
+
+    def _get_url(self):
+        from main import models
+
+        funding = models.Funding.objects.get(project_code="1234")
+
+        return reverse("main:funding_detail", kwargs={"pk": funding.pk})
+
+    def test_get(self, auth_client, funding):
+        """Tests the get method and the data provided."""
+        endpoint = reverse("main:funding_detail", kwargs={"pk": funding.pk})
+
+        response = auth_client.get(endpoint)
+        assert response.status_code == HTTPStatus.OK
+        assert "form" in response.context
+        assert response.context["funding_name"] == str(funding)
+
+        # The form should be readonly
+        form = response.context["form"]
+        for field in form.fields.keys():
+            assert form.fields[field].widget.attrs["disabled"]
+            assert form.fields[field].widget.attrs["readonly"]

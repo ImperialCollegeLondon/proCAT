@@ -13,4 +13,7 @@ urlpatterns = [
     path(
         "projects/<slug:pk>/", views.ProjectDetailView.as_view(), name="project_detail"
     ),
+    path(
+        "funding/<slug:pk>/", views.FundingDetailView.as_view(), name="funding_detail"
+    ),
 ]
