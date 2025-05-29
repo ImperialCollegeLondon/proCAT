@@ -84,6 +84,6 @@ class CapacityTable(tables.Table):
             "class": "table table-striped table-hover table-responsive",
         }
 
-    def render_value(self, value):
+    def render_value(self, value) -> str:
         """Render the value as a percentage."""
         return f"{value * 100:.0f}%"
