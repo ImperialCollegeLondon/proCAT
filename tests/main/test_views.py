@@ -58,3 +58,12 @@ class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
         for field in form.fields.keys():
             assert form.fields[field].widget.attrs["disabled"]
             assert form.fields[field].widget.attrs["readonly"]
+
+
+class TestCapacitiesListView(LoginRequiredMixin, TemplateOkMixin):
+    """Test suite for the capacities view."""
+
+    _template_name = "main/capacities.html"
+
+    def _get_url(self):
+        return reverse("main:capacities")
