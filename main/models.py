@@ -4,6 +4,7 @@ from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -322,3 +323,42 @@ class Funding(models.Model):
             The number of days worth of effort left.
         """
         return 42
+
+
+class Capacity(models.Model):
+    """Proportion of working time that team members are able to work on projects."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        help_text="The team member this capacity relates to.",
+    )
+
+    value = models.DecimalField(
+        "Capacity",
+        default=0.7,
+        blank=False,
+        null=False,
+        max_digits=3,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="Capacity fraction of 1 FTE devoted to project work.",
+    )
+
+    start_date = models.DateField(
+        "Start date",
+        null=False,
+        blank=False,
+        help_text="The date from when this capacity applies.",
+    )
+
+    class Meta:
+        """Meta class for the model."""
+
+        verbose_name_plural = "capacities"
+
+    def __str__(self) -> str:
+        """String representation of the Capacity object."""
+        return f"From {self.start_date}, the capacity of {self.user} is {self.value}."

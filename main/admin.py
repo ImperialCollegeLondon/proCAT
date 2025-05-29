@@ -3,11 +3,22 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import ActivityCode, Department, Funding, Project, User
+from .models import ActivityCode, Capacity, Department, Funding, Project, User
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Department)
 admin.site.register(ActivityCode)
+
+
+@admin.register(Capacity)
+class CapacityAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    """Admin class for the Capacity model."""
+
+    list_display = (
+        "user",
+        "value",
+        "start_date",
+    )
 
 
 @admin.register(Funding)
