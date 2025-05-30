@@ -40,6 +40,15 @@ class TestFundingListView(LoginRequiredMixin, TemplateOkMixin):
         return reverse("main:funding")
 
 
+class TestCapacitiesListView(LoginRequiredMixin, TemplateOkMixin):
+    """Test suite for the capacities view."""
+
+    _template_name = "main/capacities.html"
+
+    def _get_url(self):
+        return reverse("main:capacities")
+
+
 @pytest.mark.usefixtures("project")
 class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
     """Test suite for the projects view."""

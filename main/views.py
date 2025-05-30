@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
 from django_filters.views import FilterView
-from django_tables2 import SingleTableMixin
+from django_tables2 import SingleTableMixin, SingleTableView
 
 from . import forms, models, tables
 
@@ -46,6 +46,14 @@ class FundingListView(LoginRequiredMixin, SingleTableMixin, ListView):  # type: 
     model = models.Funding
     table_class = tables.FundingTable
     template_name = "main/funding.html"
+
+
+class CapacitiesListView(LoginRequiredMixin, SingleTableView):
+    """View to display the list of capacities."""
+
+    model = models.Capacity
+    table_class = tables.CapacityTable
+    template_name = "main/capacities.html"
 
 
 class CustomBaseDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
