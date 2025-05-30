@@ -1,0 +1,10 @@
+{% extends "main/base.html" %}
+{% load django_bootstrap5 %}
+{% load django_tables2 %}
+
+{% block content %}
+  <h2>Funding</h2>
+
+  <!-- Table -->
+  {% render_table table %}
+{% endblock content %}
