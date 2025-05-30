@@ -92,10 +92,10 @@ class FundingTable(tables.Table):
             "budget",
             "effort",
             "effort_left",
-          )
-          attrs: ClassVar[dict[str, str]] = {
-              "class": "table table-striped table-hover table-responsive",
-          }
+        )
+        attrs: ClassVar[dict[str, str]] = {
+            "class": "table table-striped table-hover table-responsive",
+        }
 
 
 class CapacityTable(tables.Table):
