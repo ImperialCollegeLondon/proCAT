@@ -29,6 +29,7 @@ class ProjectTable(tables.Table):
             "start_date",
             "end_date",
             "weeks_to_deadline",
+            "total_effort",
             "days_left",
         )
         attrs: ClassVar[dict[str, str]] = {
