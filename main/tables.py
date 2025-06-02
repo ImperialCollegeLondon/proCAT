@@ -13,6 +13,8 @@ class ProjectTable(tables.Table):
     """Table for Project listing."""
 
     name = tables.Column(linkify=("main:project_detail", {"pk": tables.A("pk")}))
+    weeks_to_deadline = tables.Column(orderable=False)
+    days_left = tables.Column(orderable=False)
 
     class Meta:
         """Meta class for the table."""
@@ -78,6 +80,8 @@ class FundingTable(tables.Table):
     project_code = tables.Column(
         linkify=("main:funding_detail", {"pk": tables.A("pk")})
     )
+    effort = tables.Column(orderable=False)
+    effort_left = tables.Column(orderable=False)
 
     class Meta:
         """Meta class for the table."""
