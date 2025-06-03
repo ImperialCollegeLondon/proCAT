@@ -1,6 +1,24 @@
 {% extends "main/base.html" %}
+{% load django_bootstrap5 %}
 {% load django_tables2 %}
+
 {% block content %}
   <h2>Capacities</h2>
+
+  <!-- Shortcut to access the capacities list url -->
+  {% url 'main:capacities' as capacities %}
+
+  <!-- Filter -->
+  <form action="" method="get" class="form form-inline">
+    <div class="row">
+      <div class="col-lg-5">{% bootstrap_form filter.form layout='horizontal' %}</div>
+      <div class="col-lg-5">
+        {% bootstrap_button 'Filter' %}
+        {% bootstrap_button 'Clear' button_type="link" button_class="btn-success" href=capacities %}
+      </div>
+    </div>
+  </form>
+
+  <!-- Table -->
   {% render_table table %}
 {% endblock content %}
