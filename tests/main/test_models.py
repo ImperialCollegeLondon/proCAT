@@ -222,6 +222,68 @@ class TestFunding:
         )
         funding.clean()
 
+    @pytest.mark.parametrize(
+        ["budget", "is_valid"],
+        [
+            [-1000.00, False],
+            [0.00, True],
+            [1000.00, True],
+        ],
+    )
+    def test_budget(self, project, activity_code, budget, is_valid):
+        """Test that the budget cannot be a negative value."""
+        from django.core.exceptions import ValidationError
+
+        from main import models
+
+        funding = models.Funding(
+            project=project,
+            source="External",
+            funding_body="EPSRC",
+            project_code="1234",
+            activity_code=activity_code,
+            expiry_date=datetime.now().date(),
+            budget=budget,
+            daily_rate=389.00,
+        )
+        if is_valid:
+            # Should not raise
+            funding.full_clean()
+        else:
+            with pytest.raises(ValidationError):
+                funding.full_clean()
+
+    @pytest.mark.parametrize(
+        ["daily_rate", "is_valid"],
+        [
+            [-389.00, False],
+            [0.00, True],
+            [389.00, True],
+        ],
+    )
+    def test_daily_rate(self, project, activity_code, daily_rate, is_valid):
+        """Test that the daily rate cannot be a negative value."""
+        from django.core.exceptions import ValidationError
+
+        from main import models
+
+        funding = models.Funding(
+            project=project,
+            source="External",
+            funding_body="EPSRC",
+            project_code="1234",
+            activity_code=activity_code,
+            expiry_date=datetime.now().date(),
+            budget=1000.00,
+            daily_rate=daily_rate,
+        )
+        if is_valid:
+            # Should not raise
+            funding.full_clean()
+        else:
+            with pytest.raises(ValidationError):
+                funding.full_clean()
+
 
 class TestCapacity:
     """Tests for the capacity model."""
