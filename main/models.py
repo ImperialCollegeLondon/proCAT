@@ -196,26 +196,6 @@ class Project(models.Model):
         return None
 
     @property
-    def funding_summary(self) -> list | None:
-        """Get a summary of the funding to display in the project detail view.
-
-        Returns:
-            A list of tuples giving a summary of each funding source, or None if there
-            is no funding information
-        """
-        if self.funding_source.exists():
-            funding_summary = []
-            for funding in self.funding_source.all():
-                summary = (
-                    f"{funding!s} - {funding.effort} days total -"
-                    f" {funding.effort_left} days left"
-                )
-                funding_summary.append((summary, summary))
-            return funding_summary
-
-        return None
-
-    @property
     def total_effort(self) -> int | None:
         """Provide the total days worth of effort available from funding.
 
