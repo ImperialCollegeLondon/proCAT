@@ -3,7 +3,7 @@
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.forms import ChoiceField, ModelForm, SelectMultiple
+from django.forms import ModelForm
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
@@ -57,7 +57,7 @@ class CapacitiesListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     filterset_fields = ("user",)
 
 
-class ProjectDetailView(LoginRequiredMixin, UpdateView):
+class CustomBaseDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
     """Detail view based on a read-only form view.
 
     While there is a generic Detail View, it is not rendered nicely easily as the
@@ -66,44 +66,6 @@ class ProjectDetailView(LoginRequiredMixin, UpdateView):
     """
 
     fields = "__all__"  # type: ignore [assignment]
-    model = models.Project
-    template_name = "main/project_detail.html"
-
-    def get_form(self, form_class: Any | None = None) -> ModelForm:  # type: ignore
-        """Customize form to add a funding field and make it read-only.
-
-        Args:
-            form_class: The form class to use, if any.
-
-        Return:
-            A form associated to the model.
-        """
-        form = super().get_form(form_class)
-        funding_summary = self.get_object().funding_summary
-        if funding_summary:
-            form.fields["Funding sources"] = ChoiceField(
-                choices=funding_summary, widget=SelectMultiple
-            )
-
-        for field in form.fields.keys():
-            form.fields[field].widget.attrs["disabled"] = True
-            form.fields[field].widget.attrs["readonly"] = True
-
-        return form
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
-        """Add project name to the context, so it is easy to retrieve."""
-        context = super().get_context_data(**kwargs)
-        context["project_name"] = self.get_object().name
-        return context
-
-
-class FundingDetailView(LoginRequiredMixin, UpdateView):
-    """View to view details of project funding."""
-
-    fields = "__all__"  # type: ignore [assignment]
-    model = models.Funding
-    template_name = "main/funding_detail.html"
 
     def get_form(self, form_class: Any | None = None) -> ModelForm:  # type: ignore
         """Customize form to make it read-only.
@@ -121,6 +83,26 @@ class FundingDetailView(LoginRequiredMixin, UpdateView):
             form.fields[field].widget.attrs["readonly"] = True
 
         return form
+
+
+class ProjectDetailView(CustomBaseDetailView):
+    """View to view details of a project."""
+
+    model = models.Project
+    template_name = "main/project_detail.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
+        """Add project name to the context, so it is easy to retrieve."""
+        context = super().get_context_data(**kwargs)
+        context["project_name"] = self.get_object().name
+        return context
+
+
+class FundingDetailView(CustomBaseDetailView):
+    """View to view details of project funding."""
+
+    model = models.Funding
+    template_name = "main/funding_detail.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add funding name to the context, so it is easy to retrieve."""
