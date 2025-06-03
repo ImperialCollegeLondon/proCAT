@@ -92,9 +92,16 @@ class ProjectDetailView(CustomBaseDetailView):
     template_name = "main/project_detail.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
-        """Add project name to the context, so it is easy to retrieve."""
+        """Add project name and funding table to the context.
+
+        A custom query is used with the funding table, so only the funding for the
+        current project is displayed.
+        """
         context = super().get_context_data(**kwargs)
         context["project_name"] = self.get_object().name
+        funding_source = self.get_object().funding_source.all()
+        funding_table = tables.FundingTable(funding_source)
+        context["funding_table"] = funding_table
         return context
 
 
