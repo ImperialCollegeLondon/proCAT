@@ -196,7 +196,7 @@ class Project(models.Model):
         return None
 
     @property
-    def funding_summary(self) -> list | None:
+    def funding_summary(self) -> list[tuple[str, str]] | None:
         """Get a summary of the funding to display in the project detail view.
 
         Returns:
@@ -236,7 +236,7 @@ class Project(models.Model):
             The number of days and percentage worth of effort left, or None if there is
             no funding information.
         """
-        if self.funding_source.exists():
+        if self.funding_source.exists() and self.total_effort:
             left = sum([funding.effort_left for funding in self.funding_source.all()])
             return left, round(left / self.total_effort * 100, 1)
 

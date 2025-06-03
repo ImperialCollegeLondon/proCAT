@@ -57,7 +57,7 @@ class CapacitiesListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     filterset_fields = ("user",)
 
 
-class ProjectDetailView(LoginRequiredMixin, UpdateView):
+class ProjectDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
     """Detail view based on a read-only form view.
 
     While there is a generic Detail View, it is not rendered nicely easily as the
@@ -98,8 +98,8 @@ class ProjectDetailView(LoginRequiredMixin, UpdateView):
         return context
 
 
-class FundingDetailView(LoginRequiredMixin, UpdateView):
-    """View to view details of project funding."""
+class FundingDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
+    """View to view details of project funding based on a read-only form view."""
 
     fields = "__all__"  # type: ignore [assignment]
     model = models.Funding
