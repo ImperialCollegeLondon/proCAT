@@ -7,7 +7,7 @@ from django.forms import ModelForm
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import CreateView, ListView, UpdateView
 from django_filters.views import FilterView
 from django_tables2 import SingleTableMixin
 
@@ -38,6 +38,14 @@ class ProjectsListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     table_class = tables.ProjectTable
     template_name = "main/projects.html"
     filterset_fields = ("nature", "department", "status", "charging")
+
+
+class FundingListView(LoginRequiredMixin, SingleTableMixin, ListView):  # type: ignore [type-arg]
+    """View to display the funding list for all projects."""
+
+    model = models.Funding
+    table_class = tables.FundingTable
+    template_name = "main/funding.html"
 
 
 class CapacitiesListView(LoginRequiredMixin, SingleTableMixin, FilterView):

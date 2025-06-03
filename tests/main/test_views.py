@@ -31,6 +31,15 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
         return reverse("main:projects")
 
 
+class TestFundingListView(LoginRequiredMixin, TemplateOkMixin):
+    """Test suite for the funding view."""
+
+    _template_name = "main/funding.html"
+
+    def _get_url(self):
+        return reverse("main:funding")
+
+
 class TestCapacitiesListView(LoginRequiredMixin, TemplateOkMixin):
     """Test suite for the capacities view."""
 

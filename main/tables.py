@@ -6,13 +6,15 @@ from typing import ClassVar
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
 
-from .models import Capacity, Project
+from .models import Capacity, Funding, Project
 
 
 class ProjectTable(tables.Table):
     """Table for Project listing."""
 
     name = tables.Column(linkify=("main:project_detail", {"pk": tables.A("pk")}))
+    weeks_to_deadline = tables.Column(orderable=False)
+    days_left = tables.Column(orderable=False)
 
     class Meta:
         """Meta class for the table."""
@@ -67,6 +69,37 @@ class ProjectTable(tables.Table):
         return mark_safe(
             f'<span class="{base_class} bg-success">{num} ({frac}%)</span>'
         )
+
+
+class FundingTable(tables.Table):
+    """Table for the Funding listing."""
+
+    project = tables.Column(
+        linkify=("main:project_detail", {"pk": tables.A("project.pk")})
+    )
+    project_code = tables.Column(
+        linkify=("main:funding_detail", {"pk": tables.A("pk")})
+    )
+    effort = tables.Column(orderable=False)
+    effort_left = tables.Column(orderable=False)
+
+    class Meta:
+        """Meta class for the table."""
+
+        model = Funding
+        fields = (
+            "project",
+            "project_code",
+            "funding_body",
+            "source",
+            "expiry_date",
+            "budget",
+            "effort",
+            "effort_left",
+        )
+        attrs: ClassVar[dict[str, str]] = {
+            "class": "table table-striped table-hover table-responsive",
+        }
 
 
 class CapacityTable(tables.Table):
