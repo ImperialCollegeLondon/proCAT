@@ -100,6 +100,74 @@ class TestProject:
         )
         assert project.weeks_to_deadline == output
 
+    @pytest.mark.django_db
+    @pytest.mark.usefixtures("department", "user", "activity_code")
+    def test_total_effort(self):
+        """Test the total_effort method."""
+        from main import models
+
+        department = models.Department.objects.get(name="ICT")
+        user = models.User.objects.get(username="testuser")
+        project = models.Project.objects.create(
+            name="ProCAT",
+            department=department,
+            lead=user,
+        )
+        assert project.total_effort is None
+
+        activity_code = models.ActivityCode.objects.get(code="1234")
+        funding_A = models.Funding.objects.create(
+            project=project,
+            source="External",
+            project_code="1234",
+            activity_code=activity_code,
+            budget=10000.00,
+        )
+        funding_B = models.Funding.objects.create(
+            project=project,
+            source="External",
+            project_code="5678",
+            activity_code=activity_code,
+            budget=5000.00,
+        )
+        total_effort = funding_A.effort + funding_B.effort
+        assert project.total_effort == total_effort
+
+    @pytest.mark.django_db
+    @pytest.mark.usefixtures("department", "user", "activity_code")
+    def test_days_left(self):
+        """Test the days_left method."""
+        from main import models
+
+        department = models.Department.objects.get(name="ICT")
+        user = models.User.objects.get(username="testuser")
+        project = models.Project.objects.create(
+            name="ProCAT",
+            department=department,
+            lead=user,
+        )
+        assert project.days_left is None
+
+        activity_code = models.ActivityCode.objects.get(code="1234")
+        funding_A = models.Funding.objects.create(
+            project=project,
+            source="External",
+            project_code="1234",
+            activity_code=activity_code,
+            budget=10000.00,
+        )
+        funding_B = models.Funding.objects.create(
+            project=project,
+            source="External",
+            project_code="5678",
+            activity_code=activity_code,
+            budget=5000.00,
+        )
+        total_effort = funding_A.effort + funding_B.effort
+        left = funding_A.effort_left + funding_B.effort_left
+        days_left = left, round(left / total_effort * 100, 1)
+        assert project.days_left == days_left
+
 
 class TestFunding:
     """Tests for the funding model."""

@@ -49,7 +49,7 @@ class TestCapacitiesListView(LoginRequiredMixin, TemplateOkMixin):
         return reverse("main:capacities")
 
 
-@pytest.mark.usefixtures("project", "funding")
+@pytest.mark.usefixtures("project")
 class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
     """Test suite for the projects view."""
 
