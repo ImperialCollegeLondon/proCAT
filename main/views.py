@@ -99,9 +99,10 @@ class ProjectDetailView(CustomBaseDetailView):
         """
         context = super().get_context_data(**kwargs)
         context["project_name"] = self.get_object().name
-
+        # get funding info for the current project
         funding_source = self.get_object().funding_source.all()
         funding_table = tables.FundingTable(funding_source)
+        # enables the table to be sorted by column headings
         RequestConfig(self.request).configure(funding_table)
         context["funding_table"] = funding_table
         return context
