@@ -64,12 +64,15 @@ class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
 
     def test_get(self, auth_client, project):
         """Tests the get method and the data provided."""
+        from main import tables
+
         endpoint = reverse("main:project_detail", kwargs={"pk": project.pk})
 
         response = auth_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
         assert "form" in response.context
         assert response.context["project_name"] == project.name
+        assert isinstance(response.context["funding_table"], tables.FundingTable)
 
         # The form should be readonly
         form = response.context["form"]

@@ -196,16 +196,31 @@ class Project(models.Model):
         return None
 
     @property
+    def total_effort(self) -> int | None:
+        """Provide the total days worth of effort available from funding.
+
+        Returns:
+            The total number of days effort, or None if there is no funding information.
+        """
+        if self.funding_source.exists():
+            total = sum([funding.effort for funding in self.funding_source.all()])
+            return total
+
+        return None
+
+    @property
     def days_left(self) -> tuple[int, float] | None:
         """Provide the days worth of effort left.
 
-        TODO: Placeholder. To be implemented when funding is implemented.
-
         Returns:
-            The number of days worth of effort left, or None if there is no funding
-            information.
+            The number of days and percentage worth of effort left, or None if there is
+            no funding information.
         """
-        return 42, 48.0
+        if self.total_effort:
+            left = sum([funding.effort_left for funding in self.funding_source.all()])
+            return left, round(left / self.total_effort * 100, 1)
+
+        return None
 
 
 class Funding(models.Model):
@@ -219,6 +234,7 @@ class Funding(models.Model):
         blank=False,
         null=False,
         help_text="The project that the funding relates to.",
+        related_name="funding_source",
     )
 
     source = models.CharField(

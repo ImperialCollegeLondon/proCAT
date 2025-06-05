@@ -14,6 +14,7 @@ class ProjectTable(tables.Table):
 
     name = tables.Column(linkify=("main:project_detail", {"pk": tables.A("pk")}))
     weeks_to_deadline = tables.Column(orderable=False)
+    total_effort = tables.Column(orderable=False)
     days_left = tables.Column(orderable=False)
 
     class Meta:
@@ -29,6 +30,7 @@ class ProjectTable(tables.Table):
             "start_date",
             "end_date",
             "weeks_to_deadline",
+            "total_effort",
             "days_left",
         )
         attrs: ClassVar[dict[str, str]] = {
