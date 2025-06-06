@@ -1,8 +1,10 @@
 """Tests for the models."""
 
+from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta
 
 import pytest
+from django.core.exceptions import ValidationError
 
 
 def test_department_model_str():
@@ -40,8 +42,6 @@ class TestProject:
 
     def test_clean_when_not_draft(self, user):
         """Test the clean method."""
-        from django.core.exceptions import ValidationError
-
         from main import models
 
         # Mandatory fields are present
@@ -196,8 +196,6 @@ class TestFunding:
 
     def test_clean_when_external(self):
         """Test the clean method."""
-        from django.core.exceptions import ValidationError
-
         from main import models
 
         # test with missing fields
@@ -223,20 +221,18 @@ class TestFunding:
         funding.clean()
 
     @pytest.mark.parametrize(
-        ["budget", "is_valid"],
+        ["budget", "expectation"],
         [
-            [-1000.00, False],
-            [0.00, True],
-            [1000.00, True],
+            [-1000.00, pytest.raises(ValidationError)],
+            [0.00, does_not_raise()],
+            [1000.00, does_not_raise()],
         ],
     )
-    def test_budget(self, project, activity_code, budget, is_valid):
+    def test_budget(self, project, activity_code, budget, expectation):
         """Test that the budget cannot be a negative value."""
-        from django.core.exceptions import ValidationError
-
         from main import models
 
-        funding = models.Funding(
+        funding = models.Funding.objects.create(
             project=project,
             source="External",
             funding_body="EPSRC",
@@ -246,25 +242,19 @@ class TestFunding:
             budget=budget,
             daily_rate=389.00,
         )
-        if is_valid:
-            # Should not raise
+        with expectation:
             funding.full_clean()
-        else:
-            with pytest.raises(ValidationError):
-                funding.full_clean()
 
     @pytest.mark.parametrize(
-        ["daily_rate", "is_valid"],
+        ["daily_rate", "expectation"],
         [
-            [-389.00, False],
-            [0.00, True],
-            [389.00, True],
+            [-389.00, pytest.raises(ValidationError)],
+            [0.00, does_not_raise()],
+            [389.00, does_not_raise()],
         ],
     )
-    def test_daily_rate(self, project, activity_code, daily_rate, is_valid):
+    def test_daily_rate(self, project, activity_code, daily_rate, expectation):
         """Test that the daily rate cannot be a negative value."""
-        from django.core.exceptions import ValidationError
-
         from main import models
 
         funding = models.Funding(
@@ -277,12 +267,8 @@ class TestFunding:
             budget=1000.00,
             daily_rate=daily_rate,
         )
-        if is_valid:
-            # Should not raise
+        with expectation:
             funding.full_clean()
-        else:
-            with pytest.raises(ValidationError):
-                funding.full_clean()
 
 
 class TestCapacity:
@@ -312,8 +298,6 @@ class TestCapacity:
     )
     def test_value(self, user, value, is_valid):
         """Test that the value of capacity can only between 0 and 1."""
-        from django.core.exceptions import ValidationError
-
         from main import models
 
         capacity = models.Capacity(
