@@ -282,6 +282,7 @@ class Funding(models.Model):
         null=False,
         max_digits=12,
         decimal_places=2,
+        validators=[MinValueValidator(0)],
         help_text="The total budget for the funding.",
     )
 
@@ -292,6 +293,7 @@ class Funding(models.Model):
         null=False,
         max_digits=12,
         decimal_places=2,
+        validators=[MinValueValidator(0)],
         help_text="The current daily rate, which defaults to 389.00.",
     )
 
