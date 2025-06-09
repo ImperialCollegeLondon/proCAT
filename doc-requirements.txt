@@ -24,7 +24,7 @@ colorama==0.4.6
     #   mkdocs-material
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
-django==5.2.1
+django==5.2.2
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
