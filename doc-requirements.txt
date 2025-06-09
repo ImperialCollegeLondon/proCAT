@@ -22,7 +22,7 @@ colorama==0.4.6
     #   griffe
     #   mkdocs
     #   mkdocs-material
-crispy-bootstrap5==2025.4
+crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
 django==5.2.1
     # via
