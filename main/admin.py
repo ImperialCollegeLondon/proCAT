@@ -3,7 +3,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import ActivityCode, Capacity, Department, Funding, Project, User
+from .models import (
+    ActivityCode,
+    Capacity,
+    Department,
+    Funding,
+    Project,
+    TimeEntry,
+    User,
+)
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Department)
@@ -51,4 +59,16 @@ class ProjectAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "end_date",
         "weeks_to_deadline",
         "days_left",
+    )
+
+
+@admin.register(TimeEntry)
+class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    """Admin class for the TimeEntry model."""
+
+    list_display = (
+        "user",
+        "project",
+        "start_time",
+        "end_time",
     )

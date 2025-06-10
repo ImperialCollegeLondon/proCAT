@@ -309,3 +309,22 @@ class TestCapacity:
         else:
             with pytest.raises(ValidationError):
                 capacity.full_clean()
+
+
+class TestTimeEntry:
+    """Tests for the time entry model."""
+
+    def test_model_str(self, user, project):
+        """Test the object string for the time entry model."""
+        from main import models
+
+        time_entry = models.TimeEntry(
+            user=user,
+            project=project,
+            start_time=datetime.now(),
+            end_time=datetime.now() + timedelta(hours=7.5),
+        )
+        assert (
+            str(time_entry)
+            == f"{user!s} - {project!s} - {time_entry.start_time} to {time_entry.end_time}"  # noqa: E501
+        )
