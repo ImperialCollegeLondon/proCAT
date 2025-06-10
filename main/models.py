@@ -380,3 +380,40 @@ class Capacity(models.Model):
     def __str__(self) -> str:
         """String representation of the Capacity object."""
         return f"From {self.start_date}, the capacity of {self.user} is {self.value}."
+
+
+class TimeEntry(models.Model):
+    """Time entry for a user."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        help_text="The team member this time entry relates to.",
+    )
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        help_text="The project this time entry relates to.",
+    )
+
+    start_time = models.DateTimeField(
+        "Start time",
+        null=False,
+        blank=False,
+        help_text="The date and time when the work started.",
+    )
+    end_time = models.DateTimeField(
+        "End time",
+        null=False,
+        blank=False,
+        help_text="The date and time when the work ended.",
+    )
+
+    def __str__(self) -> str:
+        """String representation of the Time Entry object."""
+        return f"{self.user} - {self.project} - {self.start_time} to {self.end_time}"
