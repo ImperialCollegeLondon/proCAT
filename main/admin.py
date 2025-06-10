@@ -63,7 +63,7 @@ class ProjectAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
 
 @admin.register(TimeEntry)
-class TimeEntryAdmin(admin.ModelAdmin):
+class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     """Admin class for the TimeEntry model."""
 
     list_display = (
