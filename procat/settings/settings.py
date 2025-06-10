@@ -141,3 +141,12 @@ DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
 LOGIN_URL = "/auth/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
+
+HUEY = {
+    "huey_class": "huey.RedisHuey",
+    "name": "huey",
+    "connection": {"filename": BASE_DIR / "db" / "huey.db"},
+    "consumer": {"workers": 2, "worker_type": "thread"},
+    "immediate": False,
+    "utc": False,
+}
