@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "Project Charging and Analytics Tool"
 authors = [
     { name = "Diego Alonso Alvarez", email = "d.alonso-alvarez@imperial.ac.uk" },
-    { name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk" }
+    { name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk" },
 ]
 requires-python = ">=3.13"
 dependencies = [
@@ -14,7 +14,9 @@ dependencies = [
     "whitenoise",
     "crispy-bootstrap5",
     "django_tables2",
-    "django-filter"
+    "django-filter",
+    "huey",
+    "redis",
 ]
 
 [project.optional-dependencies]
@@ -28,7 +30,7 @@ dev = [
     "pytest-django",
     "pytest-mock",
     "django-stubs[compatible-mypy]",
-    "djlint"
+    "djlint",
 ]
 doc = [
     "mkdocs",
@@ -76,7 +78,7 @@ select = [
     "F",   # Pyflakes
     "I",   # isort
     "UP",  # pyupgrade
-    "RUF"  # ruff
+    "RUF", # ruff
 ]
 pydocstyle.convention = "google"
 
@@ -93,4 +95,6 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-exclude = ["htmlcov"] # Exclude the coverage report file from setuptools package finder
+exclude = [
+    "htmlcov",
+] # Exclude the coverage report file from setuptools package finder
