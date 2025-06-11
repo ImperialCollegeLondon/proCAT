@@ -16,7 +16,7 @@ def notify_lead(project: Project) -> None:
     subject = f"Project {project.name} is due for completion soon!"
     message = lead_message.format(project_name=project.name)
 
-    if project.lead.email:
+    if project.lead is not None and project.lead.email:
         send_mail(
             subject,
             message,
