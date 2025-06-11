@@ -18,3 +18,6 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_HSTS_SECONDS = 15552000
 USE_X_FORWARDED_HOST = True
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smarthost.cc.ic.ac.uk"
+SERVER_EMAIL = "noreply@imperial.ac.uk"
+DEFAULT_FROM_EMAIL = SERVER_EMAIL
