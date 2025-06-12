@@ -6,6 +6,10 @@
 #
 asgiref==3.8.1
     # via django
+bokeh==3.7.3
+    # via procat (pyproject.toml)
+contourpy==1.3.2
+    # via bokeh
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
 django==5.2.3
@@ -28,9 +32,39 @@ django-tables2==2.7.5
     # via procat (pyproject.toml)
 huey==2.5.3
     # via procat (pyproject.toml)
+jinja2==3.1.6
+    # via bokeh
+markupsafe==3.0.2
+    # via jinja2
+narwhals==1.42.0
+    # via bokeh
+numpy==2.3.0
+    # via
+    #   bokeh
+    #   contourpy
+    #   pandas
+packaging==25.0
+    # via bokeh
+pandas==2.3.0
+    # via bokeh
+pillow==11.2.1
+    # via bokeh
+python-dateutil==2.9.0.post0
+    # via pandas
+pytz==2025.2
+    # via pandas
+pyyaml==6.0.2
+    # via bokeh
+six==1.17.0
+    # via python-dateutil
 sqlparse==0.5.3
     # via django
+tornado==6.5.1
+    # via bokeh
 tzdata==2025.2
     # via django
+    # via pandas
 whitenoise==6.9.0
     # via procat (pyproject.toml)
+xyzservices==2025.4.0
+    # via bokeh
