@@ -8,6 +8,8 @@ asgiref==3.8.1
     # via
     #   django
     #   django-stubs
+bokeh==3.7.3
+    # via procat (pyproject.toml)
 build==1.2.2.post1
     # via pip-tools
 cfgv==3.4.0
@@ -17,12 +19,9 @@ click==8.2.1
     #   djlint
     #   pip-tools
 colorama==0.4.6
-    # via
-    #   build
-    #   click
-    #   djlint
-    #   pytest
-    #   tqdm
+    # via djlint
+contourpy==1.3.2
+    # via bokeh
 coverage[toml]==7.8.2
     # via pytest-cov
 crispy-bootstrap5==2025.6
@@ -69,26 +68,42 @@ identify==2.6.12
     # via pre-commit
 iniconfig==2.1.0
     # via pytest
+jinja2==3.1.6
+    # via bokeh
 jsbeautifier==1.15.4
     # via
     #   cssbeautifier
     #   djlint
 json5==0.12.0
     # via djlint
+markupsafe==3.0.2
+    # via jinja2
 mypy==1.15.0
     # via
     #   django-stubs
     #   procat (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
+narwhals==1.42.0
+    # via bokeh
 nodeenv==1.9.1
     # via pre-commit
+numpy==2.3.0
+    # via
+    #   bokeh
+    #   contourpy
+    #   pandas
 packaging==25.0
     # via
+    #   bokeh
     #   build
     #   pytest
+pandas==2.3.0
+    # via bokeh
 pathspec==0.12.1
     # via djlint
+pillow==11.2.1
+    # via bokeh
 pip-tools==7.4.1
     # via procat (pyproject.toml)
 platformdirs==4.3.8
@@ -115,8 +130,13 @@ pytest-django==4.11.1
     # via procat (pyproject.toml)
 pytest-mock==3.14.1
     # via procat (pyproject.toml)
+python-dateutil==2.9.0.post0
+    # via pandas
+pytz==2025.2
+    # via pandas
 pyyaml==6.0.2
     # via
+    #   bokeh
     #   djlint
     #   pre-commit
 regex==2024.11.6
@@ -127,8 +147,11 @@ six==1.17.0
     # via
     #   cssbeautifier
     #   jsbeautifier
+    #   python-dateutil
 sqlparse==0.5.3
     # via django
+tornado==6.5.1
+    # via bokeh
 tqdm==4.67.1
     # via djlint
 types-pyyaml==6.0.12.20250516
@@ -139,13 +162,15 @@ typing-extensions==4.14.0
     #   django-stubs-ext
     #   mypy
 tzdata==2025.2
-    # via django
+    # via pandas
 virtualenv==20.31.2
     # via pre-commit
 wheel==0.45.1
     # via pip-tools
 whitenoise==6.9.0
     # via procat (pyproject.toml)
+xyzservices==2025.4.0
+    # via bokeh
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

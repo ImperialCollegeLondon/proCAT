@@ -16,6 +16,7 @@ dependencies = [
     "django_tables2",
     "django-filter",
     "huey",
+    "bokeh",
 ]
 
 [project.optional-dependencies]
