@@ -57,7 +57,7 @@ django-tables2==2.7.5
     # via procat (pyproject.toml)
 djlint==1.36.4
     # via procat (pyproject.toml)
-editorconfig==0.17.0
+editorconfig==0.17.1
     # via
     #   cssbeautifier
     #   jsbeautifier
