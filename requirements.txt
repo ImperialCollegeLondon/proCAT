@@ -3,7 +3,6 @@
 # by the following command:
 #
 #    pip-compile --output-file=requirements.txt pyproject.toml
-#    pip-compile --output-file=requirements.txt pyproject.toml
 #
 asgiref==3.8.1
     # via django
@@ -27,9 +26,9 @@ django-filter==25.1
     # via procat (pyproject.toml)
 django-tables2==2.7.5
     # via procat (pyproject.toml)
+huey==2.5.3
+    # via procat (pyproject.toml)
 sqlparse==0.5.3
-    # via django
-tzdata==2025.2
     # via django
 tzdata==2025.2
     # via django

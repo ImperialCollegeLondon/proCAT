@@ -63,6 +63,8 @@ editorconfig==0.17.1
     #   jsbeautifier
 filelock==3.18.0
     # via virtualenv
+huey==2.5.3
+    # via procat (pyproject.toml)
 identify==2.6.12
     # via pre-commit
 iniconfig==2.1.0
@@ -95,6 +97,8 @@ pluggy==1.6.0
     # via pytest
 pre-commit==4.2.0
     # via procat (pyproject.toml)
+pygments==2.19.1
+    # via pytest
 pyproject-hooks==1.2.0
     # via
     #   build
