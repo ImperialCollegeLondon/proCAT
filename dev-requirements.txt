@@ -31,7 +31,7 @@ cssbeautifier==1.15.4
     # via djlint
 distlib==0.3.9
     # via virtualenv
-django==5.2.2
+django==5.2.3
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
