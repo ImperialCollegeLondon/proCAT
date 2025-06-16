@@ -1,6 +1,6 @@
 """Models module for main app."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -220,6 +220,36 @@ class Project(models.Model):
             left = sum([funding.effort_left for funding in self.funding_source.all()])
             return left, round(left / self.total_effort * 100, 1)
 
+        return None
+
+    @property
+    def total_working_days(self) -> int | None:
+        """Provide the total number of working (business) days given the dates.
+
+        Returns:
+            Number of working days between the project start and end date.
+        """
+        if self.status != "Draft":
+            count = 0
+            date = self.start_date
+            while date < self.end_date:
+                if date.weekday() < 5:
+                    count += 1
+                date += timedelta(1)
+            return count
+        return None
+
+    @property
+    def effort_per_day(self) -> float | None:
+        """Calculate the estimated effort per day.
+
+        Considers only working (business) days.
+
+        Returns:
+            Float representing the estimated effort per day over project lifespan.
+        """
+        if self.total_effort and self.total_working_days:
+            return self.total_effort / self.total_working_days
         return None
 
 
