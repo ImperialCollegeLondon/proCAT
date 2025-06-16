@@ -7,6 +7,10 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+from procat.settings.settings import EFFORT_LEFT_THRESHOLD, WEEKS_LEFT_THRESHOLD
+
+from .tasks import notify_left_threshold
+
 
 class User(AbstractUser):
     """Custom user model."""
@@ -209,6 +213,19 @@ class Project(models.Model):
         return None
 
     @property
+    def percent_effort_left(self) -> float | None:
+        """Provide the percentage of effort left.
+
+        Returns:
+            The percentage of effort left, or None if there is no funding information.
+        """
+        if self.total_effort:
+            left = sum([funding.effort_left for funding in self.funding_source.all()])
+            return round(left / self.total_effort * 100, 1)
+
+        return None
+
+    @property
     def days_left(self) -> tuple[int, float] | None:
         """Provide the days worth of effort left.
 
@@ -221,6 +238,39 @@ class Project(models.Model):
             return left, round(left / self.total_effort * 100, 1)
 
         return None
+
+    def check_and_notify_status(self) -> None:
+        """Check the project status and notify accordingly."""
+        for threshold in EFFORT_LEFT_THRESHOLD:
+            if (
+                self.percent_effort_left is not None
+                and self.percent_effort_left <= threshold
+            ):
+                if self.lead and hasattr(self.lead, "email"):
+                    notify_left_threshold(
+                        email=self.lead.email,
+                        project_name=self.name,
+                        threshold_type="effort_left",
+                        threshold=threshold,
+                    )
+
+        for threshold in WEEKS_LEFT_THRESHOLD:
+            if (
+                self.weeks_to_deadline is not None
+                and self.weeks_to_deadline[1] <= threshold
+            ):
+                if self.lead and hasattr(self.lead, "email"):
+                    notify_left_threshold(
+                        email=self.lead.email,
+                        project_name=self.name,
+                        threshold_type="weeks_left",
+                        threshold=threshold,
+                    )
+
+    def save(self, **kwargs: object) -> None:
+        """Override the save method to check and notify project status."""
+        self.check_and_notify_status()
+        super().save(**kwargs)
 
 
 class Funding(models.Model):

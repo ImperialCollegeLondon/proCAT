@@ -151,3 +151,6 @@ HUEY = {
     "utc": False,
 }
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+EFFORT_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for effort left (percent)
+WEEKS_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for weeks left (percent)

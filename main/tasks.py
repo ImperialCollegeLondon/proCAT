@@ -1,22 +1,30 @@
 """Task definitions for project notifications using Huey."""
 
-import datetime
+from huey import Huey
 
-from huey import crontab
-from huey.contrib.djhuey import db_periodic_task
+from .notify import email_lead_project_status
 
-from .models import Project
-from .notify import notify_lead
+huey = Huey()
 
 
-# Runs every monday at 10:00 AM
-@db_periodic_task(crontab(hour=10, minute=0, day_of_week=1))
-def notify_project_due_completion_soon() -> None:
-    """Notify about project(s) due for completion soon."""
-    projects = Project.objects.filter(
-        status="Active",
-        end_date__lte=datetime.datetime.now() + datetime.timedelta(days=7),
-    )
+@huey.task()
+def notify_left_threshold(
+    email: str, project_name: str, threshold_type: str, threshold: int
+) -> None:
+    """Notify project lead about the project status based on thresholds."""
+    if threshold_type == "effort_left":
+        message = (
+            f"The project {project_name} has {threshold}% effort left. "
+            "Please check the project status and update your time spent on it."
+        )
 
-    for project in projects:
-        notify_lead(project)
+    elif threshold_type == "weeks_left":
+        message = (
+            f"The project {project_name} has {threshold}% weeks left. "
+            "Please check the project status and update your time spent on it."
+        )
+
+    else:
+        raise ValueError("Invalid threshold type provided.")
+
+    email_lead_project_status(email, project_name, message)
