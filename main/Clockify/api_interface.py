@@ -28,7 +28,6 @@ class ClockifyAPI:
             "x-api-key": self.api_key,
         }
 
-        # Convert payload dict to JSON string like in your example
         json_payload = json.dumps(payload)
 
         response = requests.request("POST", url, headers=headers, data=json_payload)
