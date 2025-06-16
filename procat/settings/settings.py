@@ -143,7 +143,7 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
 HUEY = {
-    "huey_class": "huey.RedisHuey",
+    "huey_class": "huey.SqliteHuey",
     "name": "huey",
     "connection": {"filename": BASE_DIR / "db" / "huey.db"},
     "consumer": {"workers": 2, "worker_type": "thread"},

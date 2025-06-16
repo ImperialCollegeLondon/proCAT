@@ -28,8 +28,6 @@ django-tables2==2.7.5
     # via procat (pyproject.toml)
 huey==2.5.3
     # via procat (pyproject.toml)
-redis==6.2.0
-    # via procat (pyproject.toml)
 sqlparse==0.5.3
     # via django
 tzdata==2025.2
