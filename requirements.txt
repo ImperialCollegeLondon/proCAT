@@ -62,7 +62,6 @@ sqlparse==0.5.3
 tornado==6.5.1
     # via bokeh
 tzdata==2025.2
-    # via django
     # via pandas
 whitenoise==6.9.0
     # via procat (pyproject.toml)
