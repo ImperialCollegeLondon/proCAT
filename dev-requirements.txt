@@ -31,7 +31,7 @@ cssbeautifier==1.15.4
     # via djlint
 distlib==0.3.9
     # via virtualenv
-django==5.2.2
+django==5.2.3
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -57,12 +57,14 @@ django-tables2==2.7.5
     # via procat (pyproject.toml)
 djlint==1.36.4
     # via procat (pyproject.toml)
-editorconfig==0.17.0
+editorconfig==0.17.1
     # via
     #   cssbeautifier
     #   jsbeautifier
 filelock==3.18.0
     # via virtualenv
+huey==2.5.3
+    # via procat (pyproject.toml)
 identify==2.6.12
     # via pre-commit
 iniconfig==2.1.0
@@ -95,6 +97,8 @@ pluggy==1.6.0
     # via pytest
 pre-commit==4.2.0
     # via procat (pyproject.toml)
+pygments==2.19.1
+    # via pytest
 pyproject-hooks==1.2.0
     # via
     #   build
@@ -105,7 +109,7 @@ pytest==8.4.0
     #   pytest-cov
     #   pytest-django
     #   pytest-mock
-pytest-cov==6.1.1
+pytest-cov==6.2.1
     # via procat (pyproject.toml)
 pytest-django==4.11.1
     # via procat (pyproject.toml)
@@ -129,7 +133,7 @@ tqdm==4.67.1
     # via djlint
 types-pyyaml==6.0.12.20250516
     # via django-stubs
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   django-stubs
     #   django-stubs-ext

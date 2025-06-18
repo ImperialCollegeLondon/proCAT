@@ -125,6 +125,7 @@ INSTALLED_APPS += [
     "crispy_bootstrap5",
     "django_tables2",
     "django_filters",
+    "huey.contrib.djhuey",
 ]
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
@@ -140,3 +141,13 @@ DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
 LOGIN_URL = "/auth/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
+
+HUEY = {
+    "huey_class": "huey.SqliteHuey",
+    "name": "huey",
+    "connection": {"filename": BASE_DIR / "db" / "huey.db"},
+    "consumer": {"workers": 2, "worker_type": "thread"},
+    "immediate": False,
+    "utc": False,
+}
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

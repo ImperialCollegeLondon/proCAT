@@ -10,7 +10,7 @@ babel==2.17.0
     # via mkdocs-material
 backrefs==5.8
     # via mkdocs-material
-certifi==2025.4.26
+certifi==2025.6.15
     # via requests
 charset-normalizer==3.4.2
     # via requests
@@ -24,7 +24,7 @@ colorama==0.4.6
     #   mkdocs-material
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
-django==5.2.2
+django==5.2.3
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -46,6 +46,8 @@ ghp-import==2.1.0
     # via mkdocs
 griffe==1.7.3
     # via mkdocstrings-python
+huey==2.5.3
+    # via procat (pyproject.toml)
 idna==3.10
     # via requests
 jinja2==3.1.6
@@ -125,7 +127,7 @@ pyyaml==6.0.2
     #   pyyaml-env-tag
 pyyaml-env-tag==1.1
     # via mkdocs
-requests==2.32.3
+requests==2.32.4
     # via mkdocs-material
 six==1.17.0
     # via python-dateutil

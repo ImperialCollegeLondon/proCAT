@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "Project Charging and Analytics Tool"
 authors = [
     { name = "Diego Alonso Alvarez", email = "d.alonso-alvarez@imperial.ac.uk" },
-    { name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk" }
+    { name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk" },
 ]
 requires-python = ">=3.13"
 dependencies = [
@@ -14,7 +14,8 @@ dependencies = [
     "whitenoise",
     "crispy-bootstrap5",
     "django_tables2",
-    "django-filter"
+    "django-filter",
+    "huey",
 ]
 
 [project.optional-dependencies]
@@ -28,7 +29,7 @@ dev = [
     "pytest-django",
     "pytest-mock",
     "django-stubs[compatible-mypy]",
-    "djlint"
+    "djlint",
 ]
 doc = [
     "mkdocs",
@@ -60,6 +61,10 @@ disallow_untyped_defs = false
 module = ["django_tables2.*", "django_filters.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["huey", "huey.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 addopts = "-v -p no:warnings --cov=main --cov=procat --cov-branch --cov-report=xml --cov-report=html --doctest-modules --ignore=procat/__main__.py --ignore=docs/ --ignore=procat/settings/"
 DJANGO_SETTINGS_MODULE = "procat.settings"
@@ -76,7 +81,7 @@ select = [
     "F",   # Pyflakes
     "I",   # isort
     "UP",  # pyupgrade
-    "RUF"  # ruff
+    "RUF", # ruff
 ]
 pydocstyle.convention = "google"
 
@@ -93,4 +98,6 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-exclude = ["htmlcov"] # Exclude the coverage report file from setuptools package finder
+exclude = [
+    "htmlcov",
+] # Exclude the coverage report file from setuptools package finder
