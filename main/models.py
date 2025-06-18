@@ -269,8 +269,8 @@ class Project(models.Model):
 
     def save(self, **kwargs: object) -> None:
         """Override the save method to check and notify project status."""
-        self.check_and_notify_status()
         super().save(**kwargs)
+        self.check_and_notify_status()
 
 
 class Funding(models.Model):
