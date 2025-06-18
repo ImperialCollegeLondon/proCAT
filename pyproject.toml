@@ -17,10 +17,7 @@ dependencies = [
     "django-filter",
     "huey",
     "bokeh",
-<<<<<<< calculate_time_series
     "pandas",
-=======
->>>>>>> main
 ]
 
 [project.optional-dependencies]

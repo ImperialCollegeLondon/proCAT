@@ -99,13 +99,9 @@ packaging==25.0
     #   build
     #   pytest
 pandas==2.3.0
-<<<<<<< calculate_time_series
     # via
     #   bokeh
     #   procat (pyproject.toml)
-=======
-    # via bokeh
->>>>>>> main
 pathspec==0.12.1
     # via djlint
 pillow==11.2.1
