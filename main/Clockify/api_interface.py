@@ -3,7 +3,6 @@
 import json
 import os
 
-import dict
 import requests
 
 WORKSPACE_ID = os.getenv("CLOCKIFY_WORKSPACE_ID")
