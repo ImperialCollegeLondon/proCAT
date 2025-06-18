@@ -1,0 +1,16 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-{{ bokeh_version }}.min.js"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{ bokeh_version }}.min.js"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{ bokeh_version }}.min.js"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-{{ bokeh_version }}.min.js"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-{{ bokeh_version }}.min.js"></script>
+
+  <h2>Capacity planning</h2>
+
+  {{ script | safe }}
+  {{ div | safe }}
+
+{% endblock content %}
