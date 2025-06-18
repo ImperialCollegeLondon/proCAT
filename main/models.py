@@ -267,7 +267,7 @@ class Project(models.Model):
                         threshold=threshold,
                     )
 
-    def save(self, **kwargs: object) -> None:
+    def save(self, **kwargs) -> None:
         """Override the save method to check and notify project status."""
         super().save(**kwargs)
         self.check_and_notify_status()
