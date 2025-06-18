@@ -20,6 +20,9 @@ def update_timeseries(
     using the start_date and end_date attributes to index the timeseries. Dates are
     ignored if they do not exist within the period specified for plotting.
 
+    TODO: For advanced capacity planning, keep separate Project and User timeseries
+    so these can be plotted individually.
+
     Returns:
         Pandas series representing the updated timeseries with values from the Model.
     """
@@ -47,7 +50,7 @@ def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series
     )
     # filter Project objects according to status, dates and whether they have funding
     status_include = ["Not started", "Active"]
-    projects = models.Project.objects.all().filter(
+    projects = models.Project.objects.filter(
         Q(start_date__gte=start_date.date()) | Q(end_date__lt=end_date.date()),
         status__in=status_include,
     )
@@ -76,7 +79,7 @@ def get_capacity_timeseries(start_date: datetime, end_date: datetime) -> pd.Seri
     dates = pd.bdate_range(
         pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
     )
-    capacities = models.Capacity.objects.all().filter(start_date__lte=end_date.date())
+    capacities = models.Capacity.objects.filter(start_date__lte=end_date.date())
     users = capacities.values_list("user__username", flat=True).distinct()
 
     # initialize time series
