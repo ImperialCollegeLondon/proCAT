@@ -1,14 +1,12 @@
 {% extends "main/base.html" %}
 {% load django_bootstrap5 %}
-
 {% block content %}
-  <h2>{{ funding_name }}</h2>
-
-  <!-- Object details -->
-  <div class="row">
-    <div class="col">
-      <p>&nbsp;</p>
-      {% bootstrap_form form layout='horizontal' %}
+    <h2>{{ funding_name }}</h2>
+    <!-- Object details -->
+    <div class="row">
+        <div class="col">
+            <p>&nbsp;</p>
+            {% bootstrap_form form layout='horizontal' %}
+        </div>
     </div>
-  </div>
 {% endblock content %}
