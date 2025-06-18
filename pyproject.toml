@@ -16,6 +16,8 @@ dependencies = [
     "django_tables2",
     "django-filter",
     "huey",
+    "types-requests",
+    "requests",
 ]
 
 [project.optional-dependencies]
