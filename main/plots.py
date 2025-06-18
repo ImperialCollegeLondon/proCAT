@@ -3,6 +3,7 @@
 from datetime import datetime
 
 import pandas as pd
+from bokeh.models import ColumnDataSource
 from django.db.models import Model, Q
 
 from . import models
@@ -96,3 +97,20 @@ def get_capacity_timeseries(start_date: datetime, end_date: datetime) -> pd.Seri
             timeseries = update_timeseries(capacity, timeseries, "value")
 
     return timeseries
+
+
+def calculate_traces(start_date: datetime.date, end_date: datetime.date):
+    """Get data from the Django database for the capacity planning traces.
+
+    Returns:
+        Bokeh ColumnDataSource object containing Effort and Capacity timeseries
+        columns.
+    """
+    effort_timeseries = get_effort_timeseries(start_date, end_date)
+    capacity_timeseries = get_capacity_timeseries(start_date, end_date)
+    timeseries_df = pd.DataFrame(
+        {"Effort": effort_timeseries, "Capacity": capacity_timeseries}
+    )
+    timeseries_df.reset_index(inplace=True)
+    source = ColumnDataSource(timeseries_df)
+    return source
