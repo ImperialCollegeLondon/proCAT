@@ -1,17 +1,19 @@
 """Views for the main app."""
 
+from datetime import datetime, timedelta
 from typing import Any
 
+from bokeh.embed import components
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import ModelForm
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, UpdateView
+from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 from django_filters.views import FilterView
 from django_tables2 import RequestConfig, SingleTableMixin
 
-from . import forms, models, tables
+from . import forms, models, plots, tables
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -118,4 +120,23 @@ class FundingDetailView(CustomBaseDetailView):
         """Add funding name to the context, so it is easy to retrieve."""
         context = super().get_context_data(**kwargs)
         context["funding_name"] = str(self.get_object())
+        return context
+
+
+class CapacityPlanningView(LoginRequiredMixin, TemplateView):
+    """View that renders the Capacity Planning page."""
+
+    template_name = "main/capacity_planning.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
+        """Add HTML components and Bokeh version to the context."""
+        context = super().get_context_data(**kwargs)
+        plot = plots.create_timeseries_plot(
+            datetime.now(), datetime.now() + timedelta(365)
+        )
+        script, div = components(plot)
+        context["script"] = script
+        context["div"] = div
+        version = plots.get_bokeh_version()
+        context["bokeh_version"] = version
         return context
