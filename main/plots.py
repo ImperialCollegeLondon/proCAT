@@ -1,23 +1,25 @@
 """Plots for displaying database data."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 import pandas as pd
 from bokeh.models import ColumnDataSource
-from django.db.models import Model, Q
+from django.db.models import Q
 
 from . import models
 
 
 def update_timeseries(
-    object: Model,
+    object: models.Project | models.Capacity,
+    object_start_date: date | None,
+    object_end_date: date | None,
     timeseries: pd.Series,
     attr_name: str,
 ) -> pd.Series:
     """Update the initialized timeseries with data from a Model object.
 
     By specifying attr_name (e.g. Capacity.value), this value is added to the timeseries
-    using the start_date and end_date attributes to index the timeseries. Dates are
+    using the model start date and end date to index the timeseries. Dates are
     ignored if they do not exist within the period specified for plotting.
 
     TODO: For advanced capacity planning, keep separate Project and User timeseries
@@ -27,7 +29,7 @@ def update_timeseries(
         Pandas series representing the updated timeseries with values from the Model.
     """
     object_dates = pd.bdate_range(
-        start=object.start_date, end=object.end_date, inclusive="left"
+        start=object_start_date, end=object_end_date, inclusive="left"
     )
     # get intersection between the Model dates and the plotting dates
     index = timeseries.index.intersection(object_dates)
@@ -49,10 +51,12 @@ def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series
         pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
     )
     # filter Project objects according to status, dates and whether they have funding
-    status_include = ["Not started", "Active"]
-    projects = models.Project.objects.filter(
-        Q(start_date__gte=start_date.date()) | Q(end_date__lt=end_date.date()),
-        status__in=status_include,
+    projects = list(
+        models.Project.objects.filter(
+            Q(start_date__gte=start_date.date()) | Q(end_date__lt=end_date.date()),
+            start_date__isnull=False,
+            end_date__isnull=False,
+        )
     )
     projects = [project for project in projects if project.funding_source.exists()]
 
@@ -60,7 +64,9 @@ def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series
     timeseries = pd.Series(0.0, index=dates)
 
     for project in projects:
-        timeseries = update_timeseries(project, timeseries, "effort_per_day")
+        timeseries = update_timeseries(
+            project, project.start_date, project.end_date, timeseries, "effort_per_day"
+        )
 
     return timeseries
 
@@ -87,22 +93,24 @@ def get_capacity_timeseries(start_date: datetime, end_date: datetime) -> pd.Seri
 
     for user in users:
         # retrieve capacity objects for each user and sort by start date
-        user_capacities = capacities.filter(user__username=user)
+        user_capacities = list(capacities.filter(user__username=user))
         user_capacities = sorted(user_capacities, key=lambda x: x.start_date)
 
         for idx, capacity in enumerate(user_capacities):
             # assign end date depending on whether future capacity object exists
             if idx != len(user_capacities) - 1:
-                capacity.end_date = user_capacities[idx + 1].start_date
+                capacity_end_date = user_capacities[idx + 1].start_date
             else:
-                capacity.end_date = end_date.date()
+                capacity_end_date = end_date.date()
 
-            timeseries = update_timeseries(capacity, timeseries, "value")
+            timeseries = update_timeseries(
+                capacity, capacity.start_date, capacity_end_date, timeseries, "value"
+            )
 
     return timeseries
 
 
-def calculate_traces(start_date: datetime.date, end_date: datetime.date):
+def calculate_traces(start_date: datetime, end_date: datetime) -> ColumnDataSource:
     """Get data from the Django database for the capacity planning traces.
 
     Returns:

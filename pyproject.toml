@@ -17,6 +17,7 @@ dependencies = [
     "django-filter",
     "huey",
     "bokeh",
+    "pandas",
 ]
 
 [project.optional-dependencies]
@@ -64,6 +65,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["huey", "huey.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pandas.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

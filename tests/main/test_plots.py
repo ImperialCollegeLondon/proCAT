@@ -17,10 +17,12 @@ def test_update_timeseries():
     )
     timeseries = pd.Series(0.0, index=dates)
     capacity = models.Capacity(value=0.5, start_date=datetime.now().date())
-    capacity.end_date = datetime.now().date() + timedelta(7)
+    capacity_end_date = datetime.now().date() + timedelta(7)
     assert timeseries.value_counts()[0.0] == 10
 
-    timeseries = plots.update_timeseries(capacity, timeseries, "value")
+    timeseries = plots.update_timeseries(
+        capacity, capacity.start_date, capacity_end_date, timeseries, "value"
+    )
     assert timeseries.value_counts()[capacity.value] == 5
 
 

@@ -229,7 +229,7 @@ class Project(models.Model):
         Returns:
             Number of working days between the project start and end date.
         """
-        if self.status != "Draft":
+        if self.start_date and self.end_date:
             count = 0
             date = self.start_date
             while date < self.end_date:
