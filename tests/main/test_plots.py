@@ -69,16 +69,18 @@ def test_get_capacity_timeseries(user):
     """Test the get_effort_timeseries function."""
     from main import models, plots
 
-    capacity = models.Capacity.objects.create(
-        user=user, value=0.5, start_date=datetime.now().date() + timedelta(14)
+    capacity_A = models.Capacity.objects.create(
+        user=user, value=0.5, start_date=datetime.now().date()
+    )
+    capacity_B = models.Capacity.objects.create(
+        user=user, value=0.7, start_date=datetime.now().date() + timedelta(7)
     )
     plot_start_date, plot_end_date = datetime.now(), datetime.now() + timedelta(28)
 
     timeseries = plots.get_capacity_timeseries(plot_start_date, plot_end_date)
     assert isinstance(timeseries, pd.Series)
-
-    n_entries = timeseries.value_counts()[capacity.value]
-    assert n_entries == 10
+    assert timeseries.value_counts()[capacity_A.value] == 5
+    assert timeseries.value_counts()[capacity_B.value] == 15
 
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
