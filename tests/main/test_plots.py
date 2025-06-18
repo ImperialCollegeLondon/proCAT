@@ -17,12 +17,10 @@ def test_update_timeseries():
     )
     timeseries = pd.Series(0.0, index=dates)
     capacity = models.Capacity(value=0.5, start_date=datetime.now().date())
-    capacity_end_date = datetime.now().date() + timedelta(7)
+    capacity.end_date = datetime.now().date() + timedelta(7)
     assert timeseries.value_counts()[0.0] == 10
 
-    timeseries = plots.update_timeseries(
-        capacity, capacity.start_date, capacity_end_date, timeseries, "value"
-    )
+    timeseries = plots.update_timeseries(timeseries, capacity, "value")
     assert timeseries.value_counts()[capacity.value] == 5
 
 
@@ -76,7 +74,6 @@ def test_get_capacity_timeseries(user):
         user=user, value=0.7, start_date=datetime.now().date() + timedelta(7)
     )
     plot_start_date, plot_end_date = datetime.now(), datetime.now() + timedelta(28)
-
     timeseries = plots.get_capacity_timeseries(plot_start_date, plot_end_date)
     assert isinstance(timeseries, pd.Series)
     assert timeseries.value_counts()[capacity_A.value] == 5
@@ -91,7 +88,6 @@ def test_calculate_traces():
     from main import plots
 
     source = plots.calculate_traces(datetime.now(), datetime.now() + timedelta(365))
-
     assert isinstance(source, ColumnDataSource)
     assert "Effort" in source.data
     assert "Capacity" in source.data

@@ -1,35 +1,33 @@
 """Plots for displaying database data."""
 
-from datetime import date, datetime
+from datetime import datetime
 
 import pandas as pd
 from bokeh.models import ColumnDataSource
-from django.db.models import Q
+from django.db.models import F, Q, Window
+from django.db.models.functions import Coalesce, Lead
 
 from . import models
 
 
 def update_timeseries(
-    object: models.Project | models.Capacity,
-    object_start_date: date | None,
-    object_end_date: date | None,
-    timeseries: pd.Series,
-    attr_name: str,
+    timeseries: pd.Series, object: models.Project | models.Capacity, attr_name: str
 ) -> pd.Series:
-    """Update the initialized timeseries with data from a Model object.
+    """Update the initialized timeseries with value from a Model object.
 
-    By specifying attr_name (e.g. Capacity.value), this value is added to the timeseries
-    using the model start date and end date to index the timeseries. Dates are
-    ignored if they do not exist within the period specified for plotting.
+    The dates for the Model are used to index the timeseries. The value added is
+    specified by the attr_name.
 
     TODO: For advanced capacity planning, keep separate Project and User timeseries
     so these can be plotted individually.
 
     Returns:
-        Pandas series representing the updated timeseries with values from the Model.
+        Pandas series containing updated timeseries data.
     """
     object_dates = pd.bdate_range(
-        start=object_start_date, end=object_end_date, inclusive="left"
+        start=object.start_date,
+        end=object.end_date,  # type: ignore[union-attr]
+        inclusive="left",
     )
     # get intersection between the Model dates and the plotting dates
     index = timeseries.index.intersection(object_dates)
@@ -38,11 +36,7 @@ def update_timeseries(
 
 
 def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series:
-    """Get the timeseries data for project effort.
-
-    Only relevant for 'Active' and 'Not started' projects, projects that fit within the
-    selected time period, and projects with funding associated. Returns time series
-    with aggregated effort per day over all projects, considering only business days.
+    """Get the timeseries data for aggregated project effort.
 
     Returns:
         Pandas series of aggregated effort with date range as index.
@@ -50,7 +44,7 @@ def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series
     dates = pd.bdate_range(
         pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
     )
-    # filter Project objects according to status, dates and whether they have funding
+    # filter Projects to ensure dates exist and overlap with timeseries dates
     projects = list(
         models.Project.objects.filter(
             Q(start_date__gte=start_date.date()) | Q(end_date__lt=end_date.date()),
@@ -60,13 +54,10 @@ def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series
     )
     projects = [project for project in projects if project.funding_source.exists()]
 
-    # initialize time series
+    # initialize timeseries
     timeseries = pd.Series(0.0, index=dates)
-
     for project in projects:
-        timeseries = update_timeseries(
-            project, project.start_date, project.end_date, timeseries, "effort_per_day"
-        )
+        timeseries = update_timeseries(timeseries, project, "effort_per_day")
 
     return timeseries
 
@@ -76,8 +67,7 @@ def get_capacity_timeseries(start_date: datetime, end_date: datetime) -> pd.Seri
 
     A user may have multiple capacity entries associated. In this case, we assign the
     'end date' for the capacity entry as the start date of the next capacity. If there
-    is no subsequent capacity entry, the 'end date' is the end of the time period
-    selected.
+    is no subsequent capacity entry, the 'end date' is the end of the plotting period.
 
     Returns:
         Pandas series of aggregated capacities with date range as index.
@@ -85,27 +75,24 @@ def get_capacity_timeseries(start_date: datetime, end_date: datetime) -> pd.Seri
     dates = pd.bdate_range(
         pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
     )
-    capacities = models.Capacity.objects.filter(start_date__lte=end_date.date())
-    users = capacities.values_list("user__username", flat=True).distinct()
-
-    # initialize time series
-    timeseries = pd.Series(0.0, index=dates)
-
-    for user in users:
-        # retrieve capacity objects for each user and sort by start date
-        user_capacities = list(capacities.filter(user__username=user))
-        user_capacities = sorted(user_capacities, key=lambda x: x.start_date)
-
-        for idx, capacity in enumerate(user_capacities):
-            # assign end date depending on whether future capacity object exists
-            if idx != len(user_capacities) - 1:
-                capacity_end_date = user_capacities[idx + 1].start_date
-            else:
-                capacity_end_date = end_date.date()
-
-            timeseries = update_timeseries(
-                capacity, capacity.start_date, capacity_end_date, timeseries, "value"
+    # if multiple capacities for a user, end_date is start_date of next capacity object
+    # if no subsequent capacity, then end_date is plotting period end_date
+    capacities = list(
+        models.Capacity.objects.filter(start_date__lte=end_date.date())
+        .annotate(
+            end_date=Window(
+                expression=Lead("start_date"),  # get start date of next capacity
+                order_by=F("start_date").asc(),  # orders by ascending start date
+                partition_by="user__username",
             )
+        )
+        .annotate(end_date=Coalesce("end_date", end_date.date()))
+    )
+
+    # initialize timeseries
+    timeseries = pd.Series(0.0, index=dates)
+    for capacity in capacities:
+        timeseries = update_timeseries(timeseries, capacity, "value")
 
     return timeseries
 
