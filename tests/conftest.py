@@ -74,3 +74,15 @@ def funding(project, activity_code):
         budget=10000.00,
         daily_rate=389.00,
     )[0]
+
+
+@pytest.fixture
+def capacity(user):
+    """Provides a default capacity object."""
+    from main import models
+
+    return models.Capacity.objects.get_or_create(
+        user=user,
+        value=0.7,
+        start_date=datetime.now().date(),
+    )

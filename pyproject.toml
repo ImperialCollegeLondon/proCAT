@@ -17,6 +17,7 @@ dependencies = [
     "django-filter",
     "huey",
     "bokeh",
+    "pandas",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +32,7 @@ dev = [
     "pytest-mock",
     "django-stubs[compatible-mypy]",
     "djlint",
+    "pandas-stubs",
 ]
 doc = [
     "mkdocs",
