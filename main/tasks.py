@@ -12,13 +12,13 @@ def notify_left_threshold_logic(
         raise ValueError("Invalid threshold type provided.")
     unit = "days" if threshold_type == "effort" else "weeks"
     message = _template.format(
-                  project_leader=project_leader,
-                  project_name=project_name,
-                  threshold=threshold,
-                  threshold_type=threshold_type.rsplit("_")[0],
-                  value=value,
-                  unit=unit
-              )
+        project_leader=project_leader,
+        project_name=project_name,
+        threshold=threshold,
+        threshold_type=threshold_type.rsplit("_")[0],
+        value=value,
+        unit=unit,
+    )
 
     email_lead_project_status(email, project_name, message)
 
