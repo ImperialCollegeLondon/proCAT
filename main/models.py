@@ -162,6 +162,8 @@ class Project(models.Model):
         " on timesheet records. 'Pro-rata' charges the same amount every month. "
         "Finally, in 'Manual' the charges are scheduled manually.",
     )
+    notifications_effort = models.JSONField(default=dict, blank=True)
+    notifications_weeks = models.JSONField(default=dict, blank=True)
 
     def __str__(self) -> str:
         """String representation of the Project object."""
@@ -241,33 +243,66 @@ class Project(models.Model):
 
     def check_and_notify_status(self) -> None:
         """Check the project status and notify accordingly."""
+        check = False
+
+        if self.notifications_effort is None:
+            self.notifications_effort = {}
+
         for threshold in sorted(EFFORT_LEFT_THRESHOLD):
             if (
                 self.percent_effort_left is not None
                 and self.percent_effort_left <= threshold
             ):
+                if str(threshold) in self.notifications_effort:
+                    # Already notified for this threshold in the past
+                    break
+
                 if self.lead and hasattr(self.lead, "email"):
                     notify_left_threshold(
                         email=self.lead.email,
+                        lead=self.lead.get_full_name(),
                         project_name=self.name,
-                        threshold_type="effort_left",
+                        threshold_type="effort",
                         threshold=threshold,
+                        value=self.days_left[0] if self.days_left else 0,
                     )
+                    self.notifications_effort[str(threshold)] = (
+                        datetime.today().date().isoformat()
+                    )
+                    check = True
                     break
+
+        if self.notifications_weeks is None:
+            self.notifications_weeks = {}
 
         for threshold in sorted(WEEKS_LEFT_THRESHOLD):
             if (
                 self.weeks_to_deadline is not None
                 and self.weeks_to_deadline[1] <= threshold
             ):
+                if str(threshold) in self.notifications_weeks:
+                    # Already notified for this threshold in the past
+                    break
+
                 if self.lead and hasattr(self.lead, "email"):
                     notify_left_threshold(
                         email=self.lead.email,
+                        lead=self.lead.get_full_name(),
                         project_name=self.name,
-                        threshold_type="weeks_left",
+                        threshold_type="weeks",
                         threshold=threshold,
+                        value=self.weeks_to_deadline[0]
+                        if self.weeks_to_deadline
+                        else 0,
                     )
+                    self.notifications_weeks[str(threshold)] = (
+                        datetime.today().date().isoformat()
+                    )
+                    check = True
                     break
+
+        if check:
+            self.save(update_fields=["notifications_effort", "notifications_weeks"])
 
 
 class Funding(models.Model):

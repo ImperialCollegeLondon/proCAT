@@ -1,5 +1,7 @@
 """Task definitions for project notifications using Huey."""
 
+from huey import crontab
+
 from .huey import huey
 from .notify import email_lead_project_status
 
@@ -51,3 +53,14 @@ def notify_left_threshold(
     notify_left_threshold_logic(
         email, lead, project_name, threshold_type, threshold, value
     )
+
+
+# Runs every day at 10:00 AM
+@huey.periodic_task(crontab(hour=10, minute=0))
+def daily_project_status_check() -> None:
+    """Daily task to check project statuses and notify leads."""
+    from .models import Project
+
+    projects = Project.objects.filter(status="Active")
+    for project in projects:
+        project.check_and_notify_status()
