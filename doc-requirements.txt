@@ -10,6 +10,8 @@ babel==2.17.0
     # via mkdocs-material
 backrefs==5.8
     # via mkdocs-material
+bokeh==3.7.3
+    # via procat (pyproject.toml)
 certifi==2025.6.15
     # via requests
 charset-normalizer==3.4.2
@@ -18,10 +20,10 @@ click==8.2.1
     # via mkdocs
 colorama==0.4.6
     # via
-    #   click
     #   griffe
-    #   mkdocs
     #   mkdocs-material
+contourpy==1.3.2
+    # via bokeh
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
 django==5.2.3
@@ -52,6 +54,7 @@ idna==3.10
     # via requests
 jinja2==3.1.6
     # via
+    #   bokeh
     #   mkdocs
     #   mkdocs-material
     #   mkdocstrings
@@ -103,12 +106,25 @@ mkdocstrings==0.29.1
     #   procat (pyproject.toml)
 mkdocstrings-python==1.16.12
     # via procat (pyproject.toml)
+narwhals==1.43.0
+    # via bokeh
+numpy==2.3.0
+    # via
+    #   bokeh
+    #   contourpy
+    #   pandas
 packaging==25.0
-    # via mkdocs
+    # via
+    #   bokeh
+    #   mkdocs
 paginate==0.5.7
     # via mkdocs-material
+pandas==2.3.0
+    # via bokeh
 pathspec==0.12.1
     # via mkdocs
+pillow==11.2.1
+    # via bokeh
 platformdirs==4.3.8
     # via mkdocs-get-deps
 pygments==2.19.1
@@ -118,9 +134,14 @@ pymdown-extensions==10.15
     #   mkdocs-material
     #   mkdocstrings
 python-dateutil==2.9.0.post0
-    # via ghp-import
+    # via
+    #   ghp-import
+    #   pandas
+pytz==2025.2
+    # via pandas
 pyyaml==6.0.2
     # via
+    #   bokeh
     #   mkdocs
     #   mkdocs-get-deps
     #   pymdown-extensions
@@ -133,11 +154,15 @@ six==1.17.0
     # via python-dateutil
 sqlparse==0.5.3
     # via django
+tornado==6.5.1
+    # via bokeh
 tzdata==2025.2
-    # via django
+    # via pandas
 urllib3==2.4.0
     # via requests
 watchdog==6.0.0
     # via mkdocs
 whitenoise==6.9.0
     # via procat (pyproject.toml)
+xyzservices==2025.4.0
+    # via bokeh

@@ -18,6 +18,7 @@ dependencies = [
     "huey",
     "types-requests",
     "requests",
+    "bokeh",
 ]
 
 [project.optional-dependencies]
