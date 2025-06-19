@@ -26,10 +26,10 @@ def update_timeseries(
 
     Args:
         timeseries: the Pandas series containing the Project or Capacity data with
-        the dates of the plotting period as the index
+            the dates of the plotting period as the index
         object: the Project or Capacity object used to update the timeseries
         attr_name: the name of the attribute representing the value to add to the
-        timeseries (i.e. 'value' or 'effort_per_day')
+            timeseries (i.e. 'value' or 'effort_per_day')
 
     Returns:
         Pandas series containing updated timeseries data.
