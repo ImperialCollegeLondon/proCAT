@@ -43,6 +43,10 @@ def create_timeseries_plot(start_date: datetime, end_date: datetime) -> figure:
     the start date. Time for the effort (aggregated over all projects) and
     capacity (aggregated over all users) are calculated.
 
+    Args:
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
+
     Returns:
         Bokeh figure containing timeseries data.
     """
@@ -53,6 +57,7 @@ def create_timeseries_plot(start_date: datetime, end_date: datetime) -> figure:
         height=500,
         background_fill_color="#efefef",
         x_axis_type="datetime",  # type: ignore[call-arg]
+        tools="save,xpan,xwheel_zoom,reset",
     )
     plot.yaxis.axis_label = "Value"
     plot.xaxis.axis_label = "Date"
@@ -72,5 +77,5 @@ def create_timeseries_plot(start_date: datetime, end_date: datetime) -> figure:
         color="navy",
         legend_label="Capacity",
     )
-    plot.legend.click_policy = "hide"
+    plot.legend.click_policy = "hide"  # hides traces when clicked in legend
     return plot
