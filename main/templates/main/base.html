@@ -1,29 +1,29 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>
-            {% block title %}
-                ProCAT
-            {% endblock title %}
-        </title>
-        <meta name="description" content="ProCAT">
-        <meta name="keywords" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        {% block extra_css %}
-        {% endblock extra_css %}
-        {% block extra_js %}
-        {% endblock extra_js %}
-        {% load django_bootstrap5 %}
-        {% bootstrap_css %}
-        {% bootstrap_javascript %}
-    </head>
-    <body>
-        {% include "main/navbar.html" %}
-        <div class="container-fluid py-3">
-            <!-- Changed to container-fluid for full width -->
-            {% block content %}
-            {% endblock content %}
-        </div>
-    </body>
+  <head>
+    <title>
+      {% block title %}
+        ProCAT
+      {% endblock title %}
+    </title>
+    <meta name="description" content="ProCAT">
+    <meta name="keywords" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block extra_css %}
+    {% endblock extra_css %}
+    {% block extra_js %}
+    {% endblock extra_js %}
+    {% load django_bootstrap5 %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+  </head>
+  <body>
+    {% include "main/navbar.html" %}
+    <div class="container-fluid py-3">
+      <!-- Changed to container-fluid for full width -->
+      {% block content %}
+      {% endblock content %}
+    </div>
+  </body>
 </html>
