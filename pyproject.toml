@@ -32,6 +32,7 @@ dev = [
     "pytest-mock",
     "django-stubs[compatible-mypy]",
     "djlint",
+    "pandas-stubs",
 ]
 doc = [
     "mkdocs",
@@ -65,10 +66,6 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["huey", "huey.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["pandas.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

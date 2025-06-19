@@ -1,6 +1,6 @@
 """Models module for main app."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -230,13 +230,8 @@ class Project(models.Model):
             Number of working days between the project start and end date.
         """
         if self.start_date and self.end_date:
-            count = 0
-            date = self.start_date
-            while date < self.end_date:
-                if date.weekday() < 5:
-                    count += 1
-                date += timedelta(1)
-            return count
+            days = (self.end_date - self.start_date).days
+            return round(5 * days / 7)
         return None
 
     @property
