@@ -241,7 +241,7 @@ class Project(models.Model):
 
     def check_and_notify_status(self) -> None:
         """Check the project status and notify accordingly."""
-        for threshold in EFFORT_LEFT_THRESHOLD:
+        for threshold in sorted(EFFORT_LEFT_THRESHOLD):
             if (
                 self.percent_effort_left is not None
                 and self.percent_effort_left <= threshold
@@ -253,8 +253,9 @@ class Project(models.Model):
                         threshold_type="effort_left",
                         threshold=threshold,
                     )
+                    break
 
-        for threshold in WEEKS_LEFT_THRESHOLD:
+        for threshold in sorted(WEEKS_LEFT_THRESHOLD):
             if (
                 self.weeks_to_deadline is not None
                 and self.weeks_to_deadline[1] <= threshold
@@ -266,6 +267,7 @@ class Project(models.Model):
                         threshold_type="weeks_left",
                         threshold=threshold,
                     )
+                    break
 
     def save(self, **kwargs) -> None:
         """Override the save method to check and notify project status."""
