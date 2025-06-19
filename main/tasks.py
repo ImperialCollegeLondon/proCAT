@@ -8,18 +8,17 @@ def notify_left_threshold_logic(
     email: str, project_name: str, threshold_type: str, threshold: int
 ) -> None:
     """Logic for notifying the lead about project status."""
-    if threshold_type == "effort_left":
-        message = (
-            f"The project {project_name} has {threshold}% effort left. "
-            "Please check the project status and update your time spent on it."
-        )
-    elif threshold_type == "weeks_left":
-        message = (
-            f"The project {project_name} has {threshold}% weeks left. "
-            "Please check the project status and update your time spent on it."
-        )
-    else:
+    if threshold_type not in ("effort", "weeks_left"):
         raise ValueError("Invalid threshold type provided.")
+    unit = "days" if threshold_type == "effort" else "weeks"
+    message = _template.format(
+                  project_leader=project_leader,
+                  project_name=project_name,
+                  threshold=threshold,
+                  threshold_type=threshold_type.rsplit("_")[0],
+                  value=value,
+                  unit=unit
+              )
 
     email_lead_project_status(email, project_name, message)
 
