@@ -176,6 +176,12 @@ class Project(models.Model):
         help_text="Summarises the notifications sent when the weeks threshold "
         "is crossed and the corresponding dates.",
     )
+    clockify_id = models.CharField(
+        "Clockify ID",
+        blank=True,
+        null=False,
+        help_text="The ID of the project in Clockify, if applicable.",
+    )
 
     def __str__(self) -> str:
         """String representation of the Project object."""
@@ -305,6 +311,31 @@ class Project(models.Model):
 
         if check:
             self.save(update_fields=["notifications_effort", "notifications_weeks"])
+
+    @property
+    def total_working_days(self) -> int | None:
+        """Provide the total number of working (business) days given the dates.
+
+        Returns:
+            Number of working days between the project start and end date.
+        """
+        if self.start_date and self.end_date:
+            days = (self.end_date - self.start_date).days
+            return round(5 * days / 7)
+        return None
+
+    @property
+    def effort_per_day(self) -> float | None:
+        """Calculate the estimated effort per day.
+
+        Considers only working (business) days.
+
+        Returns:
+            Float representing the estimated effort per day over project lifespan.
+        """
+        if self.total_effort and self.total_working_days:
+            return self.total_effort / self.total_working_days
+        return None
 
 
 class Funding(models.Model):

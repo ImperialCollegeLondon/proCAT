@@ -93,13 +93,18 @@ numpy==2.3.0
     #   bokeh
     #   contourpy
     #   pandas
+    #   pandas-stubs
 packaging==25.0
     # via
     #   bokeh
     #   build
     #   pytest
 pandas==2.3.0
-    # via bokeh
+    # via
+    #   bokeh
+    #   procat (pyproject.toml)
+pandas-stubs==2.2.3.250527
+    # via procat (pyproject.toml)
 pathspec==0.12.1
     # via djlint
 pillow==11.2.1
@@ -156,6 +161,8 @@ tornado==6.5.1
     # via bokeh
 tqdm==4.67.1
     # via djlint
+types-pytz==2025.2.0.20250516
+    # via pandas-stubs
 types-pyyaml==6.0.12.20250516
     # via django-stubs
 typing-extensions==4.14.0

@@ -2,11 +2,9 @@
 {% load static %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container-fluid">
-
     <a class="navbar-brand" href="{% url 'main:index' %}">
       <h1>ProCAT</h1>
     </a>
-
     <ul class="navbar-nav me-auto">
       {% if user.is_authenticated %}
         <li class="nav-item">
@@ -20,7 +18,6 @@
         </li>
       {% endif %}
     </ul>
-
     <ul class="navbar-nav">
       {% if user.is_authenticated %}
         <!-- We welcome the user and include a few useful links -->
@@ -48,6 +45,5 @@
         </li>
       {% endif %}
     </ul>
-
   </div>
 </nav>

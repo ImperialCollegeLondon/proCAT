@@ -16,7 +16,10 @@ dependencies = [
     "django_tables2",
     "django-filter",
     "huey",
+    "types-requests",
+    "requests",
     "bokeh",
+    "pandas",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +34,7 @@ dev = [
     "pytest-mock",
     "django-stubs[compatible-mypy]",
     "djlint",
+    "pandas-stubs",
 ]
 doc = [
     "mkdocs",
