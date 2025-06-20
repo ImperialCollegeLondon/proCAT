@@ -262,27 +262,29 @@ class Project(models.Model):
 
         for threshold in sorted(EFFORT_LEFT_THRESHOLD):
             if (
-                self.percent_effort_left is not None
-                and self.percent_effort_left <= threshold
+                self.percent_effort_left is None
+                or self.percent_effort_left > threshold
             ):
-                if str(threshold) in self.notifications_effort:
-                    # Already notified for this threshold in the past
-                    break
+                continue
+                
+            if str(threshold) in self.notifications_effort:
+                # Already notified for this threshold in the past
+                break
 
-                if self.lead and hasattr(self.lead, "email"):
-                    notify_left_threshold(
-                        email=self.lead.email,
-                        lead=self.lead.get_full_name(),
-                        project_name=self.name,
-                        threshold_type="effort",
-                        threshold=threshold,
-                        value=self.days_left[0] if self.days_left else 0,
-                    )
-                    self.notifications_effort[str(threshold)] = (
-                        datetime.today().date().isoformat()
-                    )
-                    check = True
-                    break
+            assert self.lead and hasattr(self.lead, "email")
+            notify_left_threshold(
+                email=self.lead.email,
+                lead=self.lead.get_full_name(),
+                project_name=self.name,
+                threshold_type="effort",
+                threshold=threshold,
+                value=self.days_left[0] if self.days_left else 0,
+            )
+            self.notifications_effort[str(threshold)] = (
+                datetime.today().date().isoformat()
+            )
+            check = True
+            break
 
         if self.notifications_weeks is None:
             self.notifications_weeks = {}
