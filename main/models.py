@@ -257,21 +257,16 @@ class Project(models.Model):
         """Check the project status and notify accordingly."""
         check = False
 
-        if self.notifications_effort is None:
-            self.notifications_effort = {}
+        assert self.lead and hasattr(self.lead, "email")
 
         for threshold in sorted(EFFORT_LEFT_THRESHOLD):
-            if (
-                self.percent_effort_left is None
-                or self.percent_effort_left > threshold
-            ):
+            if self.percent_effort_left is None or self.percent_effort_left > threshold:
                 continue
-                
+
             if str(threshold) in self.notifications_effort:
                 # Already notified for this threshold in the past
                 break
 
-            assert self.lead and hasattr(self.lead, "email")
             notify_left_threshold(
                 email=self.lead.email,
                 lead=self.lead.get_full_name(),
@@ -286,34 +281,27 @@ class Project(models.Model):
             check = True
             break
 
-        if self.notifications_weeks is None:
-            self.notifications_weeks = {}
-
         for threshold in sorted(WEEKS_LEFT_THRESHOLD):
-            if (
-                self.weeks_to_deadline is not None
-                and self.weeks_to_deadline[1] <= threshold
-            ):
-                if str(threshold) in self.notifications_weeks:
-                    # Already notified for this threshold in the past
-                    break
+            if self.weeks_to_deadline is None or self.weeks_to_deadline[1] > threshold:
+                continue
 
-                if self.lead and hasattr(self.lead, "email"):
-                    notify_left_threshold(
-                        email=self.lead.email,
-                        lead=self.lead.get_full_name(),
-                        project_name=self.name,
-                        threshold_type="weeks",
-                        threshold=threshold,
-                        value=self.weeks_to_deadline[0]
-                        if self.weeks_to_deadline
-                        else 0,
-                    )
-                    self.notifications_weeks[str(threshold)] = (
-                        datetime.today().date().isoformat()
-                    )
-                    check = True
-                    break
+            if str(threshold) in self.notifications_weeks:
+                # Already notified for this threshold in the past
+                break
+
+            notify_left_threshold(
+                email=self.lead.email,
+                lead=self.lead.get_full_name(),
+                project_name=self.name,
+                threshold_type="weeks",
+                threshold=threshold,
+                value=self.weeks_to_deadline[0] if self.weeks_to_deadline else 0,
+            )
+            self.notifications_weeks[str(threshold)] = (
+                datetime.today().date().isoformat()
+            )
+            check = True
+            break
 
         if check:
             self.save(update_fields=["notifications_effort", "notifications_weeks"])
