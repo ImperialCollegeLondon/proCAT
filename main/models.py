@@ -162,8 +162,8 @@ class Project(models.Model):
         " on timesheet records. 'Pro-rata' charges the same amount every month. "
         "Finally, in 'Manual' the charges are scheduled manually.",
     )
-    notifications_effort = models.JSONField(default=dict, blank=True)
-    notifications_weeks = models.JSONField(default=dict, blank=True)
+    notifications_effort = models.JSONField("Summary of effort notifications", default=dict, blank=True, help_text="Summarises the notifications sent related to crossing an effort threshold, and the dates they were sent.")
+    notifications_weeks = models.JSONField("Summary of weeks left notifications", default=dict, blank=True, help_text="Summarises the notifications sent related to crossing an weeks left threshold, and the dates they were sent.")
 
     def __str__(self) -> str:
         """String representation of the Project object."""
