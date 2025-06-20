@@ -158,6 +158,12 @@ class Project(models.Model):
         " on timesheet records. 'Pro-rata' charges the same amount every month. "
         "Finally, in 'Manual' the charges are scheduled manually.",
     )
+    clockify_id = models.CharField(
+        "Clockify ID",
+        blank=True,
+        null=False,
+        help_text="The ID of the project in Clockify, if applicable.",
+    )
 
     def __str__(self) -> str:
         """String representation of the Project object."""
