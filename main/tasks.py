@@ -2,7 +2,7 @@
 
 from huey import crontab
 
-from .huey import huey
+from huey.contrib.djhuey import db_periodic_task, task
 from .notify import email_lead_project_status
 
 _template = """
@@ -40,7 +40,7 @@ def notify_left_threshold_logic(
     email_lead_project_status(email, project_name, message)
 
 
-@huey.task()
+@task()
 def notify_left_threshold(
     email: str,
     lead: str,
@@ -56,7 +56,7 @@ def notify_left_threshold(
 
 
 # Runs every day at 10:00 AM
-@huey.periodic_task(crontab(hour=10, minute=0))
+@db_periodic_task(crontab(hour=10, minute=0))
 def daily_project_status_check() -> None:
     """Daily task to check project statuses and notify leads."""
     from .models import Project
