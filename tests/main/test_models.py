@@ -168,6 +168,66 @@ class TestProject:
         days_left = left, round(left / total_effort * 100, 1)
         assert project.days_left == days_left
 
+    @pytest.mark.parametrize(
+        ["status", "start_date", "end_date", "output"],
+        [
+            ["Draft", None, None, None],
+            [
+                "Active",
+                datetime.now().date(),
+                datetime.now().date() + timedelta(days=7),
+                5,
+            ],
+        ],
+    )
+    def test_total_working_days(
+        self, user, department, project, status, start_date, end_date, output
+    ):
+        """Test calculation of total working days for projects."""
+        from main import models
+
+        project = models.Project.objects.create(
+            name="Project",
+            department=department,
+            lead=user,
+            status=status,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        assert project.total_working_days == output
+
+    @pytest.mark.django_db
+    @pytest.mark.usefixtures("department", "user", "activity_code")
+    def test_effort_per_day(self):
+        """Test calculation of effort per day."""
+        from main import models
+
+        department = models.Department.objects.get(name="ICT")
+        user = models.User.objects.get(username="testuser")
+        project = models.Project.objects.create(
+            name="ProCAT",
+            department=department,
+            lead=user,
+            status="Active",
+            start_date=datetime.now().date(),
+            end_date=datetime.now().date() + timedelta(7),
+        )
+        assert project.effort_per_day is None
+
+        activity_code = models.ActivityCode.objects.get(code="1234")
+        funding = models.Funding.objects.create(
+            project=project,
+            source="External",
+            project_code="1234",
+            activity_code=activity_code,
+            budget=1000.00,
+            daily_rate=100.00,
+        )
+        total_effort = funding.budget / funding.daily_rate
+        effort_per_day = total_effort / project.total_working_days
+        assert project.effort_per_day == effort_per_day
+
 
 class TestFunding:
     """Tests for the funding model."""

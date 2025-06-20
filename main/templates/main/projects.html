@@ -1,13 +1,10 @@
 {% extends "main/base.html" %}
 {% load django_bootstrap5 %}
 {% load django_tables2 %}
-
 {% block content %}
   <h2>Projects</h2>
-
   <!-- Shortcut to access the projects list url -->
   {% url 'main:projects' as projects %}
-
   <!-- Filter -->
   <form action="" method="get" class="form form-inline">
     <div class="row">
@@ -18,7 +15,6 @@
       </div>
     </div>
   </form>
-
   <!-- Table -->
   {% render_table table %}
 {% endblock content %}
