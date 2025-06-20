@@ -1,8 +1,8 @@
 """Task definitions for project notifications using Huey."""
 
 from huey import crontab
-
 from huey.contrib.djhuey import db_periodic_task, task
+
 from .notify import email_lead_project_status
 
 _template = """
