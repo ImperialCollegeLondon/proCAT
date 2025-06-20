@@ -1,22 +1,66 @@
 """Task definitions for project notifications using Huey."""
 
-import datetime
-
 from huey import crontab
-from huey.contrib.djhuey import db_periodic_task
+from huey.contrib.djhuey import db_periodic_task, task
 
-from .models import Project
-from .notify import notify_lead
+from .notify import email_lead_project_status
+
+_template = """
+Dear {project_leader},
+
+The project {project_name} has {threshold}% {threshold_type} left ({value} {unit}).
+Please check the project status and update your time spent on it.
+
+Best regards,
+ProCAT
+"""
 
 
-# Runs every monday at 10:00 AM
-@db_periodic_task(crontab(hour=10, minute=0, day_of_week=1))
-def notify_project_due_completion_soon() -> None:
-    """Notify about project(s) due for completion soon."""
-    projects = Project.objects.filter(
-        status="Active",
-        end_date__lte=datetime.datetime.now() + datetime.timedelta(days=7),
+def notify_left_threshold_logic(
+    email: str,
+    lead: str,
+    project_name: str,
+    threshold_type: str,
+    threshold: int,
+    value: int,
+) -> None:
+    """Logic for notifying the lead about project status."""
+    if threshold_type not in ("effort", "weeks"):
+        raise ValueError("Invalid threshold type provided.")
+    unit = "days" if threshold_type == "effort" else "weeks"
+    message = _template.format(
+        project_leader=lead,
+        project_name=project_name,
+        threshold=threshold,
+        threshold_type=threshold_type.rsplit("_")[0],
+        value=value,
+        unit=unit,
     )
 
+    email_lead_project_status(email, project_name, message)
+
+
+@task()
+def notify_left_threshold(
+    email: str,
+    lead: str,
+    project_name: str,
+    threshold_type: str,
+    threshold: int,
+    value: int,
+) -> None:
+    """Huey task wrapper that calls the core notify logic."""
+    notify_left_threshold_logic(
+        email, lead, project_name, threshold_type, threshold, value
+    )
+
+
+# Runs every day at 10:00 AM
+@db_periodic_task(crontab(hour=10, minute=0))
+def daily_project_status_check() -> None:
+    """Daily task to check project statuses and notify leads."""
+    from .models import Project
+
+    projects = Project.objects.filter(status="Active")
     for project in projects:
-        notify_lead(project)
+        project.check_and_notify_status()
