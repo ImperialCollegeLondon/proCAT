@@ -106,7 +106,7 @@ mkdocstrings==0.29.1
     #   procat (pyproject.toml)
 mkdocstrings-python==1.16.12
     # via procat (pyproject.toml)
-narwhals==1.43.0
+narwhals==1.43.1
     # via bokeh
 numpy==2.3.0
     # via
