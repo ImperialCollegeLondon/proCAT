@@ -108,3 +108,23 @@ class TestFundingDetailView(LoginRequiredMixin, TemplateOkMixin):
         for field in form.fields.keys():
             assert form.fields[field].widget.attrs["disabled"]
             assert form.fields[field].widget.attrs["readonly"]
+
+
+class TestCapacityPlanningView(LoginRequiredMixin, TemplateOkMixin):
+    """Test suite for the Capacity Planning view."""
+
+    _template_name = "main/capacity_planning.html"
+
+    def _get_url(self):
+        return reverse("main:capacity_planning")
+
+    def test_get(self, auth_client, funding):
+        """Tests the get method and the data provided."""
+        import bokeh
+
+        endpoint = reverse("main:capacity_planning")
+        response = auth_client.get(endpoint)
+        assert response.status_code == HTTPStatus.OK
+        assert "<script" in response.context["script"]
+        assert "<div" in response.context["div"]
+        assert response.context["bokeh_version"] == bokeh.__version__
