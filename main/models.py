@@ -7,6 +7,10 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+from procat.settings.settings import EFFORT_LEFT_THRESHOLD, WEEKS_LEFT_THRESHOLD
+
+from .tasks import notify_left_threshold
+
 
 class User(AbstractUser):
     """Custom user model."""
@@ -158,6 +162,20 @@ class Project(models.Model):
         " on timesheet records. 'Pro-rata' charges the same amount every month. "
         "Finally, in 'Manual' the charges are scheduled manually.",
     )
+    notifications_effort = models.JSONField(
+        "Summary of effort left notifications",
+        default=dict,
+        blank=True,
+        help_text="Summarises the notifications sent when an effort threshold "
+        "is crossed and the corresponding dates.",
+    )
+    notifications_weeks = models.JSONField(
+        "Summary of weeks left notifications",
+        default=dict,
+        blank=True,
+        help_text="Summarises the notifications sent when the weeks threshold "
+        "is crossed and the corresponding dates.",
+    )
     clockify_id = models.CharField(
         "Clockify ID",
         blank=True,
@@ -215,6 +233,19 @@ class Project(models.Model):
         return None
 
     @property
+    def percent_effort_left(self) -> float | None:
+        """Provide the percentage of effort left.
+
+        Returns:
+            The percentage of effort left, or None if there is no funding information.
+        """
+        if self.total_effort:
+            left = sum([funding.effort_left for funding in self.funding_source.all()])
+            return round(left / self.total_effort * 100, 1)
+
+        return None
+
+    @property
     def days_left(self) -> tuple[int, float] | None:
         """Provide the days worth of effort left.
 
@@ -227,6 +258,59 @@ class Project(models.Model):
             return left, round(left / self.total_effort * 100, 1)
 
         return None
+
+    def check_and_notify_status(self) -> None:
+        """Check the project status and notify accordingly."""
+        check = False
+
+        assert self.lead and hasattr(self.lead, "email")
+
+        for threshold in sorted(EFFORT_LEFT_THRESHOLD):
+            if self.percent_effort_left is None or self.percent_effort_left > threshold:
+                continue
+
+            if str(threshold) in self.notifications_effort:
+                # Already notified for this threshold in the past
+                break
+
+            notify_left_threshold(
+                email=self.lead.email,
+                lead=self.lead.get_full_name(),
+                project_name=self.name,
+                threshold_type="effort",
+                threshold=threshold,
+                value=self.days_left[0] if self.days_left else 0,
+            )
+            self.notifications_effort[str(threshold)] = (
+                datetime.today().date().isoformat()
+            )
+            check = True
+            break
+
+        for threshold in sorted(WEEKS_LEFT_THRESHOLD):
+            if self.weeks_to_deadline is None or self.weeks_to_deadline[1] > threshold:
+                continue
+
+            if str(threshold) in self.notifications_weeks:
+                # Already notified for this threshold in the past
+                break
+
+            notify_left_threshold(
+                email=self.lead.email,
+                lead=self.lead.get_full_name(),
+                project_name=self.name,
+                threshold_type="weeks",
+                threshold=threshold,
+                value=self.weeks_to_deadline[0] if self.weeks_to_deadline else 0,
+            )
+            self.notifications_weeks[str(threshold)] = (
+                datetime.today().date().isoformat()
+            )
+            check = True
+            break
+
+        if check:
+            self.save(update_fields=["notifications_effort", "notifications_weeks"])
 
     @property
     def total_working_days(self) -> int | None:
