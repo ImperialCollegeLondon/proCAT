@@ -2,17 +2,11 @@
 
 from datetime import datetime
 
-import bokeh
 import pandas as pd
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 
 from . import timeseries
-
-
-def get_bokeh_version() -> str:
-    """Get Bokeh version for HTML script tags."""
-    return bokeh.__version__
 
 
 def calculate_traces(start_date: datetime, end_date: datetime) -> ColumnDataSource:

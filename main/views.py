@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Any
 
+import bokeh
 from bokeh.embed import components
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import ModelForm
@@ -137,6 +138,5 @@ class CapacityPlanningView(LoginRequiredMixin, TemplateView):
         script, div = components(plot)
         context["script"] = script
         context["div"] = div
-        version = plots.get_bokeh_version()
-        context["bokeh_version"] = version
+        context["bokeh_version"] = bokeh.__version__
         return context
