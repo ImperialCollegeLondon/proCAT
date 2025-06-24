@@ -108,7 +108,7 @@ mkdocstrings-python==1.16.12
     # via procat (pyproject.toml)
 narwhals==1.43.1
     # via bokeh
-numpy==2.3.0
+numpy==2.3.1
     # via
     #   bokeh
     #   contourpy
