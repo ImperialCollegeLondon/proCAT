@@ -388,3 +388,114 @@ class TestTimeEntry:
             str(time_entry)
             == f"{user!s} - {project!s} - {time_entry.start_time} to {time_entry.end_time}"  # noqa: E501
         )
+
+
+class TestMonthlyCharge:
+    """Tests for the monthly charge model."""
+
+    def test_model_str(self, project, funding):
+        """Test the object string for the monthly charge model."""
+        from main import models
+
+        monthly_charge = models.MonthlyCharge(
+            project=project, funding=funding, amount=500.00, date=datetime.now().date()
+        )
+        assert str(monthly_charge) == (
+            f"Monthly charge for {datetime.now().month}/{datetime.now().year} -"
+            f" {project} - {funding.project_code}"
+        )
+
+        monthly_charge = models.MonthlyCharge(
+            custom_description="A custom description.",
+        )
+        assert str(monthly_charge) == "A custom description."
+
+    @pytest.mark.parametrize(
+        ["amount", "expectation"],
+        [
+            [-100.00, pytest.raises(ValidationError)],
+            [0.00, does_not_raise()],
+            [100.00, does_not_raise()],
+        ],
+    )
+    def test_amount(self, project, funding, amount, expectation):
+        """Test that the amount must be non-negative."""
+        from main import models
+
+        monthly_charge = models.MonthlyCharge(
+            project=project, funding=funding, amount=amount, date=datetime.now().date()
+        )
+        with expectation:
+            monthly_charge.full_clean()
+
+    @pytest.mark.usefixtures("project", "funding")
+    def test_clean_invalid_date(self, project, funding):
+        """Test the model validation for the date field."""
+        from main import models
+
+        charge_date = funding.expiry_date + timedelta(7)
+        amount = funding.funding_left - 10
+        monthly_charge = models.MonthlyCharge(
+            project=project, funding=funding, amount=amount, date=charge_date
+        )
+
+        with pytest.raises(
+            ValidationError,
+            match="Monthly charge must not exceed the funding expiry date",
+        ):
+            monthly_charge.clean()
+
+    @pytest.mark.usefixtures("project", "funding")
+    def test_clean_invalid_funding(self, project, funding):
+        """Test the model validation for the amount field."""
+        from main import models
+
+        charge_date = funding.expiry_date - timedelta(7)
+        amount = funding.funding_left + 10
+        monthly_charge = models.MonthlyCharge(
+            project=project, funding=funding, amount=amount, date=charge_date
+        )
+
+        with pytest.raises(
+            ValidationError,
+            match="Monthly charge must not exceed the amount of funding available.",
+        ):
+            monthly_charge.clean()
+
+    @pytest.mark.usefixtures("funding")
+    def test_clean_invalid_custom_description(self, project, funding):
+        """Test the model validation for the custom description field."""
+        from main import models
+
+        project = models.Project(name="Project", charging="Manual")
+        charge_date = funding.expiry_date - timedelta(7)
+        amount = funding.funding_left - 10
+        monthly_charge = models.MonthlyCharge(
+            project=project,
+            funding=funding,
+            amount=amount,
+            date=charge_date,
+        )
+
+        with pytest.raises(
+            ValidationError,
+            match="Custom line description needed for manual charging method.",
+        ):
+            monthly_charge.clean()
+
+    @pytest.mark.usefixtures("project", "funding")
+    def test_clean_valid(self, project, funding):
+        """Test the model validation for valid amount, date and description fields."""
+        from main import models
+
+        project = models.Project(name="Project", charging="Manual")
+        charge_date = funding.expiry_date - timedelta(7)
+        amount = funding.funding_left - 10
+        monthly_charge = models.MonthlyCharge(
+            project=project,
+            funding=funding,
+            amount=amount,
+            date=charge_date,
+            custom_description="A custom description",
+        )
+        monthly_charge.clean()
