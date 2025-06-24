@@ -148,7 +148,7 @@ pyyaml==6.0.2
     #   pre-commit
 regex==2024.11.6
     # via djlint
-ruff==0.11.13
+ruff==0.12.0
     # via procat (pyproject.toml)
 six==1.17.0
     # via
