@@ -413,9 +413,9 @@ class TestMonthlyCharge:
     @pytest.mark.parametrize(
         ["amount", "expectation"],
         [
-            [-100.00, pytest.raises(ValidationError)],
+            [-1.00, pytest.raises(ValidationError)],
             [0.00, does_not_raise()],
-            [100.00, does_not_raise()],
+            [1.00, does_not_raise()],
         ],
     )
     def test_amount(self, project, funding, amount, expectation):
@@ -428,20 +428,36 @@ class TestMonthlyCharge:
         with expectation:
             monthly_charge.full_clean()
 
+    @pytest.mark.usefixtures("project")
+    def test_clean_missing_funding_fields(self, project):
+        """Test the model validation for the funding fields."""
+        from main import models
+
+        funding = models.Funding(project_code="1234")
+        monthly_charge = models.MonthlyCharge(
+            project=project, funding=funding, amount=10, date=datetime.now().date()
+        )
+        with pytest.raises(
+            ValidationError,
+            match="Funding source must have expiry date and amount.",
+        ):
+            monthly_charge.clean()
+
     @pytest.mark.usefixtures("project", "funding")
     def test_clean_invalid_date(self, project, funding):
         """Test the model validation for the date field."""
         from main import models
 
-        charge_date = funding.expiry_date + timedelta(7)
-        amount = funding.funding_left - 10
         monthly_charge = models.MonthlyCharge(
-            project=project, funding=funding, amount=amount, date=charge_date
+            project=project,
+            funding=funding,
+            date=funding.expiry_date + timedelta(1),  # invalid date
+            amount=funding.funding_left - 1,
         )
 
         with pytest.raises(
             ValidationError,
-            match="Monthly charge must not exceed the funding expiry date",
+            match="Monthly charge must not exceed the funding date or amount.",
         ):
             monthly_charge.clean()
 
@@ -450,31 +466,30 @@ class TestMonthlyCharge:
         """Test the model validation for the amount field."""
         from main import models
 
-        charge_date = funding.expiry_date - timedelta(7)
-        amount = funding.funding_left + 10
         monthly_charge = models.MonthlyCharge(
-            project=project, funding=funding, amount=amount, date=charge_date
+            project=project,
+            funding=funding,
+            date=funding.expiry_date - timedelta(1),
+            amount=funding.funding_left + 1,  # invalid funding
         )
 
         with pytest.raises(
             ValidationError,
-            match="Monthly charge must not exceed the amount of funding available.",
+            match="Monthly charge must not exceed the funding date or amount.",
         ):
             monthly_charge.clean()
 
     @pytest.mark.usefixtures("funding")
-    def test_clean_invalid_custom_description(self, project, funding):
-        """Test the model validation for the custom description field."""
+    def test_clean_invalid_custom_description(self, funding):
+        """Test the model validation for the missing custom description field."""
         from main import models
 
         project = models.Project(name="Project", charging="Manual")
-        charge_date = funding.expiry_date - timedelta(7)
-        amount = funding.funding_left - 10
         monthly_charge = models.MonthlyCharge(
             project=project,
             funding=funding,
-            amount=amount,
-            date=charge_date,
+            amount=funding.funding_left - 1,
+            date=funding.expiry_date - timedelta(1),
         )
 
         with pytest.raises(
@@ -483,19 +498,17 @@ class TestMonthlyCharge:
         ):
             monthly_charge.clean()
 
-    @pytest.mark.usefixtures("project", "funding")
+    @pytest.mark.usefixtures("funding")
     def test_clean_valid(self, project, funding):
         """Test the model validation for valid amount, date and description fields."""
         from main import models
 
         project = models.Project(name="Project", charging="Manual")
-        charge_date = funding.expiry_date - timedelta(7)
-        amount = funding.funding_left - 10
         monthly_charge = models.MonthlyCharge(
             project=project,
             funding=funding,
-            amount=amount,
-            date=charge_date,
-            custom_description="A custom description",
+            amount=funding.funding_left - 1,
+            date=funding.expiry_date - timedelta(1),
+            custom_description="A custom description.",
         )
         monthly_charge.clean()
