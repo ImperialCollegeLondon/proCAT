@@ -607,10 +607,11 @@ class MonthlyCharge(models.Model):
                     "Monthly charge must not exceed the funding expiry date."
                 )
 
-        if self.amount > self.funding.funding_left:
-            raise ValidationError(
-                "Monthly charge must not exceed the amount of funding available."
-            )
+        if self.funding.funding_left:
+            if self.amount > self.funding.funding_left:
+                raise ValidationError(
+                    "Monthly charge must not exceed the amount of funding available."
+                )
 
         if self.project.charging == "Manual" and self.custom_description is None:
             raise ValidationError(
