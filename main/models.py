@@ -457,6 +457,17 @@ class Funding(models.Model):
         """
         return 42
 
+    @property
+    def funding_left(self) -> float:
+        """Provide the funding left in currency.
+
+        TODO: Placeholder. Update when synced with Clockify.
+
+        Returns:
+            The amount of funding left.
+        """
+        return float(self.daily_rate) * self.effort_left
+
 
 class Capacity(models.Model):
     """Proportion of working time that team members are able to work on projects."""
@@ -532,3 +543,76 @@ class TimeEntry(models.Model):
     def __str__(self) -> str:
         """String representation of the Time Entry object."""
         return f"{self.user} - {self.project} - {self.start_time} to {self.end_time}"
+
+
+class MonthlyCharge(models.Model):
+    """Monthly charge for a specific project, account and analysis code."""
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        help_text="The project the monthly charge relates to.",
+    )
+
+    funding = models.ForeignKey(
+        Funding,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        help_text="The funding source to be used for the charge.",
+    )
+
+    amount = models.DecimalField(
+        "Amount",
+        blank=False,
+        null=False,
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text="The amount to be charged to the funding source.",
+    )
+
+    date = models.DateField(
+        "Charge date",
+        null=False,
+        blank=False,
+        help_text="The date the charges related to (the month previous).",
+    )
+
+    custom_description = models.CharField(
+        "Custom description",
+        null=True,
+        blank=True,
+        help_text="Custom line description for manual charges.",
+    )
+
+    def __str__(self) -> str:
+        """String representation of the MonthlyCharge object."""
+        if self.custom_description:
+            return self.custom_description
+        return (
+            f"Monthly charge for {self.date.month}/{self.date.year} - {self.project} -"
+            f" {self.funding.project_code}"
+        )
+
+    def clean(self) -> None:
+        """Ensure that charge has valid funding attached."""
+        super().clean()
+
+        if self.funding.expiry_date:
+            if self.date > self.funding.expiry_date:
+                raise ValidationError(
+                    "Monthly charge must not exceed the funding expiry date."
+                )
+
+        if self.amount > self.funding.funding_left:
+            raise ValidationError(
+                "Monthly charge must not exceed the amount of funding available."
+            )
+
+        if self.project.charging == "Manual" and self.custom_description is None:
+            raise ValidationError(
+                "Custom line description needed for manual charging method."
+            )
