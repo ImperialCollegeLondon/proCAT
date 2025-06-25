@@ -508,43 +508,6 @@ class Capacity(models.Model):
         return f"From {self.start_date}, the capacity of {self.user} is {self.value}."
 
 
-class TimeEntry(models.Model):
-    """Time entry for a user."""
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        null=False,
-        blank=False,
-        help_text="The team member this time entry relates to.",
-    )
-
-    project = models.ForeignKey(
-        Project,
-        on_delete=models.CASCADE,
-        null=False,
-        blank=False,
-        help_text="The project this time entry relates to.",
-    )
-
-    start_time = models.DateTimeField(
-        "Start time",
-        null=False,
-        blank=False,
-        help_text="The date and time when the work started.",
-    )
-    end_time = models.DateTimeField(
-        "End time",
-        null=False,
-        blank=False,
-        help_text="The date and time when the work ended.",
-    )
-
-    def __str__(self) -> str:
-        """String representation of the Time Entry object."""
-        return f"{self.user} - {self.project} - {self.start_time} to {self.end_time}"
-
-
 class MonthlyCharge(models.Model):
     """Monthly charge for a specific project, account and analysis code."""
 
@@ -618,3 +581,47 @@ class MonthlyCharge(models.Model):
                 f"RSE Project {self.project} ({self.funding.project_code}): "
                 f"{self.date.month}/{self.date.year} [rcs-manager@imperial.ac.uk]"
             )
+
+
+class TimeEntry(models.Model):
+    """Time entry for a user."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        help_text="The team member this time entry relates to.",
+    )
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        help_text="The project this time entry relates to.",
+    )
+
+    start_time = models.DateTimeField(
+        "Start time",
+        null=False,
+        blank=False,
+        help_text="The date and time when the work started.",
+    )
+    end_time = models.DateTimeField(
+        "End time",
+        null=False,
+        blank=False,
+        help_text="The date and time when the work ended.",
+    )
+    monthly_charge = models.ForeignKey(
+        MonthlyCharge,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The relevant monthly charge for this time entry.",
+    )
+
+    def __str__(self) -> str:
+        """String representation of the Time Entry object."""
+        return f"{self.user} - {self.project} - {self.start_time} to {self.end_time}"
