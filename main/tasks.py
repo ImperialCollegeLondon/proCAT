@@ -111,14 +111,14 @@ def notify_monthly_time_logged_summary() -> None:
     for user in users:
         user_entries = time_entries.filter(user=user)
 
-        project_hours = {}
-        total_hours = 0
+        project_hours: dict[str, float] = {}
+        total_hours = 0.0
 
         for entry in user_entries:
             project_name = entry.project.name
             hours = (entry.end_time - entry.start_time).total_seconds() / 3600
             total_hours += hours
-            project_hours.setdefault(project_name, 0)
+            project_hours.setdefault(project_name, 0.0)
             project_hours[project_name] += hours
 
         if total_hours == 0:
