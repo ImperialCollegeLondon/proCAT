@@ -581,21 +581,17 @@ class MonthlyCharge(models.Model):
         help_text="The date the charges related to (the month previous).",
     )
 
-    custom_description = models.CharField(
-        "Custom description",
+    description = models.CharField(
+        "Description",
         null=True,
         blank=True,
-        help_text="Custom line description for manual charges.",
+        help_text="Line description displayed in the charges report. Mandatory for "
+        "manually charged projects.",
     )
 
     def __str__(self) -> str:
         """String representation of the MonthlyCharge object."""
-        if self.custom_description:
-            return self.custom_description
-        return (
-            f"Monthly charge for {self.date.month}/{self.date.year} - {self.project} -"
-            f" {self.funding.project_code}"
-        )
+        return self.description
 
     def clean(self) -> None:
         """Ensure the charge has valid funding attached and description if Manual."""
@@ -612,7 +608,13 @@ class MonthlyCharge(models.Model):
                 "Monthly charge must not exceed the funding date or amount."
             )
 
-        if self.project.charging == "Manual" and self.custom_description is None:
-            raise ValidationError(
-                "Custom line description needed for manual charging method."
+        if self.project.charging == "Manual":
+            if self.description is None:
+                raise ValidationError(
+                    "Line description needed for manual charging method."
+                )
+        else:
+            self.description = (
+                f"RSE Project {self.project} ({self.funding.project_code}): "
+                f"{self.date.month}/{self.date.year} [rcs-manager@imperial.ac.uk]"
             )

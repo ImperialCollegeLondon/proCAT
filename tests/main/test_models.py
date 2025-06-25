@@ -400,13 +400,14 @@ class TestMonthlyCharge:
         monthly_charge = models.MonthlyCharge(
             project=project, funding=funding, amount=500.00, date=datetime.now().date()
         )
+        monthly_charge.clean()
         assert str(monthly_charge) == (
-            f"Monthly charge for {datetime.now().month}/{datetime.now().year} -"
-            f" {project} - {funding.project_code}"
+            f"RSE Project {project} ({funding.project_code}): "
+            f"{datetime.now().month}/{datetime.now().year} [rcs-manager@imperial.ac.uk]"
         )
 
         monthly_charge = models.MonthlyCharge(
-            custom_description="A custom description.",
+            description="A custom description.",
         )
         assert str(monthly_charge) == "A custom description."
 
@@ -480,8 +481,8 @@ class TestMonthlyCharge:
             monthly_charge.clean()
 
     @pytest.mark.usefixtures("funding")
-    def test_clean_invalid_custom_description(self, funding):
-        """Test the model validation for the missing custom description field."""
+    def test_clean_invalid_description(self, funding):
+        """Test the model validation for the missing description field."""
         from main import models
 
         project = models.Project(name="Project", charging="Manual")
@@ -494,7 +495,7 @@ class TestMonthlyCharge:
 
         with pytest.raises(
             ValidationError,
-            match="Custom line description needed for manual charging method.",
+            match="Line description needed for manual charging method.",
         ):
             monthly_charge.clean()
 
@@ -509,6 +510,6 @@ class TestMonthlyCharge:
             funding=funding,
             amount=funding.funding_left - 1,
             date=funding.expiry_date - timedelta(1),
-            custom_description="A custom description.",
+            description="A custom description.",
         )
         monthly_charge.clean()

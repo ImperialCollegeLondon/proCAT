@@ -84,5 +84,5 @@ class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "funding",
         "amount",
         "date",
-        "custom_description",
+        "description",
     )
