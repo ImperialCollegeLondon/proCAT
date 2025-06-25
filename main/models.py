@@ -583,7 +583,7 @@ class MonthlyCharge(models.Model):
 
     description = models.CharField(
         "Description",
-        null=True,
+        null=False,
         blank=True,
         help_text="Line description displayed in the charges report. Mandatory for "
         "manually charged projects.",
@@ -609,7 +609,7 @@ class MonthlyCharge(models.Model):
             )
 
         if self.project.charging == "Manual":
-            if self.description is None:
+            if not self.description:
                 raise ValidationError(
                     "Line description needed for manual charging method."
                 )
