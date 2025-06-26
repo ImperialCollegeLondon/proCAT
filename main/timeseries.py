@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 import pandas as pd
-from django.db.models import F, Q, Window
+from django.db.models import F, Window
 from django.db.models.functions import Coalesce, Lead
 
 from . import models
@@ -61,7 +61,8 @@ def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series
     # filter Projects to ensure dates exist and overlap with timeseries dates
     projects = list(
         models.Project.objects.filter(
-            Q(start_date__gte=start_date.date()) | Q(end_date__lt=end_date.date()),
+            start_date__lt=end_date.date(),
+            end_date__gte=start_date.date(),
             start_date__isnull=False,
             end_date__isnull=False,
         )
