@@ -71,7 +71,7 @@ def daily_project_status_check() -> None:
 
 
 _template_time_logged = """
-Dear {project_leader},
+Dear {user},
 
 This is your monthly summary of project work. In {last_month_name} you have logged:
 
@@ -137,7 +137,7 @@ def notify_monthly_time_logged_summary() -> None:
         current_month_name = current_month_start.strftime("%B")
 
         message = _template_time_logged.format(
-            project_leader=user.get_full_name(),
+            user=user.get_full_name(),
             last_month_name=last_month_name,
             project_summary=project_work_summary,
             percentage=percentage,
