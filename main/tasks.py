@@ -126,12 +126,12 @@ def notify_monthly_time_logged_summary() -> None:
 
         project_work_summary = "\n".join(
             [
-                f"{project}: {round(hours / 8, 1)} days"  # Assuming 8 hours/workday
+                f"{project}: {round(hours / 7, 1)} days"  # Assuming 7 hours/workday
                 for project, hours in project_hours.items()
             ]
         )
 
-        total_days = total_hours / 8  # Assuming 8 hours/workday
+        total_days = total_hours / 7  # Assuming 7 hours/workday
         percentage = round((total_days * 100) / avg_work_days_per_month, 1)
 
         last_month_name = last_month_start.strftime("%B")
