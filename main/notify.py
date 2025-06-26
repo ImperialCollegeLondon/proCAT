@@ -1,4 +1,4 @@
-"""Function to send notifications to project lead."""
+"""Function to send notifications to user."""
 
 from django.core.mail import send_mail
 
