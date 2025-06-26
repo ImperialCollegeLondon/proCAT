@@ -54,8 +54,6 @@ def test_get_effort_timeseries(
     """Test the get_effort_timeseries function."""
     from main import models, timeseries
 
-    department = models.Department.objects.get(name="ICT")
-    user = models.User.objects.get(username="testuser")
     project = models.Project.objects.create(
         name="ProCAT",
         department=department,
@@ -64,8 +62,6 @@ def test_get_effort_timeseries(
         start_date=start_date,
         end_date=end_date,
     )
-
-    activity_code = models.ActivityCode.objects.get(code="1234")
     funding = models.Funding.objects.create(
         project=project,
         source="External",
