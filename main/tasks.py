@@ -97,7 +97,13 @@ def notify_monthly_time_logged_summary() -> None:
 
     today = datetime.today()
 
-    last_month_start = datetime(year=today.year, month=today.month - 1, day=1)
+    if today.month == 1:
+        # If it's January, last month is December of the previous year
+        last_month_start = datetime(year=today.year - 1, month=12, day=1)
+    else:
+        # Otherwise, just go back one month
+        last_month_start = datetime(year=today.year, month=today.month - 1, day=1)
+
     current_month_start = datetime(year=today.year, month=today.month, day=1)
 
     time_entries = TimeEntry.objects.filter(
