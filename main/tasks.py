@@ -1,5 +1,7 @@
 """Task definitions for project notifications using Huey."""
 
+import datetime
+
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
@@ -64,3 +66,62 @@ def daily_project_status_check() -> None:
     projects = Project.objects.filter(status="Active")
     for project in projects:
         project.check_and_notify_status()
+
+
+_template_funds_ran_out_but_not_expired = """
+Dear {project_leader},
+
+The funding for project {project_name} has run out but the project has not yet expired.
+
+Please check the funding status and take necessary actions.
+
+Best regards,
+ProCAT
+"""
+
+_template_funding_expired_but_has_budget = """
+Dear {project_leader},
+
+The funding for project {project_name} has expired, but there is still budget available.
+
+Please check the funding status and take necessary actions.
+
+Best regards,
+ProCAT
+"""
+
+
+# Runs every day at 11:00 AM
+@db_periodic_task(crontab(hour=11, minute=0))
+def notify_funding_status() -> None:
+    """Daily task to notify about funding status."""
+    from .models import Funding
+
+    date = datetime.date.today()
+
+    funds_ran_out_but_not_expired = Funding.objects.filter(
+        expiry_date__gt=date, budget__lt=0
+    )
+    funding_expired_but_has_budget = Funding.objects.filter(
+        expiry_date__lt=date, budget__gt=0
+    )
+
+    if funds_ran_out_but_not_expired.exists():
+        for funding in funds_ran_out_but_not_expired:
+            message = _template_funds_ran_out_but_not_expired.format(
+                project_leader=funding.project.lead.get_full_name(),
+                project_name=funding.project.name,
+            )
+            email_lead_project_status(
+                funding.project.lead.email, funding.project.name, message
+            )
+
+    if funding_expired_but_has_budget.exists():
+        for funding in funding_expired_but_has_budget:
+            message = _template_funding_expired_but_has_budget.format(
+                project_leader=funding.project.lead.get_full_name(),
+                project_name=funding.project.name,
+            )
+            email_lead_project_status(
+                funding.project.lead.email, funding.project.name, message
+            )
