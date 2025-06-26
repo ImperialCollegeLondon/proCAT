@@ -8,7 +8,7 @@ def email_lead(subject: str, email: str, message: str) -> None:
     send_mail(
         subject=subject,
         message=message,
-        from_email="noreply@example.com",
+        from_email=None,
         recipient_list=[email],
         fail_silently=False,
     )
