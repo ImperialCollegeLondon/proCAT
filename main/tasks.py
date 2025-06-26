@@ -1,12 +1,10 @@
 """Task definitions for project notifications using Huey."""
 
-from datetime import datetime
-
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
 from .notify import email_user
-from .utils import get_logged_hours
+from .utils import get_current_and_last_month, get_logged_hours
 
 _template = """
 Dear {project_leader},
@@ -95,16 +93,9 @@ def notify_monthly_time_logged_summary() -> None:
 
     avg_work_days_per_month = 220 / 12  # Approximately 18.33 days per month
 
-    today = datetime.today()
-
-    if today.month == 1:
-        # If it's January, last month is December of the previous year
-        last_month_start = datetime(year=today.year - 1, month=12, day=1)
-    else:
-        # Otherwise, just go back one month
-        last_month_start = datetime(year=today.year, month=today.month - 1, day=1)
-
-    current_month_start = datetime(year=today.year, month=today.month, day=1)
+    last_month_start, last_month_name, current_month_start, current_month_name = (
+        get_current_and_last_month()
+    )
 
     time_entries = TimeEntry.objects.filter(
         start_time__gte=last_month_start, end_time__lt=current_month_start
@@ -122,9 +113,6 @@ def notify_monthly_time_logged_summary() -> None:
 
         total_days = total_hours / 7  # Assuming 7 hours/workday
         percentage = round((total_days * 100) / avg_work_days_per_month, 1)
-
-        last_month_name = last_month_start.strftime("%B")
-        current_month_name = current_month_start.strftime("%B")
 
         message = _template_time_logged.format(
             user=user.get_full_name(),
