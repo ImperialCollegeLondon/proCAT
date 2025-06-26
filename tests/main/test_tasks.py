@@ -39,7 +39,7 @@ def test_notify_left_threshold_valid_type(
     project_name = "TestProject"
     subject = f"[Project Status Update] {project_name}"
 
-    with patch("main.tasks.email_lead") as mock_email_func:
+    with patch("main.tasks.email_user") as mock_email_func:
         notify_left_threshold_logic(
             email, lead, project_name, threshold_type, threshold, value
         )

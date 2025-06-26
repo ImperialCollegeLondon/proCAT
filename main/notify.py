@@ -3,7 +3,7 @@
 from django.core.mail import send_mail
 
 
-def email_lead(subject: str, email: str, message: str) -> None:
+def email_user(subject: str, email: str, message: str) -> None:
     """Send email notification to the project lead."""
     send_mail(
         subject=subject,

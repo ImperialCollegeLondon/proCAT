@@ -5,7 +5,7 @@ from datetime import datetime
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
-from .notify import email_lead
+from .notify import email_user
 
 _template = """
 Dear {project_leader},
@@ -40,7 +40,7 @@ def notify_left_threshold_logic(
         unit=unit,
     )
 
-    email_lead(subject, email, message)
+    email_user(subject, email, message)
 
 
 @task()
@@ -147,7 +147,7 @@ def notify_monthly_time_logged_summary() -> None:
 
         subject = f"Your Project Time Logged Summary for {last_month_name}"
 
-        email_lead(
+        email_user(
             subject=subject,
             message=message,
             email=user.email,
