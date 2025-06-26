@@ -1,5 +1,6 @@
 """Task definitions for project notifications using Huey."""
 
+from collections import defaultdict
 from datetime import datetime
 
 from huey import crontab
@@ -111,7 +112,7 @@ def notify_monthly_time_logged_summary() -> None:
     for user in users:
         user_entries = time_entries.filter(user=user)
 
-        project_hours: dict[str, float] = {}
+        project_hours = defaultdict(float)  # <- This defaults to 0.0
         total_hours = 0.0
 
         for entry in user_entries:
