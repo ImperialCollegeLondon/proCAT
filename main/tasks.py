@@ -1,12 +1,12 @@
 """Task definitions for project notifications using Huey."""
 
-from collections import defaultdict
 from datetime import datetime
 
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
 from .notify import email_user
+from .utils import get_logged_hours
 
 _template = """
 Dear {project_leader},
@@ -110,24 +110,8 @@ def notify_monthly_time_logged_summary() -> None:
     users = User.objects.filter(timeentry__in=time_entries).distinct()
 
     for user in users:
-        user_entries = time_entries.filter(user=user)
-
-        project_hours: defaultdict[str, float] = defaultdict(
-            float
-        )  # <- This defaults to 0.0
-        total_hours = 0.0
-
-        for entry in user_entries:
-            project_name = entry.project.name
-            hours = (entry.end_time - entry.start_time).total_seconds() / 3600
-            total_hours += hours
-            project_hours[project_name] += hours
-
-        project_work_summary = "\n".join(
-            [
-                f"{project}: {round(hours / 7, 1)} days"  # Assuming 7 hours/workday
-                for project, hours in project_hours.items()
-            ]
+        total_hours, project_work_summary = get_logged_hours(
+            time_entries.filter(user=user)
         )
 
         total_days = total_hours / 7  # Assuming 7 hours/workday
