@@ -123,9 +123,6 @@ def notify_monthly_time_logged_summary() -> None:
             total_hours += hours
             project_hours[project_name] += hours
 
-        if total_hours == 0:
-            continue  # No hours logged for this user
-
         project_work_summary = "\n".join(
             [
                 f"{project}: {round(hours / 7, 1)} days"  # Assuming 7 hours/workday
