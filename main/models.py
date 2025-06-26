@@ -457,6 +457,17 @@ class Funding(models.Model):
         """
         return 42
 
+    @property
+    def funding_left(self) -> float:
+        """Provide the funding left in currency.
+
+        TODO: Placeholder. Update when synced with Clockify.
+
+        Returns:
+            The amount of funding left.
+        """
+        return float(self.daily_rate) * self.effort_left
+
 
 class Capacity(models.Model):
     """Proportion of working time that team members are able to work on projects."""
@@ -497,6 +508,81 @@ class Capacity(models.Model):
         return f"From {self.start_date}, the capacity of {self.user} is {self.value}."
 
 
+class MonthlyCharge(models.Model):
+    """Monthly charge for a specific project, account and analysis code."""
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        help_text="The project the monthly charge relates to.",
+    )
+
+    funding = models.ForeignKey(
+        Funding,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        help_text="The funding source to be used for the charge.",
+    )
+
+    amount = models.DecimalField(
+        "Amount",
+        blank=False,
+        null=False,
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text="The amount to be charged to the funding source.",
+    )
+
+    date = models.DateField(
+        "Charge date",
+        null=False,
+        blank=False,
+        help_text="The date the charges related to (the month previous).",
+    )
+
+    description = models.CharField(
+        "Description",
+        null=False,
+        blank=True,
+        help_text="Line description displayed in the charges report. Mandatory for "
+        "manually charged projects.",
+    )
+
+    def __str__(self) -> str:
+        """String representation of the MonthlyCharge object."""
+        return self.description
+
+    def clean(self) -> None:
+        """Ensure the charge has valid funding attached and description if Manual."""
+        super().clean()
+
+        if not self.funding.expiry_date or not self.funding.funding_left:
+            raise ValidationError("Funding source must have expiry date and amount.")
+
+        if (
+            self.date > self.funding.expiry_date
+            or self.amount > self.funding.funding_left
+        ):
+            raise ValidationError(
+                "Monthly charge must not exceed the funding date or amount."
+            )
+
+        if self.project.charging == "Manual":
+            if not self.description:
+                raise ValidationError(
+                    "Line description needed for manual charging method."
+                )
+        else:
+            self.description = (
+                f"RSE Project {self.project} ({self.funding.project_code}): "
+                f"{self.date.month}/{self.date.year} [rcs-manager@imperial.ac.uk]"
+            )
+
+
 class TimeEntry(models.Model):
     """Time entry for a user."""
 
@@ -527,6 +613,13 @@ class TimeEntry(models.Model):
         null=False,
         blank=False,
         help_text="The date and time when the work ended.",
+    )
+    monthly_charge = models.ForeignKey(
+        MonthlyCharge,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The relevant monthly charge for this time entry.",
     )
 
     def __str__(self) -> str:

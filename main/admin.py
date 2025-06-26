@@ -8,6 +8,7 @@ from .models import (
     Capacity,
     Department,
     Funding,
+    MonthlyCharge,
     Project,
     TimeEntry,
     User,
@@ -71,4 +72,18 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "project",
         "start_time",
         "end_time",
+        "monthly_charge",
+    )
+
+
+@admin.register(MonthlyCharge)
+class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    """Admin class for the MonthlyCharge model."""
+
+    list_display = (
+        "project",
+        "funding",
+        "amount",
+        "date",
+        "description",
     )
