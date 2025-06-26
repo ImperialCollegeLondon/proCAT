@@ -76,7 +76,9 @@ def get_logged_hours(
     return total_hours, project_work_summary
 
 
-def get_current_and_last_month(date=None) -> tuple[datetime, str, datetime, str]:
+def get_current_and_last_month(
+    date: datetime | None = None,
+) -> tuple[datetime, str, datetime, str]:
     """Get the start of the last month and current month, and their names."""
     if date is None:
         date = datetime.today()
@@ -93,4 +95,9 @@ def get_current_and_last_month(date=None) -> tuple[datetime, str, datetime, str]
     current_month_start = datetime(year=date.year, month=date.month, day=1)
     current_month_name = current_month_start.strftime("%B")
 
-    return last_month_start, last_month_name, current_month_start, current_month_name
+    return (
+        last_month_start,
+        last_month_name,
+        current_month_start,
+        current_month_name,
+    )
