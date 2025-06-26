@@ -2,9 +2,12 @@
 
 from collections import defaultdict
 from collections.abc import Iterable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from . import models
+
+if TYPE_CHECKING:
+    from .models import TimeEntry
 
 ACTIVITY_CODES = (
     {
@@ -47,7 +50,7 @@ def destroy_activities(*args: Any) -> None:  # type: ignore [explicit-any]
 
 
 def get_logged_hours(
-    entries: Iterable[object],
+    entries: Iterable["TimeEntry"],
 ) -> tuple[float, str]:
     """Calculate total logged hours from time entries."""
     project_hours: defaultdict[str, float] = defaultdict(
