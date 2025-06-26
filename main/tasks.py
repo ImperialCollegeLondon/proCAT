@@ -112,7 +112,9 @@ def notify_monthly_time_logged_summary() -> None:
     for user in users:
         user_entries = time_entries.filter(user=user)
 
-        project_hours = defaultdict(float)  # <- This defaults to 0.0
+        project_hours: defaultdict[str, float] = defaultdict(
+            float
+        )  # <- This defaults to 0.0
         total_hours = 0.0
 
         for entry in user_entries:
