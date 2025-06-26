@@ -25,12 +25,35 @@ def test_update_timeseries():
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("department", "user", "activity_code")
-def test_get_effort_timeseries():
+@pytest.mark.parametrize(
+    ["start_date", "end_date", "plot_start_date", "plot_end_date"],
+    [
+        [
+            datetime.now().date() + timedelta(7),
+            datetime.now().date() + timedelta(14),
+            datetime.now(),
+            datetime.now() + timedelta(21),
+        ],
+        [
+            datetime.now().date(),
+            datetime.now().date() + timedelta(21),
+            datetime.now() + timedelta(7),
+            datetime.now() + timedelta(14),
+        ],
+    ],
+)
+def test_get_effort_timeseries(
+    department,
+    user,
+    activity_code,
+    start_date,
+    end_date,
+    plot_start_date,
+    plot_end_date,
+):
     """Test the get_effort_timeseries function."""
     from main import models, timeseries
 
-    plot_start_date, plot_end_date = datetime.now(), datetime.now() + timedelta(28)
     department = models.Department.objects.get(name="ICT")
     user = models.User.objects.get(username="testuser")
     project = models.Project.objects.create(
@@ -38,8 +61,8 @@ def test_get_effort_timeseries():
         department=department,
         lead=user,
         status="Active",
-        start_date=datetime.now().date() + timedelta(7),
-        end_date=datetime.now().date() + timedelta(14),
+        start_date=start_date,
+        end_date=end_date,
     )
 
     activity_code = models.ActivityCode.objects.get(code="1234")
