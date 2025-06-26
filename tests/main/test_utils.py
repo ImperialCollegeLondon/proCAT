@@ -4,9 +4,6 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from main.models import TimeEntry
-from main.utils import get_logged_hours
-
 
 @pytest.mark.django_db
 def test_create_destroy_activity_codes():
@@ -23,6 +20,9 @@ def test_create_destroy_activity_codes():
 @pytest.mark.django_db
 def test_get_logged_hours(user, project):
     """Test get_logged_hours function."""
+    from main.models import TimeEntry
+    from main.utils import get_logged_hours
+
     # Create a time entries for a project
     start_time_1 = datetime(2025, 4, 1, 11, 0)
     end_time_1 = start_time_1 + timedelta(hours=5)
