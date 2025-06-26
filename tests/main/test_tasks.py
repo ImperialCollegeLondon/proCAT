@@ -52,3 +52,31 @@ def test_notify_left_threshold_invalid_type():
         notify_left_threshold_logic(
             "lead@example.com", "Project Lead", "TestProject", "invalid_type", 10, 3
         )
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("user", "project", "department")
+def test_notify_monthly_time_logged_summary():
+    """Test the monthly time logged summary notification."""
+    from main import models
+    from main.tasks import notify_monthly_time_logged_summary
+
+    department = models.Department.objects.get(name="ICT")
+    user = models.User.objects.get(username="testuser")
+    project = models.Project.objects.create(
+        name="ProCAT",
+        department=department,
+        lead=user,
+    )
+
+    # Create a time entry for the user
+    models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time="2025-04-01 11:00:00",
+        end_time="2025-04-01 16:00:00",
+    )
+
+    with patch("main.tasks.email_user") as mock_email_func:
+        notify_monthly_time_logged_summary()
+        mock_email_func.assert_called_once()
