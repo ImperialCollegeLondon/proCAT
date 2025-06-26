@@ -118,7 +118,6 @@ def notify_monthly_time_logged_summary() -> None:
             project_name = entry.project.name
             hours = (entry.end_time - entry.start_time).total_seconds() / 3600
             total_hours += hours
-            project_hours.setdefault(project_name, 0.0)
             project_hours[project_name] += hours
 
         if total_hours == 0:
