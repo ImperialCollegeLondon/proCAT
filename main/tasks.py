@@ -71,7 +71,8 @@ def daily_project_status_check() -> None:
 _template_funds_ran_out_but_not_expired = """
 Dear {project_leader},
 
-The funding for project {project_name} has run out but the project has not yet expired.
+The funding for project {project_name} has run out but the project has
+not yet expired.
 
 Please check the funding status and take necessary actions.
 
@@ -82,7 +83,8 @@ ProCAT
 _template_funding_expired_but_has_budget = """
 Dear {project_leader},
 
-The funding for project {project_name} has expired, but there is still budget available.
+The project {project_name} has expired, but there is still unspent funds of
+£{budget} available.
 
 Please check the funding status and take necessary actions.
 
@@ -91,13 +93,14 @@ ProCAT
 """
 
 
-# Runs every day at 11:00 AM
-@db_periodic_task(crontab(hour=11, minute=0))
-def notify_funding_status() -> None:
-    """Daily task to notify about funding status."""
+def notify_funding_status_logic(
+    date: datetime.date | None = None,
+) -> None:
+    """Logic for notifying the lead about funding status."""
     from .models import Funding
 
-    date = datetime.date.today()
+    if date is None:
+        date = datetime.date.today()
 
     funds_ran_out_but_not_expired = Funding.objects.filter(
         expiry_date__gt=date, budget__lt=0
@@ -121,7 +124,15 @@ def notify_funding_status() -> None:
             message = _template_funding_expired_but_has_budget.format(
                 project_leader=funding.project.lead.get_full_name(),
                 project_name=funding.project.name,
+                budget=funding.budget,
             )
             email_lead_project_status(
                 funding.project.lead.email, funding.project.name, message
             )
+
+
+# Runs every day at 11:00 AM
+@db_periodic_task(crontab(hour=11, minute=0))
+def notify_funding_status() -> None:
+    """Daily task to notify about funding status."""
+    notify_funding_status_logic()
