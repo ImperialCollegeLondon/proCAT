@@ -2,13 +2,11 @@
 
 from collections import defaultdict
 from collections.abc import Iterable
-from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from datetime import datetime, timedelta
+from typing import Any
 
 from . import models
-
-if TYPE_CHECKING:
-    from .models import TimeEntry
+from .models import TimeEntry
 
 ACTIVITY_CODES = (
     {
