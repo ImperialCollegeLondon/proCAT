@@ -1,5 +1,7 @@
 """Task definitions for project notifications using Huey."""
 
+import datetime
+
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
@@ -64,3 +66,75 @@ def daily_project_status_check() -> None:
     projects = Project.objects.filter(status="Active")
     for project in projects:
         project.check_and_notify_status()
+
+
+_template_funds_ran_out_but_not_expired = """
+Dear {lead},
+
+The funding for project {project_name} has run out but the project has
+not yet expired.
+
+Please check the funding status and take necessary actions.
+
+Best regards,
+ProCAT
+"""
+
+_template_funding_expired_but_has_budget = """
+Dear {lead},
+
+The project {project_name} has expired, but there is still unspent funds of
+£{budget} available.
+
+Please check the funding status and take necessary actions.
+
+Best regards,
+ProCAT
+"""
+
+
+def notify_funding_status_logic(
+    date: datetime.date | None = None,
+) -> None:
+    """Logic for notifying the lead about funding status."""
+    from .models import Funding
+
+    if date is None:
+        date = datetime.date.today()
+
+    funds_ran_out_but_not_expired = Funding.objects.filter(
+        expiry_date__gt=date, budget__lt=0
+    )
+    funding_expired_but_has_budget = Funding.objects.filter(
+        expiry_date__lt=date, budget__gt=0
+    )
+
+    if funds_ran_out_but_not_expired.exists():
+        for funding in funds_ran_out_but_not_expired:
+            lead = funding.project.lead
+            lead_name = lead.get_full_name() if lead is not None else "Project Leader"
+            lead_email = lead.email if lead is not None else ""
+            message = _template_funds_ran_out_but_not_expired.format(
+                lead=lead_name,
+                project_name=funding.project.name,
+            )
+            email_lead_project_status(lead_email, funding.project.name, message)
+
+    if funding_expired_but_has_budget.exists():
+        for funding in funding_expired_but_has_budget:
+            lead = funding.project.lead
+            lead_name = lead.get_full_name() if lead is not None else "Project Leader"
+            lead_email = lead.email if lead is not None else ""
+            message = _template_funding_expired_but_has_budget.format(
+                lead=lead_name,
+                project_name=funding.project.name,
+                budget=funding.budget,
+            )
+            email_lead_project_status(lead_email, funding.project.name, message)
+
+
+# Runs every day at 11:00 AM
+@db_periodic_task(crontab(hour=11, minute=0))
+def notify_funding_status() -> None:
+    """Daily task to notify about funding status."""
+    notify_funding_status_logic()
