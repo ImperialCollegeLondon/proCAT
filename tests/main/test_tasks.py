@@ -55,19 +55,10 @@ def test_notify_left_threshold_invalid_type():
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("user", "project", "department")
-def test_notify_monthly_time_logged_summary():
+def test_notify_monthly_time_logged_summary(user, project, department):
     """Test the monthly time logged summary notification."""
     from main import models
     from main.tasks import notify_monthly_time_logged_summary
-
-    department = models.Department.objects.get(name="ICT")
-    user = models.User.objects.get(username="testuser")
-    project = models.Project.objects.create(
-        name="ProCAT",
-        department=department,
-        lead=user,
-    )
 
     # Create a time entry for the user
     models.TimeEntry.objects.create(
