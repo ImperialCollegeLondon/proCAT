@@ -69,7 +69,7 @@ def daily_project_status_check() -> None:
 
 
 _template_funds_ran_out_but_not_expired = """
-Dear {project_leader},
+Dear {lead},
 
 The funding for project {project_name} has run out but the project has
 not yet expired.
@@ -81,7 +81,7 @@ ProCAT
 """
 
 _template_funding_expired_but_has_budget = """
-Dear {project_leader},
+Dear {lead},
 
 The project {project_name} has expired, but there is still unspent funds of
 £{budget} available.
@@ -111,24 +111,26 @@ def notify_funding_status_logic(
 
     if funds_ran_out_but_not_expired.exists():
         for funding in funds_ran_out_but_not_expired:
+            lead = funding.project.lead
+            lead_name = lead.get_full_name() if lead is not None else "Project Leader"
+            lead_email = lead.email if lead is not None else ""
             message = _template_funds_ran_out_but_not_expired.format(
-                project_leader=funding.project.lead.get_full_name(),
+                lead=lead_name,
                 project_name=funding.project.name,
             )
-            email_lead_project_status(
-                funding.project.lead.email, funding.project.name, message
-            )
+            email_lead_project_status(lead_email, funding.project.name, message)
 
     if funding_expired_but_has_budget.exists():
         for funding in funding_expired_but_has_budget:
+            lead = funding.project.lead
+            lead_name = lead.get_full_name() if lead is not None else "Project Leader"
+            lead_email = lead.email if lead is not None else ""
             message = _template_funding_expired_but_has_budget.format(
-                project_leader=funding.project.lead.get_full_name(),
+                lead=lead_name,
                 project_name=funding.project.name,
                 budget=funding.budget,
             )
-            email_lead_project_status(
-                funding.project.lead.email, funding.project.name, message
-            )
+            email_lead_project_status(lead_email, funding.project.name, message)
 
 
 # Runs every day at 11:00 AM
