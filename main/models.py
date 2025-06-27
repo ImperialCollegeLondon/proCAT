@@ -9,8 +9,6 @@ from django.db import models
 
 from procat.settings.settings import EFFORT_LEFT_THRESHOLD, WEEKS_LEFT_THRESHOLD
 
-from .tasks import notify_left_threshold
-
 
 class User(AbstractUser):
     """Custom user model."""
@@ -261,6 +259,8 @@ class Project(models.Model):
 
     def check_and_notify_status(self) -> None:
         """Check the project status and notify accordingly."""
+        from .tasks import notify_left_threshold
+
         check = False
 
         assert self.lead and hasattr(self.lead, "email")

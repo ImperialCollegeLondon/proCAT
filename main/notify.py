@@ -1,14 +1,13 @@
-"""Function to send notifications about project status."""
+"""Function to send notifications to user."""
 
 from django.core.mail import send_mail
 
 
-def email_lead_project_status(email: str, project_name: str, message: str) -> None:
-    """Send email notification to the project lead about the project status."""
-    subject = f"[Project Status Update] {project_name}"
+def email_user(subject: str, email: str, message: str) -> None:
+    """Send email notification to the project lead."""
     send_mail(
-        subject,
-        message,
+        subject=subject,
+        message=message,
         from_email=None,
         recipient_list=[email],
         fail_silently=False,
