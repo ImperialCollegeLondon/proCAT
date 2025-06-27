@@ -83,16 +83,10 @@ def get_current_and_last_month(
     if date is None:
         date = datetime.today()
 
-    if date.month == 1:
-        # If it's January, last month is December of the previous year
-        last_month_start = datetime(year=date.year - 1, month=12, day=1)
-    else:
-        # Otherwise, just go back one month
-        last_month_start = datetime(year=date.year, month=date.month - 1, day=1)
+    current_month_start = datetime(year=date.year, month=date.month, day=1)
+    last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
 
     last_month_name = last_month_start.strftime("%B")
-
-    current_month_start = datetime(year=date.year, month=date.month, day=1)
     current_month_name = current_month_start.strftime("%B")
 
     return (
