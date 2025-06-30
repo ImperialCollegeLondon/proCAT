@@ -26,19 +26,28 @@ def test_update_timeseries():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    ["start_date", "end_date", "plot_start_date", "plot_end_date"],
+    ["start_date", "end_date", "plot_start_date", "plot_end_date", "n_days"],
     [
         [
             datetime.now().date() + timedelta(7),
             datetime.now().date() + timedelta(14),
             datetime.now(),
             datetime.now() + timedelta(21),
+            5,
         ],
         [
             datetime.now().date(),
             datetime.now().date() + timedelta(21),
             datetime.now() + timedelta(7),
             datetime.now() + timedelta(14),
+            5,
+        ],
+        [
+            datetime.now().date(),
+            datetime.now().date() + timedelta(20),
+            datetime.now() + timedelta(4),
+            datetime.now() + timedelta(30),
+            11,
         ],
     ],
 )
@@ -50,6 +59,7 @@ def test_get_effort_timeseries(
     end_date,
     plot_start_date,
     plot_end_date,
+    n_days,
 ):
     """Test the get_effort_timeseries function."""
     from main import models, timeseries
@@ -77,7 +87,7 @@ def test_get_effort_timeseries(
     effort = funding.budget / funding.daily_rate
     effort_per_day = effort / project.total_working_days
     n_entries = ts.value_counts()[effort_per_day]
-    assert n_entries == 5
+    assert n_entries == n_days
 
 
 @pytest.mark.django_db
