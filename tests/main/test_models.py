@@ -251,6 +251,9 @@ class TestFunding:
         """Test project code generated from cost centre and activity."""
         from main import models
 
+        funding = models.Funding()
+        assert funding.project_code is None
+
         funding = models.Funding(cost_centre="centre", activity="1234")
         assert funding.project_code == "centre_1234"
 
