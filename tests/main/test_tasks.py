@@ -201,7 +201,7 @@ def test_funding_expired_but_has_budget(funding, project, user):
         f"Best regards,\nProCAT\n"
     )
 
-    with patch("main.tasks.email_lead_project_status") as mock_email_func:
+    with patch("main.tasks.email_user") as mock_email_func:
         notify_funding_status_logic()
         mock_email_func.assert_called_once_with(
             user.email, project.name, expected_message

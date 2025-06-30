@@ -1,6 +1,6 @@
 """Task definitions for project notifications using Huey."""
 
-from datetime import datetime
+import datetime
 
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
@@ -198,7 +198,7 @@ def notify_funding_status_logic(
                 lead=lead_name,
                 project_name=funding.project.name,
             )
-            email_lead_project_status(lead_email, funding.project.name, message)
+            email_user(lead_email, funding.project.name, message)
 
     if funding_expired_but_has_budget.exists():
         for funding in funding_expired_but_has_budget:
