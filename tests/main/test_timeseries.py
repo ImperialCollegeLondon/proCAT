@@ -54,7 +54,7 @@ def test_update_timeseries():
 def test_get_effort_timeseries(
     department,
     user,
-    activity_code,
+    analysis_code,
     start_date,
     end_date,
     plot_start_date,
@@ -72,11 +72,12 @@ def test_get_effort_timeseries(
         start_date=start_date,
         end_date=end_date,
     )
+
     funding = models.Funding.objects.create(
         project=project,
         source="External",
         project_code="1234",
-        activity_code=activity_code,
+        analysis_code=analysis_code,
         budget=1000.00,
         daily_rate=100.00,
     )

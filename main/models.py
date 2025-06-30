@@ -53,15 +53,15 @@ class Department(models.Model):
         return f"{self.name} - {self.faculty}"
 
 
-class ActivityCode(models.Model):
-    """Activity code to use during charging."""
+class AnalysisCode(models.Model):
+    """Analysis code to use during charging."""
 
     code = models.IntegerField(
         "Code",
         unique=True,
         blank=False,
         null=False,
-        help_text="Code for the activity to use during charging.",
+        help_text="Code for the analysis to use during charging.",
     )
     description = models.CharField(
         "Description",
@@ -78,7 +78,7 @@ class ActivityCode(models.Model):
     )
 
     def __str__(self) -> str:
-        """String representation of the Activity Code object."""
+        """String representation of the Analysis Code object."""
         return f"{self.code} - {self.description}"
 
 
@@ -375,12 +375,12 @@ class Funding(models.Model):
         help_text="The funding code designated to the project.",
     )
 
-    activity_code = models.ForeignKey(
-        ActivityCode,
+    analysis_code = models.ForeignKey(
+        AnalysisCode,
         on_delete=models.PROTECT,
         blank=True,
         null=True,
-        help_text="The activity code to use for charging.",
+        help_text="The analysis code to use for charging.",
     )
 
     expiry_date = models.DateField(
@@ -429,7 +429,7 @@ class Funding(models.Model):
         if (
             not self.funding_body
             or not self.project_code
-            or not self.activity_code
+            or not self.analysis_code
             or not self.expiry_date
         ):
             raise ValidationError(

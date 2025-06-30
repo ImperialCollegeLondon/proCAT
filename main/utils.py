@@ -8,7 +8,7 @@ from typing import Any
 from . import models
 from .models import TimeEntry
 
-ACTIVITY_CODES = (
+ANALYSIS_CODES = (
     {
         "code": 182130,
         "description": "FEC Directly Allocated EQP&FACILITIES",
@@ -35,17 +35,17 @@ ACTIVITY_CODES = (
 )
 
 
-def create_activities(*args: Any) -> None:  # type: ignore [explicit-any]
-    """Create default activity codes."""
-    models.ActivityCode.objects.bulk_create(
-        [models.ActivityCode(**ac) for ac in ACTIVITY_CODES]
+def create_analysis(*args: Any) -> None:  # type: ignore [explicit-any]
+    """Create default analysis codes."""
+    models.AnalysisCode.objects.bulk_create(
+        [models.AnalysisCode(**ac) for ac in ANALYSIS_CODES]
     )
 
 
-def destroy_activities(*args: Any) -> None:  # type: ignore [explicit-any]
-    """Delete default activity codes."""
-    codes = [ac["code"] for ac in ACTIVITY_CODES]
-    models.ActivityCode.objects.filter(code__in=codes).delete()
+def destroy_analysis(*args: Any) -> None:  # type: ignore [explicit-any]
+    """Delete default analysis codes."""
+    codes = [ac["code"] for ac in ANALYSIS_CODES]
+    models.AnalysisCode.objects.filter(code__in=codes).delete()
 
 
 def get_logged_hours(

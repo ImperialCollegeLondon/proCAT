@@ -8,12 +8,12 @@ from .. import utils
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('main', '0003_activitycode'),
+        ('main', '0003_analysiscode'),
     ]
 
     operations = [
         migrations.RunPython(
-            code=utils.create_activities,  # type: ignore [arg-type]
-            reverse_code=utils.destroy_activities  # type: ignore [arg-type]
+            code=utils.create_analysis,  # type: ignore [arg-type]
+            reverse_code=utils.destroy_analysis  # type: ignore [arg-type]
             ),
     ]
