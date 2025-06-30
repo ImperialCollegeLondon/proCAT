@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('expiry_date', models.DateField(blank=True, help_text='Account expiry date, meaning the latest that charges can be made to the account.', null=True, verbose_name='Expiry date')),
                 ('budget', models.DecimalField(decimal_places=2, help_text='The total budget for the funding.', max_digits=6, verbose_name='Budget')),
                 ('daily_rate', models.DecimalField(decimal_places=2, default=389.0, help_text='The current daily rate, which defaults to 389.00.', max_digits=6, verbose_name='Daily rate')),
-                ('activity_code', models.ForeignKey(blank=True, help_text='The activity code to use for charging.', null=True, on_delete=django.db.models.deletion.PROTECT, to='main.activitycode')),
+                ('analysis_code', models.ForeignKey(blank=True, help_text='The analysis code to use for charging.', null=True, on_delete=django.db.models.deletion.PROTECT, to='main.analysiscode')),
                 ('project', models.ForeignKey(help_text='The project that the funding relates to.', on_delete=django.db.models.deletion.CASCADE, to='main.project')),
             ],
         ),

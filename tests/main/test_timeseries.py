@@ -25,29 +25,59 @@ def test_update_timeseries():
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("department", "user", "activity_code")
-def test_get_effort_timeseries():
+@pytest.mark.parametrize(
+    ["start_date", "end_date", "plot_start_date", "plot_end_date", "n_days"],
+    [
+        [
+            datetime.now().date() + timedelta(7),
+            datetime.now().date() + timedelta(14),
+            datetime.now(),
+            datetime.now() + timedelta(21),
+            5,
+        ],
+        [
+            datetime.now().date(),
+            datetime.now().date() + timedelta(21),
+            datetime.now() + timedelta(7),
+            datetime.now() + timedelta(14),
+            5,
+        ],
+        [
+            datetime.now().date(),
+            datetime.now().date() + timedelta(20),
+            datetime.now() + timedelta(4),
+            datetime.now() + timedelta(30),
+            11,
+        ],
+    ],
+)
+def test_get_effort_timeseries(
+    department,
+    user,
+    analysis_code,
+    start_date,
+    end_date,
+    plot_start_date,
+    plot_end_date,
+    n_days,
+):
     """Test the get_effort_timeseries function."""
     from main import models, timeseries
 
-    plot_start_date, plot_end_date = datetime.now(), datetime.now() + timedelta(28)
-    department = models.Department.objects.get(name="ICT")
-    user = models.User.objects.get(username="testuser")
     project = models.Project.objects.create(
         name="ProCAT",
         department=department,
         lead=user,
         status="Active",
-        start_date=datetime.now().date() + timedelta(7),
-        end_date=datetime.now().date() + timedelta(14),
+        start_date=start_date,
+        end_date=end_date,
     )
 
-    activity_code = models.ActivityCode.objects.get(code="1234")
     funding = models.Funding.objects.create(
         project=project,
         source="External",
         project_code="1234",
-        activity_code=activity_code,
+        analysis_code=analysis_code,
         budget=1000.00,
         daily_rate=100.00,
     )
@@ -58,7 +88,7 @@ def test_get_effort_timeseries():
     effort = funding.budget / funding.daily_rate
     effort_per_day = effort / project.total_working_days
     n_entries = ts.value_counts()[effort_per_day]
-    assert n_entries == 5
+    assert n_entries == n_days
 
 
 @pytest.mark.django_db

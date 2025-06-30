@@ -11,10 +11,10 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='ActivityCode',
+            name='AnalysisCode',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.IntegerField(help_text='Code for the activity to use during charging.', unique=True, verbose_name='Code')),
+                ('code', models.IntegerField(help_text='Code for the analysis to use during charging.', unique=True, verbose_name='Code')),
                 ('description', models.CharField(help_text='Description of the code.', unique=True, verbose_name='Description')),
                 ('notes', models.TextField(help_text='Longer explanation about when to use the code.', verbose_name='Notes')),
             ],
