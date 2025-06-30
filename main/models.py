@@ -447,6 +447,18 @@ class Funding(models.Model):
             )
 
     @property
+    def project_code(self) -> str | None:
+        """Provide the project code, containing the cost centre and activity code.
+
+        Returns:
+            The designated project code.
+        """
+        if self.cost_centre and self.activity:
+            return f"{self.cost_centre}_{self.activity}"
+
+        return None
+
+    @property
     def effort(self) -> int:
         """Provide the effort in days, calculated based on the budget and daily rate.
 
