@@ -25,7 +25,7 @@ def test_update_timeseries():
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("department", "user", "activity_code")
+@pytest.mark.usefixtures("department", "user", "analysis_code")
 def test_get_effort_timeseries():
     """Test the get_effort_timeseries function."""
     from main import models, timeseries
@@ -42,12 +42,12 @@ def test_get_effort_timeseries():
         end_date=datetime.now().date() + timedelta(14),
     )
 
-    activity_code = models.ActivityCode.objects.get(code="1234")
+    analysis_code = models.AnalysisCode.objects.get(code="1234")
     funding = models.Funding.objects.create(
         project=project,
         source="External",
         project_code="1234",
-        activity_code=activity_code,
+        analysis_code=analysis_code,
         budget=1000.00,
         daily_rate=100.00,
     )

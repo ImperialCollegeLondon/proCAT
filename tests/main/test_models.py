@@ -15,11 +15,11 @@ def test_department_model_str():
     assert str(dep) == "ICT - Other"
 
 
-def test_activity_code_model_str():
+def test_analysis_code_model_str():
     """Test the object string for the model."""
     from main import models
 
-    dep = models.ActivityCode(code="1234", description="Some code", notes="None")
+    dep = models.AnalysisCode(code="1234", description="Some code", notes="None")
     assert str(dep) == "1234 - Some code"
 
 
@@ -101,7 +101,7 @@ class TestProject:
         assert project.weeks_to_deadline == output
 
     @pytest.mark.django_db
-    @pytest.mark.usefixtures("department", "user", "activity_code")
+    @pytest.mark.usefixtures("department", "user", "analysis_code")
     def test_total_effort(self):
         """Test the total_effort method."""
         from main import models
@@ -115,26 +115,26 @@ class TestProject:
         )
         assert project.total_effort is None
 
-        activity_code = models.ActivityCode.objects.get(code="1234")
+        analysis_code = models.AnalysisCode.objects.get(code="1234")
         funding_A = models.Funding.objects.create(
             project=project,
             source="External",
             project_code="1234",
-            activity_code=activity_code,
+            analysis_code=analysis_code,
             budget=10000.00,
         )
         funding_B = models.Funding.objects.create(
             project=project,
             source="External",
             project_code="5678",
-            activity_code=activity_code,
+            analysis_code=analysis_code,
             budget=5000.00,
         )
         total_effort = funding_A.effort + funding_B.effort
         assert project.total_effort == total_effort
 
     @pytest.mark.django_db
-    @pytest.mark.usefixtures("department", "user", "activity_code")
+    @pytest.mark.usefixtures("department", "user", "analysis_code")
     def test_days_left(self):
         """Test the days_left method."""
         from main import models
@@ -148,19 +148,19 @@ class TestProject:
         )
         assert project.days_left is None
 
-        activity_code = models.ActivityCode.objects.get(code="1234")
+        analysis_code = models.AnalysisCode.objects.get(code="1234")
         funding_A = models.Funding.objects.create(
             project=project,
             source="External",
             project_code="1234",
-            activity_code=activity_code,
+            analysis_code=analysis_code,
             budget=10000.00,
         )
         funding_B = models.Funding.objects.create(
             project=project,
             source="External",
             project_code="5678",
-            activity_code=activity_code,
+            analysis_code=analysis_code,
             budget=5000.00,
         )
         total_effort = funding_A.effort + funding_B.effort
@@ -198,7 +198,7 @@ class TestProject:
         assert project.total_working_days == output
 
     @pytest.mark.django_db
-    @pytest.mark.usefixtures("department", "user", "activity_code")
+    @pytest.mark.usefixtures("department", "user", "analysis_code")
     def test_effort_per_day(self):
         """Test calculation of effort per day."""
         from main import models
@@ -215,12 +215,12 @@ class TestProject:
         )
         assert project.effort_per_day is None
 
-        activity_code = models.ActivityCode.objects.get(code="1234")
+        analysis_code = models.AnalysisCode.objects.get(code="1234")
         funding = models.Funding.objects.create(
             project=project,
             source="External",
             project_code="1234",
-            activity_code=activity_code,
+            analysis_code=analysis_code,
             budget=1000.00,
             daily_rate=100.00,
         )
@@ -267,7 +267,7 @@ class TestFunding:
             funding.clean()
 
         # all fields present
-        activity_code = models.ActivityCode(
+        analysis_code = models.AnalysisCode(
             code="1234", description="Some code", notes="None"
         )
 
@@ -275,7 +275,7 @@ class TestFunding:
             source="External",
             funding_body="EPSRC",
             project_code="1234",
-            activity_code=activity_code,
+            analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
         )
         funding.clean()
@@ -288,7 +288,7 @@ class TestFunding:
             [1000.00, does_not_raise()],
         ],
     )
-    def test_budget(self, project, activity_code, budget, expectation):
+    def test_budget(self, project, analysis_code, budget, expectation):
         """Test that the budget cannot be a negative value."""
         from main import models
 
@@ -297,7 +297,7 @@ class TestFunding:
             source="External",
             funding_body="EPSRC",
             project_code="1234",
-            activity_code=activity_code,
+            analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
             budget=budget,
             daily_rate=389.00,
@@ -313,7 +313,7 @@ class TestFunding:
             [389.00, does_not_raise()],
         ],
     )
-    def test_daily_rate(self, project, activity_code, daily_rate, expectation):
+    def test_daily_rate(self, project, analysis_code, daily_rate, expectation):
         """Test that the daily rate cannot be a negative value."""
         from main import models
 
@@ -322,7 +322,7 @@ class TestFunding:
             source="External",
             funding_body="EPSRC",
             project_code="1234",
-            activity_code=activity_code,
+            analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
             budget=1000.00,
             daily_rate=daily_rate,
