@@ -88,9 +88,9 @@ ProCAT
 
 
 def notify_monthly_time_logged_logic(
-    last_month_start: datetime,
+    last_month_start: datetime.date,
     last_month_name: str,
-    current_month_start: datetime,
+    current_month_start: datetime.date,
     current_month_name: str,
 ) -> None:
     """Logic to notify users about their monthly time logged."""
