@@ -5,7 +5,11 @@ from unittest.mock import patch
 
 import pytest
 
-from main.tasks import notify_left_threshold_logic, notify_monthly_time_logged_logic, notify_funding_status_logic
+from main.tasks import (
+    notify_funding_status_logic,
+    notify_left_threshold_logic,
+    notify_monthly_time_logged_logic,
+)
 
 
 @pytest.mark.parametrize(
@@ -176,6 +180,7 @@ def test_process_time_logged_summary_multiple_projects(user, department):
             message=expected_message,
             email=user.email,
         )
+
 
 @pytest.mark.django_db
 def test_funding_expired_but_has_budget(funding, project, user):

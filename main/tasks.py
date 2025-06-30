@@ -86,6 +86,7 @@ Best wishes,
 ProCAT
 """
 
+
 def notify_monthly_time_logged_logic(
     last_month_start: datetime,
     last_month_name: str,
@@ -170,6 +171,7 @@ Please check the funding status and take necessary actions.
 Best regards,
 ProCAT
 """
+
 
 def notify_funding_status_logic(
     date: datetime.date | None = None,
