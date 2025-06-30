@@ -247,6 +247,13 @@ class TestFunding:
         )
         assert str(funding) == "ProCAT - £10000.00 - centre_1234"
 
+    def test_project_code(self):
+        """Test project code generated from cost centre and activity."""
+        from main import models
+
+        funding = models.Funding(cost_centre="centre", activity="1234")
+        assert funding.project_code == "centre_1234"
+
     def test_effort(self):
         """Test effort calculated from budget and daily rate."""
         from main import models
