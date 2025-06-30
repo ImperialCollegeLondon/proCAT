@@ -164,7 +164,7 @@ types-requests==2.32.4.20250611
     # via procat (pyproject.toml)
 tzdata==2025.2
     # via pandas
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   requests
     #   types-requests
