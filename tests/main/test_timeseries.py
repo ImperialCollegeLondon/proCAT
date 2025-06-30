@@ -72,7 +72,8 @@ def test_get_effort_timeseries(
     funding = models.Funding.objects.create(
         project=project,
         source="External",
-        project_code="1234",
+        cost_centre="centre",
+        activity="1234",
         analysis_code=analysis_code,
         budget=1000.00,
         daily_rate=100.00,

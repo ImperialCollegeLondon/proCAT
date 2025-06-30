@@ -119,14 +119,16 @@ class TestProject:
         funding_A = models.Funding.objects.create(
             project=project,
             source="External",
-            project_code="1234",
+            cost_centre="centre",
+            activity="1234",
             analysis_code=analysis_code,
             budget=10000.00,
         )
         funding_B = models.Funding.objects.create(
             project=project,
             source="External",
-            project_code="5678",
+            cost_centre="centre",
+            activity="5678",
             analysis_code=analysis_code,
             budget=5000.00,
         )
@@ -152,14 +154,16 @@ class TestProject:
         funding_A = models.Funding.objects.create(
             project=project,
             source="External",
-            project_code="1234",
+            cost_centre="centre",
+            activity="1234",
             analysis_code=analysis_code,
             budget=10000.00,
         )
         funding_B = models.Funding.objects.create(
             project=project,
             source="External",
-            project_code="5678",
+            cost_centre="centre",
+            activity="5678",
             analysis_code=analysis_code,
             budget=5000.00,
         )
@@ -219,7 +223,8 @@ class TestProject:
         funding = models.Funding.objects.create(
             project=project,
             source="External",
-            project_code="1234",
+            cost_centre="centre",
+            activity="1234",
             analysis_code=analysis_code,
             budget=1000.00,
             daily_rate=100.00,
@@ -237,8 +242,10 @@ class TestFunding:
         from main import models
 
         project = models.Project(name="ProCAT")
-        funding = models.Funding(project=project, budget=10000.00, project_code="1234")
-        assert str(funding) == "ProCAT - £10000.00 - 1234"
+        funding = models.Funding(
+            project=project, budget=10000.00, cost_centre="centre", activity="1234"
+        )
+        assert str(funding) == "ProCAT - £10000.00 - centre_1234"
 
     def test_effort(self):
         """Test effort calculated from budget and daily rate."""
@@ -274,7 +281,8 @@ class TestFunding:
         funding = models.Funding(
             source="External",
             funding_body="EPSRC",
-            project_code="1234",
+            cost_centre="centre",
+            activity="1234",
             analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
         )
@@ -296,7 +304,8 @@ class TestFunding:
             project=project,
             source="External",
             funding_body="EPSRC",
-            project_code="1234",
+            cost_centre="centre",
+            activity="1234",
             analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
             budget=budget,
@@ -321,7 +330,8 @@ class TestFunding:
             project=project,
             source="External",
             funding_body="EPSRC",
-            project_code="1234",
+            cost_centre="centre",
+            activity="1234",
             analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
             budget=1000.00,
@@ -402,7 +412,7 @@ class TestMonthlyCharge:
         )
         monthly_charge.clean()
         assert str(monthly_charge) == (
-            f"RSE Project {project} ({funding.project_code}): "
+            f"RSE Project {project} ({funding.cost_centre}_{funding.activity}): "
             f"{datetime.now().month}/{datetime.now().year} [rcs-manager@imperial.ac.uk]"
         )
 
@@ -434,7 +444,7 @@ class TestMonthlyCharge:
         """Test the model validation for the funding fields."""
         from main import models
 
-        funding = models.Funding(project_code="1234")
+        funding = models.Funding(cost_centre="centre", activity="1234")
         monthly_charge = models.MonthlyCharge(
             project=project, funding=funding, amount=10, date=datetime.now().date()
         )

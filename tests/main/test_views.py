@@ -90,7 +90,7 @@ class TestFundingDetailView(LoginRequiredMixin, TemplateOkMixin):
     def _get_url(self):
         from main import models
 
-        funding = models.Funding.objects.get(project_code="1234")
+        funding = models.Funding.objects.get(activity="1234")
 
         return reverse("main:funding_detail", kwargs={"pk": funding.pk})
 

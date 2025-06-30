@@ -368,11 +368,18 @@ class Funding(models.Model):
         help_text="The organisation or department providing the funding.",
     )
 
-    project_code = models.CharField(
-        "Project code",
+    cost_centre = models.CharField(
+        "Cost centre",
         blank=True,
         null=True,
-        help_text="The funding code designated to the project.",
+        help_text="The cost centre for the project.",
+    )
+
+    activity = models.CharField(
+        "activity",
+        blank=True,
+        null=True,
+        help_text="The activity code designated to the project.",
     )
 
     analysis_code = models.ForeignKey(
@@ -419,7 +426,9 @@ class Funding(models.Model):
 
     def __str__(self) -> str:
         """String representation of the Funding object."""
-        return f"{self.project} - £{self.budget:.2f} - {self.project_code}"
+        return (
+            f"{self.project} - £{self.budget:.2f} - {self.cost_centre}_{self.activity}"
+        )
 
     def clean(self) -> None:
         """Ensure that all fields have a value unless the source is 'Internal'."""
@@ -428,7 +437,8 @@ class Funding(models.Model):
 
         if (
             not self.funding_body
-            or not self.project_code
+            or not self.cost_centre
+            or not self.activity
             or not self.analysis_code
             or not self.expiry_date
         ):
@@ -578,8 +588,9 @@ class MonthlyCharge(models.Model):
                 )
         else:
             self.description = (
-                f"RSE Project {self.project} ({self.funding.project_code}): "
-                f"{self.date.month}/{self.date.year} [rcs-manager@imperial.ac.uk]"
+                f"RSE Project {self.project} ({self.funding.cost_centre}_"
+                f"{self.funding.activity}): {self.date.month}/{self.date.year}"
+                " [rcs-manager@imperial.ac.uk]"
             )
 
 

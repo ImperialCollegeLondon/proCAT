@@ -79,8 +79,10 @@ class FundingTable(tables.Table):
     project = tables.Column(
         linkify=("main:project_detail", {"pk": tables.A("project.pk")})
     )
-    project_code = tables.Column(
-        linkify=("main:funding_detail", {"pk": tables.A("pk")})
+    cost_centre = tables.Column(
+        linkify=("main:funding_detail", {"pk": tables.A("pk")}),
+        verbose_name="Project code",
+        order_by=("cost_centre", "activity"),
     )
     effort = tables.Column(orderable=False)
     effort_left = tables.Column(orderable=False)
@@ -91,9 +93,9 @@ class FundingTable(tables.Table):
         model = Funding
         fields = (
             "project",
-            "project_code",
             "funding_body",
             "source",
+            "cost_centre",
             "expiry_date",
             "budget",
             "effort",
@@ -102,6 +104,10 @@ class FundingTable(tables.Table):
         attrs: ClassVar[dict[str, str]] = {
             "class": "table table-striped table-hover table-responsive",
         }
+
+    def render_cost_centre(self, value: str, record: Funding) -> str:
+        """Render cost centre and activity code together."""
+        return f"{value}_{record.activity}"
 
 
 class CapacityTable(tables.Table):
