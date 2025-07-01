@@ -193,6 +193,8 @@ def test_funding_expired_but_has_budget(funding, project, user):
     assert funding.expiry_date < datetime.now().date()
     assert funding.budget > 0
 
+    expected_subject = f"[Funding Expired] {project.name}"
+
     expected_message = (
         f"\nDear {funding.project.lead.get_full_name()},\n\n"
         f"The project {project.name} has expired, but there is still unspent "
@@ -201,8 +203,11 @@ def test_funding_expired_but_has_budget(funding, project, user):
         f"Best regards,\nProCAT\n"
     )
 
-    with patch("main.tasks.email_user") as mock_email_func:
+    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
         notify_funding_status_logic()
         mock_email_func.assert_called_once_with(
-            user.email, project.name, expected_message
+            subject=expected_subject,
+            email=funding.project.lead.email,
+            admin_email=[],
+            message=expected_message,
         )
