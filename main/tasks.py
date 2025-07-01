@@ -151,10 +151,9 @@ def notify_monthly_time_logged_summary() -> None:
 _template_funds_ran_out_but_not_expired = """
 Dear {lead},
 
-The funding for project {project_name} has run out but the project has
-not yet expired.
+The funding {activity} for project {project_name} has run out.
 
-Please check the funding status and take necessary actions.
+If the project has been completed, no further action is needed. Otherwise please check the funding status and take necessary actions.
 
 Best regards,
 ProCAT
