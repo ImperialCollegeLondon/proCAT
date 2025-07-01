@@ -5,6 +5,8 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import Any
 
+from django.contrib.auth import get_user_model
+
 from . import models
 from .models import TimeEntry
 
@@ -93,3 +95,12 @@ def get_current_and_last_month(
         current_month_start,
         current_month_name,
     )
+
+
+def get_admin_email() -> list[str]:
+    """Get the email of the first superuser."""
+    User = get_user_model()
+    admin_email = (
+        User.objects.filter(is_superuser=True).values_list("email", flat=True).first()
+    )
+    return admin_email if admin_email else []

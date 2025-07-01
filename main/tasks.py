@@ -5,8 +5,8 @@ import datetime
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
-from .notify import email_user
-from .utils import get_current_and_last_month, get_logged_hours
+from .notify import email_user, email_user_and_cc_admin
+from .utils import get_admin_email, get_current_and_last_month, get_logged_hours
 
 _template = """
 Dear {project_leader},
@@ -153,7 +153,8 @@ Dear {lead},
 
 The funding {activity} for project {project_name} has run out.
 
-If the project has been completed, no further action is needed. Otherwise please check the funding status and take necessary actions.
+If the project has been completed, no further action is needed. Otherwise,
+please check the funding status and take necessary actions.
 
 Best regards,
 ProCAT
@@ -190,6 +191,8 @@ def notify_funding_status_logic(
 
     if funds_ran_out_but_not_expired.exists():
         for funding in funds_ran_out_but_not_expired:
+            subject = f"[Funding Update] {funding.project.name}"
+            admin_email = get_admin_email()
             lead = funding.project.lead
             lead_name = lead.get_full_name() if lead is not None else "Project Leader"
             lead_email = lead.email if lead is not None else ""
@@ -197,10 +200,17 @@ def notify_funding_status_logic(
                 lead=lead_name,
                 project_name=funding.project.name,
             )
-            email_user(lead_email, funding.project.name, message)
+            email_user_and_cc_admin(
+                subject=subject,
+                message=message,
+                email=lead_email,
+                admin_email=admin_email,
+            )
 
     if funding_expired_but_has_budget.exists():
         for funding in funding_expired_but_has_budget:
+            subject = f"[Funding Expired] {funding.project.name}"
+            admin_email = get_admin_email()
             lead = funding.project.lead
             lead_name = lead.get_full_name() if lead is not None else "Project Leader"
             lead_email = lead.email if lead is not None else ""
@@ -209,7 +219,12 @@ def notify_funding_status_logic(
                 project_name=funding.project.name,
                 budget=funding.budget,
             )
-            email_user(lead_email, funding.project.name, message)
+            email_user_and_cc_admin(
+                subject=subject,
+                message=message,
+                email=lead_email,
+                admin_email=admin_email,
+            )
 
 
 # Runs every day at 11:00 AM
