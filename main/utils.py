@@ -103,4 +103,4 @@ def get_admin_email() -> list[str]:
     admin_email = (
         User.objects.filter(is_superuser=True).values_list("email", flat=True).first()
     )
-    return admin_email if admin_email else []
+    return [admin_email] if admin_email else []
