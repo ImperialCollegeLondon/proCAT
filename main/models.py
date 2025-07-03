@@ -1,6 +1,7 @@
 """Models module for main app."""
 
 from datetime import datetime
+from typing import Any
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -614,6 +615,11 @@ class MonthlyCharge(models.Model):
                 f"{self.date.month}/{self.date.year} [rcs-manager@imperial.ac.uk]"
             )
 
+    def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore
+        """Call the clean method when saving the model."""
+        self.clean()
+        super().save(*args, **kwargs)
+
 
 class TimeEntry(models.Model):
     """Time entry for a user."""
@@ -646,10 +652,8 @@ class TimeEntry(models.Model):
         blank=False,
         help_text="The date and time when the work ended.",
     )
-    monthly_charge = models.ForeignKey(
+    monthly_charge = models.ManyToManyField(
         MonthlyCharge,
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         help_text="The relevant monthly charge for this time entry.",
     )
