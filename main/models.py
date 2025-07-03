@@ -379,7 +379,7 @@ class Funding(models.Model):
         "activity",
         blank=True,
         null=True,
-        help_text="The activity code designated to the project, 6  alphanumeric"
+        help_text="The activity code designated to the project, 6 alphanumeric"
         "characters starting with P, F or G.",
     )
 
