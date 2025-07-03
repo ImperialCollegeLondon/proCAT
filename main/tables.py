@@ -80,7 +80,8 @@ class FundingTable(tables.Table):
         linkify=("main:project_detail", {"pk": tables.A("project.pk")})
     )
     project_code = tables.Column(
-        linkify=("main:funding_detail", {"pk": tables.A("pk")})
+        linkify=("main:funding_detail", {"pk": tables.A("pk")}),
+        order_by=("cost_centre", "activity"),
     )
     effort = tables.Column(orderable=False)
     effort_left = tables.Column(orderable=False)
@@ -91,9 +92,9 @@ class FundingTable(tables.Table):
         model = Funding
         fields = (
             "project",
-            "project_code",
             "funding_body",
             "source",
+            "project_code",
             "expiry_date",
             "budget",
             "effort",

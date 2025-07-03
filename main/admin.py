@@ -36,7 +36,8 @@ class FundingAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
     list_display = (
         "project",
-        "project_code",
+        "cost_centre",
+        "activity",
         "funding_body",
         "source",
         "expiry_date",
