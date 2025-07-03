@@ -120,7 +120,7 @@ class TestProject:
             project=project,
             source="External",
             cost_centre="centre",
-            activity="1234",
+            activity="G12345",
             analysis_code=analysis_code,
             budget=10000.00,
         )
@@ -128,7 +128,7 @@ class TestProject:
             project=project,
             source="External",
             cost_centre="centre",
-            activity="5678",
+            activity="G56789",
             analysis_code=analysis_code,
             budget=5000.00,
         )
@@ -155,7 +155,7 @@ class TestProject:
             project=project,
             source="External",
             cost_centre="centre",
-            activity="1234",
+            activity="G12345",
             analysis_code=analysis_code,
             budget=10000.00,
         )
@@ -163,7 +163,7 @@ class TestProject:
             project=project,
             source="External",
             cost_centre="centre",
-            activity="5678",
+            activity="G56789",
             analysis_code=analysis_code,
             budget=5000.00,
         )
@@ -224,7 +224,7 @@ class TestProject:
             project=project,
             source="External",
             cost_centre="centre",
-            activity="1234",
+            activity="G12345",
             analysis_code=analysis_code,
             budget=1000.00,
             daily_rate=100.00,
@@ -243,9 +243,9 @@ class TestFunding:
 
         project = models.Project(name="ProCAT")
         funding = models.Funding(
-            project=project, budget=10000.00, cost_centre="centre", activity="1234"
+            project=project, budget=10000.00, cost_centre="centre", activity="G12345"
         )
-        assert str(funding) == "ProCAT - £10000.00 - centre_1234"
+        assert str(funding) == "ProCAT - £10000.00 - centre_G12345"
 
     def test_project_code(self):
         """Test project code generated from cost centre and activity."""
@@ -254,8 +254,8 @@ class TestFunding:
         funding = models.Funding()
         assert funding.project_code is None
 
-        funding = models.Funding(cost_centre="centre", activity="1234")
-        assert funding.project_code == "centre_1234"
+        funding = models.Funding(cost_centre="centre", activity="G12345")
+        assert funding.project_code == "centre_G12345"
 
     def test_effort(self):
         """Test effort calculated from budget and daily rate."""
@@ -292,11 +292,38 @@ class TestFunding:
             source="External",
             funding_body="EPSRC",
             cost_centre="centre",
-            activity="1234",
+            activity="G12345",
             analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
         )
         funding.clean()
+
+    @pytest.mark.parametrize(
+        ["activity", "expectation"],
+        [
+            ["R12345", pytest.raises(ValidationError)],
+            ["G1234", pytest.raises(ValidationError)],
+            ["G123!5", pytest.raises(ValidationError)],
+            ["G12345", does_not_raise()],
+        ],
+    )
+    def test_clean_activity(self, activity, expectation, project, analysis_code):
+        """Test the clean method for validation of the activity code."""
+        from main import models
+
+        funding = models.Funding(
+            project=project,
+            source="External",
+            funding_body="EPSRC",
+            cost_centre="centre",
+            activity=activity,
+            analysis_code=analysis_code,
+            expiry_date=datetime.now().date(),
+            budget=38900.00,
+            daily_rate=389.00,
+        )
+        with expectation:
+            funding.clean()
 
     @pytest.mark.parametrize(
         ["budget", "expectation"],
@@ -315,7 +342,7 @@ class TestFunding:
             source="External",
             funding_body="EPSRC",
             cost_centre="centre",
-            activity="1234",
+            activity="G12345",
             analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
             budget=budget,
@@ -341,7 +368,7 @@ class TestFunding:
             source="External",
             funding_body="EPSRC",
             cost_centre="centre",
-            activity="1234",
+            activity="G12345",
             analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
             budget=1000.00,
@@ -454,7 +481,7 @@ class TestMonthlyCharge:
         """Test the model validation for the funding fields."""
         from main import models
 
-        funding = models.Funding(cost_centre="centre", activity="1234")
+        funding = models.Funding(cost_centre="centre", activity="G12345")
         monthly_charge = models.MonthlyCharge(
             project=project, funding=funding, amount=10, date=datetime.now().date()
         )

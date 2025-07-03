@@ -379,7 +379,8 @@ class Funding(models.Model):
         "activity",
         blank=True,
         null=True,
-        help_text="The activity code designated to the project.",
+        help_text="The activity code designated to the project, 6  alphanumeric"
+        "characters starting with P, F or G.",
     )
 
     analysis_code = models.ForeignKey(
@@ -444,6 +445,17 @@ class Funding(models.Model):
         ):
             raise ValidationError(
                 "All fields are mandatory except if source is 'Internal'."
+            )
+
+        allowed_characters = ["P", "F", "G"]
+        if (
+            len(self.activity) != 6
+            or not self.activity.isalnum()
+            or self.activity[0] not in allowed_characters
+        ):
+            raise ValidationError(
+                "Activity code must be 6 alphanumeric characters starting with P, F or"
+                " G."
             )
 
     @property
@@ -600,9 +612,8 @@ class MonthlyCharge(models.Model):
                 )
         else:
             self.description = (
-                f"RSE Project {self.project} ({self.funding.cost_centre}_"
-                f"{self.funding.activity}): {self.date.month}/{self.date.year}"
-                " [rcs-manager@imperial.ac.uk]"
+                f"RSE Project {self.project} ({self.funding.project_code}): "
+                f"{self.date.month}/{self.date.year} [rcs-manager@imperial.ac.uk]"
             )
 
 
