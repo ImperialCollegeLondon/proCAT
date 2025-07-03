@@ -78,8 +78,8 @@ def create_monthly_charges(project: Project, start_date: date, end_date: date) -
     if project.charging == "Pro-rata":
         total_days = get_pro_rata_charges(project, start_date, end_date)
         pks = None
-    if total_days and project.total_effort:
-        if total_days > project.total_effort:
+    if total_days and project.days_left:
+        if total_days > project.days_left[0]:
             raise ValidationError(
                 "Total chargeable days exceeds the total effort left "
                 f"for project {project.name}."

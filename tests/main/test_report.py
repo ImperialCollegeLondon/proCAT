@@ -1,22 +1,27 @@
 """Tests for the report module."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from http import HTTPStatus
 from unittest.mock import Mock
 
 import pytest
+from django.core.exceptions import ValidationError
 
 
 def test_get_pro_rata_charges():
     """Test the get_pro_rata_charges function."""
     from main import models, report
 
+    start_date = date(2025, 6, 1)
+    end_date = date(2025, 7, 1)
+
+    project = models.Project(name="ProCAT")
+    assert report.get_pro_rata_charges(project, start_date, end_date) is None
+
     project = models.Project(
         name="ProCAT", start_date=date(2025, 6, 3), end_date=date(2025, 6, 26)
     )
 
-    start_date = date(2025, 6, 1)
-    end_date = date(2025, 7, 1)
     assert report.get_pro_rata_charges(project, start_date, end_date) == 17
 
 
@@ -43,6 +48,54 @@ def test_get_actual_charges(user, project):
     )
     pks = [time_entry_A.pk, time_entry_B.pk]
     assert report.get_actual_charges(project, start_date, end_date) == (1, pks)
+
+
+@pytest.mark.django_db
+def test_create_monthly_charges_validate_effort_left(department, user, analysis_code):
+    """Test the create_monthly_charges function when charge exceeds total effort.
+
+    TODO: Update this to be more sensible when funding.effort_left implemented.
+    """
+    from main import models, report
+
+    start_date = date(2025, 6, 1)
+    end_date = date(2025, 7, 1)
+    project = models.Project.objects.create(
+        name="ProCAT",
+        department=department,
+        lead=user,
+        start_date=start_date,
+        end_date=end_date,
+        status="Active",
+        charging="Actual",
+    )
+    funding = models.Funding.objects.create(  # noqa: F841
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date,
+        budget=1000.00,
+        daily_rate=1000.00,
+    )
+
+    time_entry = models.TimeEntry.objects.create(  # noqa: F841
+        user=user,
+        project=project,
+        start_time=datetime(2025, 6, 1, 1, 0),
+        end_time=datetime(2026, 6, 1, 1, 0),
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match=(
+            "Total chargeable days exceeds the total effort left for project "
+            f"{project.name}."
+        ),
+    ):
+        report.create_monthly_charges(project, start_date, end_date)
 
 
 @pytest.mark.django_db
@@ -97,7 +150,7 @@ def test_create_monthly_charges_actual(department, user, analysis_code):
         status="Active",
         charging="Actual",
     )
-    funding = models.Funding.objects.create(
+    funding_A = models.Funding.objects.create(
         project=project,
         source="External",
         funding_body="Funding body",
@@ -108,6 +161,20 @@ def test_create_monthly_charges_actual(department, user, analysis_code):
         budget=2100.00,
         daily_rate=100.00,
     )
+    funding_B = models.Funding.objects.create(  # noqa: F841
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G56789",
+        analysis_code=analysis_code,
+        expiry_date=end_date + timedelta(30),
+        budget=2100.00,
+        daily_rate=100.00,
+    )
+    report.create_monthly_charges(project, start_date, end_date)
+    assert not models.MonthlyCharge.objects.exists()
+
     time_entry_A = models.TimeEntry.objects.create(
         user=user,
         project=project,
@@ -127,7 +194,7 @@ def test_create_monthly_charges_actual(department, user, analysis_code):
 
     report.create_monthly_charges(project, start_date, end_date)
     charge = models.MonthlyCharge.objects.get(date=start_date)
-    assert charge.amount == funding.daily_rate * days
+    assert charge.amount == funding_A.daily_rate * days
 
 
 @pytest.mark.django_db
