@@ -153,7 +153,6 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
 
     template_name = "main/cost_recovery.html"
     form_class = forms.CostRecoveryForm
-    success_url = "/cost_recovery/"
 
     def form_valid(self, form: Form) -> HttpResponse:
         """Generate csv using the dates provided in the form."""

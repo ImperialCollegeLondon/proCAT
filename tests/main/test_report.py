@@ -2,6 +2,7 @@
 
 from datetime import date, datetime
 from http import HTTPStatus
+from unittest.mock import Mock
 
 import pytest
 
@@ -110,8 +111,8 @@ def test_create_monthly_charges_actual(department, user, analysis_code):
     time_entry_A = models.TimeEntry.objects.create(
         user=user,
         project=project,
-        start_time=datetime(2025, 6, 2, 9, 00),
-        end_time=datetime(2025, 6, 2, 16, 00),
+        start_time=datetime(2025, 6, 2, 9, 0),
+        end_time=datetime(2025, 6, 2, 16, 0),
     )
     time_entry_B = models.TimeEntry.objects.create(
         user=user,
@@ -139,14 +140,14 @@ def test_get_csv_charges_block(project, funding):
         date=start_date,
         project=project,
         funding=funding,
-        amount=10.01,
+        amount=10.00,
     )
     block = [
         [
             charge.funding.cost_centre,
             charge.funding.activity,
             charge.funding.analysis_code.code,
-            str(charge.amount),
+            f"{charge.amount:.2f}",
             charge.description,
         ]
     ]
@@ -193,8 +194,8 @@ def test_get_csv_header_block(project, funding):
     assert block == report.get_csv_header_block(start_date)
 
 
-def test_generate_csv_http_response():
-    """Test the generate_csv_http_response function."""
+def test_write_to_csv():
+    """Test the write_to_csv function."""
     from main import report
 
     header_block = [
@@ -216,8 +217,66 @@ def test_generate_csv_http_response():
             "RSE Project ProCAT (AAA_1234): 7/2025 [rcs-manager@imperial.ac.uk",
         ],
     ]
-    response = report.generate_csv_http_response(
-        header_block, charges_block, "test_output.csv"
+
+    writer = Mock()
+    report.write_to_csv(header_block, charges_block, writer)
+    writer.writerow.assert_any_call(header_block[0])
+    writer.writerow.assert_any_call(charges_block[0])
+    writer.writerow.assert_any_call(charges_block[1])
+
+
+@pytest.mark.django_db
+def test_create_charges_report(department, user, analysis_code):
+    """Test the create_charges_report function."""
+    from main import models, report
+
+    start_date = date(2025, 6, 1)
+    end_date = date(2025, 7, 1)
+
+    project = models.Project.objects.create(
+        name="ProCAT",
+        department=department,
+        lead=user,
+        start_date=start_date,
+        end_date=end_date,
+        status="Active",
+        charging="Actual",
     )
+    funding = models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="1234",
+        analysis_code=analysis_code,
+        expiry_date=end_date,
+        budget=2100.00,
+        daily_rate=100.00,
+    )
+    time_entry = models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=datetime(2025, 6, 2, 9, 0),
+        end_time=datetime(2025, 6, 2, 12, 30),
+    )
+    n_days = (time_entry.end_time - time_entry.start_time).seconds / 3600 / 7
+    response = report.create_charges_report(6, 2025)
+    fname = "cost_report_6-2025.csv"
+
     assert response.status_code == HTTPStatus.OK
     assert response["Content-Type"] == "text/csv"
+    assert fname in response["Content-Disposition"]
+
+    charge_row = ",".join(
+        [
+            funding.cost_centre,
+            funding.activity,
+            funding.analysis_code.code,
+            f"{funding.daily_rate * n_days:.2f}",
+            (
+                f"RSE Project {project.name} ({funding.cost_centre}_"
+                f"{funding.activity}): 6/2025 [rcs-manager@imperial.ac.uk]"
+            ),
+        ]
+    )
+    assert charge_row in response.content.decode("utf-8")
