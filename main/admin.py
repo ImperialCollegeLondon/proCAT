@@ -73,7 +73,6 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "project",
         "start_time",
         "end_time",
-        "monthly_charge",
     )
 
 
