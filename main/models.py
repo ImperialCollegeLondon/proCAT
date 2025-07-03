@@ -380,7 +380,7 @@ class Funding(models.Model):
         blank=True,
         null=True,
         help_text="The activity code designated to the project, 6 alphanumeric"
-        "characters starting with P, F or G.",
+        " characters starting with P, F or G.",
     )
 
     analysis_code = models.ForeignKey(
@@ -427,9 +427,7 @@ class Funding(models.Model):
 
     def __str__(self) -> str:
         """String representation of the Funding object."""
-        return (
-            f"{self.project} - £{self.budget:.2f} - {self.cost_centre}_{self.activity}"
-        )
+        return f"{self.project} - £{self.budget:.2f} - {self.project_code}"
 
     def clean(self) -> None:
         """Ensure that all fields have a value unless the source is 'Internal'."""

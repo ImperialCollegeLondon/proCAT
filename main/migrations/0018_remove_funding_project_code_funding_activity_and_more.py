@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='funding',
             name='activity',
-            field=models.CharField(blank=True, help_text='The activity code designated to the project, 6 alphanumericcharacters starting with P, F or G.', null=True, verbose_name='activity'),
+            field=models.CharField(blank=True, help_text='The activity code designated to the project, 6 alphanumeric characters starting with P, F or G.', null=True, verbose_name='activity'),
         ),
         migrations.AddField(
             model_name='funding',
