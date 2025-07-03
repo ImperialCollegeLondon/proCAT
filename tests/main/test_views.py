@@ -8,6 +8,7 @@ This test module includes tests for main views of the app ensuring that:
 from http import HTTPStatus
 
 import pytest
+from django.test import RequestFactory
 from django.urls import reverse
 
 from .view_utils import LoginRequiredMixin, TemplateOkMixin
@@ -128,3 +129,36 @@ class TestCapacityPlanningView(LoginRequiredMixin, TemplateOkMixin):
         assert "<script" in response.context["script"]
         assert "<div" in response.context["div"]
         assert response.context["bokeh_version"] == bokeh.__version__
+
+
+class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
+    """Test suite for the Cost Recovery view."""
+
+    _template_name = "main/cost_recovery.html"
+
+    def _get_url(self):
+        return reverse("main:cost_recovery")
+
+    def test_get(self, auth_client):
+        """Tests the get method."""
+        endpoint = reverse("main:cost_recovery")
+        response = auth_client.get(endpoint)
+        assert response.status_code == HTTPStatus.OK
+
+    def test_form_valid(self, user):
+        """Tests the form_valid method."""
+        from main import views
+
+        rf = RequestFactory()
+        year, month = 2025, 7
+        request = rf.post(
+            "main:cost_recovery",
+            {
+                "year": year,
+                "month": month,
+            },
+        )
+        request.user = user
+        response = views.CostRecoveryView.as_view()(request)
+        assert response.headers["Content-Type"] == "text/csv"
+        assert f"cost_report_{month}-{year}.csv" in response["Content-Disposition"]
