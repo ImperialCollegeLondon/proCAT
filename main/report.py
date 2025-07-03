@@ -1,0 +1,237 @@
+"""Report for including all the charges to be expensed for the month."""
+
+import csv
+from datetime import date, datetime
+
+import pandas as pd
+from django.core.exceptions import ValidationError
+from django.db.models import Sum
+from django.http import HttpResponse
+
+from . import models, utils
+from .models import Project
+
+
+def get_pro_rata_charges(
+    project: Project, start_date: date, end_date: date
+) -> int | None:
+    """Get the number of chargeable days for projects with Pro-rata charging.
+
+    Args:
+        project: the Project for charging
+        start_date: the start date for the charging period
+        end_date: the end date for the charging period
+
+    Returns:
+        The number of chargeable days for the month or None.
+    """
+    if project.start_date and project.end_date:
+        start = max(start_date, project.start_date)
+        end = min(end_date, project.end_date)
+        return len(pd.bdate_range(start, end, inclusive="left"))
+    return None
+
+
+def get_actual_charges(
+    project: Project, start_date: date, end_date: date
+) -> tuple[float, list[int]] | tuple[None, None]:
+    """Get the number of chargeable days for projects with Actual charging.
+
+    Args:
+        project: the Project for charging
+        start_date: the start date for the charging period
+        end_date: the end date for the charging period
+
+    Returns:
+        A tuple of the number of chargeable days and list of pks of relevant time
+            entries.
+    """
+    start_time = datetime.combine(start_date, datetime.min.time())
+    end_time = datetime.combine(end_date, datetime.min.time())
+
+    time_entries = models.TimeEntry.objects.filter(
+        project=project,
+        start_time__gte=start_time,
+        start_time__lt=end_time,
+    )
+    pks = list(time_entries.values_list("pk", flat=True))
+
+    if len(time_entries) == 0:
+        return None, None
+
+    hours, _ = utils.get_logged_hours(time_entries)
+    total_days = round(hours / 7, 3)
+    return total_days, pks
+
+
+def create_monthly_charges(project: Project, start_date: date, end_date: date) -> None:
+    """Create monthly charges for projects with Actual and Pro-rata charging.
+
+    Args:
+        project: the Project for charging
+        start_date: the start date for the charging period
+        end_date: the end date for the charging period
+    """
+    if project.charging == "Actual":
+        total_days, pks = get_actual_charges(project, start_date, end_date)
+    if project.charging == "Pro-rata":
+        total_days = get_pro_rata_charges(project, start_date, end_date)
+        pks = None
+    if total_days and project.total_effort:
+        if total_days > project.total_effort:
+            raise ValidationError(
+                "Total chargeable days exceeds the total effort left "
+                f"for project {project.name}."
+            )
+
+        # get non-expired funding with funding left
+        funding_sources = list(
+            project.funding_source.all()
+            .filter(
+                expiry_date__gte=end_date,
+            )
+            .order_by("expiry_date")
+        )
+        funding_sources = [
+            funding for funding in funding_sources if funding.funding_left > 0
+        ]
+
+        # create monthly charge for each funding source
+        for funding in funding_sources:
+            if total_days > 0:  # if days left to charge
+                days_deduce = min(total_days, funding.effort_left)
+                amount = days_deduce * float(funding.daily_rate)
+                charge = models.MonthlyCharge.objects.create(
+                    project=project, funding=funding, amount=amount, date=start_date
+                )
+                total_days -= days_deduce
+
+                # update time entries with monthly charge
+                if pks:
+                    for time_entry in models.TimeEntry.objects.filter(pk__in=pks):
+                        time_entry.monthly_charge.add(charge)
+
+
+def get_csv_charges_block(start_date: date) -> list[list[str]]:
+    """Get the data from the monthly charges for the csv report.
+
+    Args:
+        start_date: relevant date (1st of the  month) for the report period
+
+    Returns:
+        A list of lists representing rows in the csv for each charge.
+    """
+    fields = [
+        "funding__cost_centre",
+        "funding__activity",
+        "funding__analysis_code__code",
+        "amount",
+        "description",
+    ]
+    queryset = models.MonthlyCharge.objects.filter(date=start_date).values(*fields)
+    charges_block = []
+    for record in queryset:
+        charges_block.append([str(record[field]) for field in fields])
+    return charges_block
+
+
+def get_csv_header_block(start_date: date) -> list[list[str]]:
+    """Get the header blocks for the CSV report.
+
+    Args:
+        start_date: relevant date (1st of the  month) for the report period
+
+    Returns:
+        csv_block with the relevant month and total amount for charging added
+    """
+    amount = models.MonthlyCharge.objects.filter(date=start_date).aggregate(
+        Sum("amount")
+    )["amount__sum"]
+
+    header_block = [
+        ["Journal Name", f"RCS_MANAGER RSE {start_date.strftime('%Y-%m')}", "", "", ""],
+        [
+            "Journal Description",
+            f"RCS RSE Recharge for {start_date.strftime('%Y-%m')}",
+            "",
+            "",
+            "",
+        ],
+        ["Journal Amount", str(amount), "", "", ""],
+        ["", "", "", "", ""],
+        ["Cost Centre", "Activity", "Analysis", "Credit", "Line Description"],
+        [
+            "ITPP",
+            "G80410",
+            "162104",
+            f"{amount},RSE Projects: {start_date.strftime('%B %Y')}",
+        ],
+        ["", "", "", "", ""],
+        ["Cost Centre", "Activity", "Analysis", "Debit", "Line Description"],
+    ]
+    return header_block
+
+
+def generate_csv_http_response(
+    header_block: list[list[str]],
+    charges_block: list[list[str]],
+    csv_fname: str,
+) -> HttpResponse:
+    """Create HTTP response for the CSV from the CSV blocks.
+
+    Args:
+        header_block: list of lists representing rows in the CSV report for the header
+            blocks
+        charges_block: list of lists representing rows in the CSV report for the charges
+            block
+        csv_fname: name of the CSV file to download
+
+    Returns:
+        HttpResponse to download the CSV.
+    """
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={csv_fname}"},
+    )
+    writer = csv.writer(response)
+    for block in [header_block, charges_block]:
+        for row in block:
+            writer.writerow(row)
+    return response
+
+
+def create_charges_report(month: int, year: int) -> HttpResponse:
+    """Generate the CSV report by creating Monthly Charge objects.
+
+    Args:
+        month: month for the report date
+        year: year for the report date
+
+    Returns:
+        HttpResponse to download the CSV.
+    """
+    start_date = date(year, month, 1)
+    end_date = date(year, month + 1, 1)
+
+    # delete Pro-rata and Actual charges so they can be re-created
+    models.MonthlyCharge.objects.filter(date=start_date).exclude(
+        project__charging="Manual"
+    ).delete()
+
+    # get all projects that overlap with this time period
+    projects = models.Project.objects.filter(
+        start_date__lt=end_date,
+        end_date__gte=start_date,
+        start_date__isnull=False,
+        end_date__isnull=False,
+    ).exclude(charging="Manual")
+
+    for project in projects:
+        create_monthly_charges(project, start_date, end_date)
+
+    header_block = get_csv_header_block(start_date)
+    charges_block = get_csv_charges_block(start_date)
+    csv_fname = f"cost_report_{month}-{year}.csv"
+
+    response = generate_csv_http_response(header_block, charges_block, csv_fname)
+    return response
