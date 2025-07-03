@@ -1,6 +1,7 @@
 """Report for including all the charges to be expensed for the month."""
 
 import csv
+from _csv import Writer
 from datetime import date, datetime
 
 import pandas as pd
@@ -172,32 +173,23 @@ def get_csv_header_block(start_date: date) -> list[list[str]]:
     return header_block
 
 
-def generate_csv_http_response(
+def write_to_csv(
     header_block: list[list[str]],
     charges_block: list[list[str]],
-    csv_fname: str,
-) -> HttpResponse:
-    """Create HTTP response for the CSV from the CSV blocks.
+    writer: Writer,
+) -> None:
+    """Write CSV rows using CSV writer object.
 
     Args:
         header_block: list of lists representing rows in the CSV report for the header
             blocks
         charges_block: list of lists representing rows in the CSV report for the charges
             block
-        csv_fname: name of the CSV file to download
-
-    Returns:
-        HttpResponse to download the CSV.
+        writer: csv writer object
     """
-    response = HttpResponse(
-        content_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={csv_fname}"},
-    )
-    writer = csv.writer(response)
     for block in [header_block, charges_block]:
         for row in block:
             writer.writerow(row)
-    return response
 
 
 def create_charges_report(month: int, year: int) -> HttpResponse:
@@ -233,5 +225,10 @@ def create_charges_report(month: int, year: int) -> HttpResponse:
     charges_block = get_csv_charges_block(start_date)
     csv_fname = f"cost_report_{month}-{year}.csv"
 
-    response = generate_csv_http_response(header_block, charges_block, csv_fname)
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={csv_fname}"},
+    )
+    writer = csv.writer(response)
+    write_to_csv(header_block, charges_block, writer)
     return response
