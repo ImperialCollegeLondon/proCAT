@@ -8,46 +8,47 @@ import pytest
 from django.core.exceptions import ValidationError
 
 
-def test_get_pro_rata_charges():
-    """Test the get_pro_rata_charges function."""
+def test_get_pro_rata_chargeable_days():
+    """Test the get_pro_rata_chargeable_days function."""
     from main import models, report
 
     start_date = date(2025, 6, 1)
     end_date = date(2025, 7, 1)
-
     project = models.Project(name="ProCAT")
-    assert report.get_pro_rata_charges(project, start_date, end_date) is None
+    assert report.get_pro_rata_chargeable_days(project, start_date, end_date) is None
 
     project = models.Project(
         name="ProCAT", start_date=date(2025, 6, 3), end_date=date(2025, 6, 26)
     )
-
-    assert report.get_pro_rata_charges(project, start_date, end_date) == 17
+    assert report.get_pro_rata_chargeable_days(project, start_date, end_date) == 17
 
 
 @pytest.mark.django_db
-def test_get_actual_charges(user, project):
-    """Test the get_actual_charges function."""
+def test_get_actual_chargeable_days(user, project):
+    """Test the get_actual_chargeable_days function."""
     from main import models, report
 
     start_date = date(2025, 6, 1)
     end_date = date(2025, 7, 1)
-    assert report.get_actual_charges(project, start_date, end_date) == (None, None)
+    assert report.get_actual_chargeable_days(project, start_date, end_date) == (
+        None,
+        None,
+    )
 
     time_entry_A = models.TimeEntry.objects.create(
         user=user,
         project=project,
         start_time=datetime(2025, 6, 2, 9, 30),
-        end_time=datetime(2025, 6, 2, 12, 30),
+        end_time=datetime(2025, 6, 2, 12, 30),  # 3 hours total
     )
     time_entry_B = models.TimeEntry.objects.create(
         user=user,
         project=project,
-        start_time=datetime(2025, 6, 4, 10, 0),
+        start_time=datetime(2025, 6, 4, 10, 0),  # 4 hours total
         end_time=datetime(2025, 6, 4, 14, 0),
     )
     pks = [time_entry_A.pk, time_entry_B.pk]
-    assert report.get_actual_charges(project, start_date, end_date) == (1, pks)
+    assert report.get_actual_chargeable_days(project, start_date, end_date) == (1, pks)
 
 
 @pytest.mark.django_db
@@ -80,7 +81,6 @@ def test_create_monthly_charges_validate_effort_left(department, user, analysis_
         budget=1000.00,
         daily_rate=1000.00,
     )
-
     time_entry = models.TimeEntry.objects.create(  # noqa: F841
         user=user,
         project=project,
@@ -105,7 +105,6 @@ def test_create_monthly_charges_pro_rata(department, user, analysis_code):
 
     start_date = date(2025, 6, 1)
     end_date = date(2025, 7, 1)
-    num_working_days = 21
 
     project = models.Project.objects.create(
         name="ProCAT",
@@ -124,18 +123,22 @@ def test_create_monthly_charges_pro_rata(department, user, analysis_code):
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=end_date,
-        budget=2100.00,
+        budget=10000.00,
         daily_rate=100.00,
     )
 
     report.create_monthly_charges(project, start_date, end_date)
     charge = models.MonthlyCharge.objects.get(date=start_date)
-    assert charge.amount == funding.daily_rate * num_working_days
+    assert charge.amount == funding.daily_rate * 21
 
 
 @pytest.mark.django_db
 def test_create_monthly_charges_actual(department, user, analysis_code):
-    """Test the create_monthly_charges function with actual charging."""
+    """Test the create_monthly_charges function with actual charging.
+
+    TODO: Update when funding.effort_left implemented to test charges are created for
+    multiple funding sources.
+    """
     from main import models, report
 
     start_date = date(2025, 6, 1)
@@ -157,8 +160,8 @@ def test_create_monthly_charges_actual(department, user, analysis_code):
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
-        expiry_date=end_date,
-        budget=2100.00,
+        expiry_date=end_date,  # expires first
+        budget=1000.00,
         daily_rate=100.00,
     )
     funding_B = models.Funding.objects.create(  # noqa: F841
@@ -169,47 +172,53 @@ def test_create_monthly_charges_actual(department, user, analysis_code):
         activity="G56789",
         analysis_code=analysis_code,
         expiry_date=end_date + timedelta(30),
-        budget=2100.00,
-        daily_rate=100.00,
+        budget=5000.00,
+        daily_rate=500.00,
     )
+
+    # check no Monthly Charge is created if there are no time entries
     report.create_monthly_charges(project, start_date, end_date)
     assert not models.MonthlyCharge.objects.exists()
 
+    # TODO: check Monthly Charges are created for each funding source (when limited)
+    # amount available in funding_A
     time_entry_A = models.TimeEntry.objects.create(
         user=user,
         project=project,
         start_time=datetime(2025, 6, 2, 9, 0),
-        end_time=datetime(2025, 6, 2, 16, 0),
+        end_time=datetime(2025, 6, 2, 16, 0),  # 7 hours total
     )
     time_entry_B = models.TimeEntry.objects.create(
         user=user,
         project=project,
         start_time=datetime(2025, 6, 4, 10, 0),
-        end_time=datetime(2025, 6, 4, 13, 30),
+        end_time=datetime(2025, 6, 4, 13, 30),  # 3.5 hours total
     )
-    hours = 0
+    chargeable_hours = 0
     for time_entry in [time_entry_A, time_entry_B]:
-        hours += (time_entry.end_time - time_entry.start_time).total_seconds() / 3600
-    days = hours / 7
+        chargeable_hours += (
+            time_entry.end_time - time_entry.start_time
+        ).total_seconds() / 3600
+    chargeable_days = chargeable_hours / 7
 
     report.create_monthly_charges(project, start_date, end_date)
     charge = models.MonthlyCharge.objects.get(date=start_date)
-    assert charge.amount == funding_A.daily_rate * days
+    assert charge.amount == funding_A.daily_rate * chargeable_days
 
 
 @pytest.mark.django_db
 def test_get_csv_charges_block(project, funding):
-    """Test the get_csv_charges_block."""
+    """Test the get_csv_charges_block function."""
     from main import models, report
 
-    start_date = datetime.now().date()
+    start_date = date(2025, 6, 1)
     charge = models.MonthlyCharge.objects.create(
         date=start_date,
         project=project,
         funding=funding,
         amount=10.00,
     )
-    block = [
+    expected_block = [
         [
             charge.funding.cost_centre,
             charge.funding.activity,
@@ -218,7 +227,7 @@ def test_get_csv_charges_block(project, funding):
             charge.description,
         ]
     ]
-    assert block == report.get_csv_charges_block(start_date)
+    assert expected_block == report.get_csv_charges_block(start_date)
 
 
 def test_get_csv_header_block(project, funding):
@@ -230,7 +239,7 @@ def test_get_csv_header_block(project, funding):
         date=start_date, project=project, funding=funding, amount=10
     )
 
-    block = [
+    expected_block = [
         [
             "Journal Name",
             f"RCS_MANAGER RSE {charge.date.strftime('%Y-%m')}",
@@ -258,7 +267,7 @@ def test_get_csv_header_block(project, funding):
         ["", "", "", "", ""],
         ["Cost Centre", "Activity", "Analysis", "Debit", "Line Description"],
     ]
-    assert block == report.get_csv_header_block(start_date)
+    assert expected_block == report.get_csv_header_block(start_date)
 
 
 def test_write_to_csv():
@@ -294,7 +303,7 @@ def test_write_to_csv():
 
 @pytest.mark.django_db
 def test_create_charges_report_for_download(department, user, analysis_code):
-    """Test the create_charges_report function."""
+    """Test the create_charges_report_for_download function."""
     from main import models, report
 
     start_date = date(2025, 6, 1)
@@ -317,25 +326,25 @@ def test_create_charges_report_for_download(department, user, analysis_code):
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=end_date,
-        budget=2100.00,
+        budget=10000.00,
         daily_rate=100.00,
     )
     time_entry = models.TimeEntry.objects.create(
         user=user,
         project=project,
         start_time=datetime(2025, 6, 2, 9, 0),
-        end_time=datetime(2025, 6, 2, 12, 30),
+        end_time=datetime(2025, 6, 2, 12, 30),  # 3.5 hours total
     )
-    n_days = (time_entry.end_time - time_entry.start_time).seconds / 3600 / 7
 
     response = report.create_charges_report_for_download(6, 2025)
-    fname = "charges_report_6-2025.csv"
+    expected_fname = "charges_report_6-2025.csv"
 
     assert response.status_code == HTTPStatus.OK
     assert response["Content-Type"] == "text/csv"
-    assert fname in response["Content-Disposition"]
+    assert expected_fname in response["Content-Disposition"]
 
-    charge_row = ",".join(
+    n_days = (time_entry.end_time - time_entry.start_time).seconds / 3600 / 7
+    expected_charge_row = ",".join(
         [
             funding.cost_centre,
             funding.activity,
@@ -347,7 +356,7 @@ def test_create_charges_report_for_download(department, user, analysis_code):
             ),
         ]
     )
-    assert charge_row in response.content.decode("utf-8")
+    assert expected_charge_row in response.content.decode("utf-8")
 
 
 @pytest.mark.django_db
@@ -375,23 +384,23 @@ def test_create_charges_report_for_attachment(department, user, analysis_code):
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=end_date,
-        budget=2100.00,
+        budget=10000.00,
         daily_rate=100.00,
     )
     time_entry = models.TimeEntry.objects.create(
         user=user,
         project=project,
         start_time=datetime(2025, 6, 2, 9, 0),
-        end_time=datetime(2025, 6, 2, 12, 30),
+        end_time=datetime(2025, 6, 2, 12, 30),  # 3.5 hours total
     )
     n_days = (time_entry.end_time - time_entry.start_time).seconds / 3600 / 7
 
     csv_string = report.create_charges_report_for_attachment(6, 2025)
-    charge_row = (
+    expected_charge_row = (
         f"{funding.cost_centre},{funding.activity},{funding.analysis_code.code},"
         f"{funding.daily_rate * n_days:.2f},"
         f"RSE Project {project.name} ({funding.cost_centre}_"
         f"{funding.activity}): 6/2025 [rcs-manager@imperial.ac.uk]\r\n"
     )
 
-    assert charge_row in csv_string
+    assert expected_charge_row in csv_string

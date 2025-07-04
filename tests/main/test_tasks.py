@@ -198,7 +198,6 @@ def test_email_monthly_charges_report(user, department, analysis_code):
         username="admin_user",
         is_superuser=True,
     )
-
     project = models.Project.objects.create(
         name="ProCAT",
         department=department,
@@ -216,22 +215,24 @@ def test_email_monthly_charges_report(user, department, analysis_code):
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=end_date,
-        budget=2100.00,
+        budget=10000.00,
         daily_rate=100.00,
     )
     time_entry = models.TimeEntry.objects.create(  # noqa: F841
         user=user,
         project=project,
         start_time=datetime(2025, 6, 2, 9, 0),
-        end_time=datetime(2025, 6, 2, 12, 30),
+        end_time=datetime(2025, 6, 2, 14, 0),  # 5 hours total
     )
-    attachment = report.create_charges_report_for_attachment(6, 2025)
-    fname = "charges_report_6-2025.csv"
+
+    expected_attachment = report.create_charges_report_for_attachment(6, 2025)
+    expected_fname = "charges_report_6-2025.csv"
     expected_message = (
         f"\nDear {admin_user.get_full_name()},\n\n"
         "Please find attached the charges report for the last month: June.\n\n"
         "Best regards,\nProCAT\n"
     )
+
     with patch("main.tasks.email_attachment") as mock_email_attachment:
         email_monthly_charges_report_logic(6, 2025, "June")
         expected_subject = "Charges report for June"
@@ -239,7 +240,7 @@ def test_email_monthly_charges_report(user, department, analysis_code):
             expected_subject,
             admin_user.email,
             expected_message,
-            fname,
-            attachment,
+            expected_fname,
+            expected_attachment,
             "text/csv",
         )
