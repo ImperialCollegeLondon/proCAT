@@ -368,11 +368,19 @@ class Funding(models.Model):
         help_text="The organisation or department providing the funding.",
     )
 
-    project_code = models.CharField(
-        "Project code",
+    cost_centre = models.CharField(
+        "Cost centre",
         blank=True,
         null=True,
-        help_text="The funding code designated to the project.",
+        help_text="The cost centre for the project.",
+    )
+
+    activity = models.CharField(
+        "activity",
+        blank=True,
+        null=True,
+        help_text="The activity code designated to the project, 6 alphanumeric"
+        " characters starting with P, F or G.",
     )
 
     analysis_code = models.ForeignKey(
@@ -428,13 +436,37 @@ class Funding(models.Model):
 
         if (
             not self.funding_body
-            or not self.project_code
+            or not self.cost_centre
+            or not self.activity
             or not self.analysis_code
             or not self.expiry_date
         ):
             raise ValidationError(
                 "All fields are mandatory except if source is 'Internal'."
             )
+
+        allowed_characters = ["P", "F", "G"]
+        if (
+            len(self.activity) != 6
+            or not self.activity.isalnum()
+            or self.activity[0] not in allowed_characters
+        ):
+            raise ValidationError(
+                "Activity code must be 6 alphanumeric characters starting with P, F or"
+                " G."
+            )
+
+    @property
+    def project_code(self) -> str | None:
+        """Provide the project code, containing the cost centre and activity code.
+
+        Returns:
+            The designated project code.
+        """
+        if self.cost_centre and self.activity:
+            return f"{self.cost_centre}_{self.activity}"
+
+        return None
 
     @property
     def effort(self) -> int:
