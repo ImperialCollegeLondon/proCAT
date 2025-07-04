@@ -161,4 +161,4 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         request.user = user
         response = views.CostRecoveryView.as_view()(request)
         assert response.headers["Content-Type"] == "text/csv"
-        assert f"cost_report_{month}-{year}.csv" in response["Content-Disposition"]
+        assert f"charges_report_{month}-{year}.csv" in response["Content-Disposition"]
