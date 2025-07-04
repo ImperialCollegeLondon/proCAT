@@ -159,26 +159,22 @@ ProCAT
 """
 
 
-def email_monthly_charges_report_logic(
-    last_month_start: datetime, last_month_name: str
-) -> None:
+def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -> None:
     """Logic to email the HoRSE the charges report for the last month."""
     from .models import User
 
-    year = last_month_start.year
-    message = _template_charges_report.format(
-        HoRSE="", month=last_month_name, year=year
-    )
-    csv_attachment = create_charges_report_for_attachment(
-        last_month_start.month, last_month_start.year
-    )
-    subject = f"Charges report for {last_month_name}"
     HoRSE = User.objects.filter(is_superuser=True)[0]  # Assuming there is 1 superuser
+    message = _template_charges_report.format(
+        HoRSE=HoRSE.get_full_name(), month=month_name, year=year
+    )
+    csv_attachment = create_charges_report_for_attachment(month, year)
+    subject = f"Charges report for {month_name}"
+
     email_attachment(
         subject,
         HoRSE.email,
         message,
-        f"cost_report_{last_month_name}-{year}.csv",
+        f"charges_report_{month}-{year}.csv",
         csv_attachment,
         "text/csv",
     )
@@ -189,4 +185,6 @@ def email_monthly_charges_report_logic(
 def email_monthly_charges_report() -> None:
     """Email the HoRSE the charges report for the last month."""
     last_month_start, last_month_name, _, _ = get_current_and_last_month()
-    email_monthly_charges_report_logic(last_month_start, last_month_name)
+    email_monthly_charges_report_logic(
+        last_month_start.month, last_month_start.year, last_month_name
+    )
