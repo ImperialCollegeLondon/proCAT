@@ -14,7 +14,7 @@ from . import models, utils
 from .models import Project
 
 
-def get_pro_rata_charges(
+def get_pro_rata_chargeable_days(
     project: Project, start_date: date, end_date: date
 ) -> int | None:
     """Get the number of chargeable days for projects with Pro-rata charging.
@@ -34,7 +34,7 @@ def get_pro_rata_charges(
     return None
 
 
-def get_actual_charges(
+def get_actual_chargeable_days(
     project: Project, start_date: date, end_date: date
 ) -> tuple[float, list[int]] | tuple[None, None]:
     """Get the number of chargeable days for projects with Actual charging.
@@ -46,7 +46,7 @@ def get_actual_charges(
 
     Returns:
         A tuple of the number of chargeable days and list of pks of relevant time
-            entries.
+            entries, or a tuple of None values if there are no time entries.
     """
     start_time = datetime.combine(start_date, datetime.min.time())
     end_time = datetime.combine(end_date, datetime.min.time())
@@ -74,11 +74,13 @@ def create_monthly_charges(project: Project, start_date: date, end_date: date) -
         start_date: the start date for the charging period
         end_date: the end date for the charging period
     """
-    if project.charging == "Actual":
-        total_days, pks = get_actual_charges(project, start_date, end_date)
+    # get the amount of chargeable days for Actual or Pro-rata projects
+    if project.charging == "Actual":  # get pk values for the relevant time entries
+        total_days, pks = get_actual_chargeable_days(project, start_date, end_date)
     if project.charging == "Pro-rata":
-        total_days = get_pro_rata_charges(project, start_date, end_date)
+        total_days = get_pro_rata_chargeable_days(project, start_date, end_date)
         pks = None
+
     if total_days and project.days_left:
         if total_days > project.days_left[0]:
             raise ValidationError(
@@ -98,9 +100,9 @@ def create_monthly_charges(project: Project, start_date: date, end_date: date) -
             funding for funding in funding_sources if funding.funding_left > 0
         ]
 
-        # create monthly charge for each funding source
+        # create a monthly charge for each funding source
         for funding in funding_sources:
-            if total_days > 0:  # if days left to charge
+            if total_days > 0:  # if there are days left to charge
                 days_deduce = min(total_days, funding.effort_left)
                 amount = days_deduce * float(funding.daily_rate)
                 charge = models.MonthlyCharge.objects.create(
@@ -115,10 +117,13 @@ def create_monthly_charges(project: Project, start_date: date, end_date: date) -
 
 
 def get_csv_charges_block(start_date: date) -> list[list[str]]:
-    """Get the data from the monthly charges for the csv report.
+    """Get the charges block for the CSV report.
+
+       Contains the data for each row in the charges block, representing individual
+       monthly charges for the month.
 
     Args:
-        start_date: relevant date (1st of the  month) for the report period
+        start_date: starting date (1st of the  month) for the report period
 
     Returns:
         A list of lists representing rows in the csv for each charge.
@@ -140,11 +145,14 @@ def get_csv_charges_block(start_date: date) -> list[list[str]]:
 def get_csv_header_block(start_date: date) -> list[list[str]]:
     """Get the header blocks for the CSV report.
 
+    Aggregates the total charge for the month across all monthly charges.
+
     Args:
-        start_date: relevant date (1st of the  month) for the report period
+        start_date: starting date (1st of the  month) for the report period
 
     Returns:
-        csv_block with the relevant month and total amount for charging added
+        A list of lists representing the 'header' rows in the CSV, excluding the rows
+            that include information on individual monthly charges
     """
     amount = models.MonthlyCharge.objects.filter(date=start_date).aggregate(
         Sum("amount")
@@ -195,22 +203,25 @@ def write_to_csv(
 
 
 def create_charges_report(month: int, year: int, writer: Writer) -> None:
-    """Generate the CSV report by creating Monthly Charge objects and writing to CSV.
+    """Generate the CSV report by creating Monthly Charge objects and writing to a CSV.
 
     Args:
         month: month for the report date
         year: year for the report date
-        writer: csv.writer to create the CSV report as HTTPResponse or StringIO
+        writer: csv.writer to create the CSV report as HttpResponse or StringIO
     """
+    # get the start_date and end dates (as the 1st of the month)
     start_date = date(year, month, 1)
-    end_date = date(year, month + 1, 1)
+    end_date_year = start_date.year + (start_date.month // 12)
+    end_date_month = (start_date.month % 12) + 1
+    end_date = date(end_date_year, end_date_month, 1)
 
-    # delete Pro-rata and Actual charges so they can be re-created
+    # delete existing Pro-rata and Actual charges so they can be re-created
     models.MonthlyCharge.objects.filter(date=start_date).exclude(
         project__charging="Manual"
     ).delete()
 
-    # get all projects that overlap with this time period
+    # get all Pro-rata and Actual projects that overlap with this time period
     projects = models.Project.objects.filter(
         start_date__lt=end_date,
         end_date__gte=start_date,
@@ -223,19 +234,18 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
 
     header_block = get_csv_header_block(start_date)
     charges_block = get_csv_charges_block(start_date)
-
     write_to_csv(header_block, charges_block, writer)
 
 
 def create_charges_report_for_download(month: int, year: int) -> HttpResponse:
-    """Create the charges report as a HTTPResponse.
+    """Create the charges report as a HTTPResponse for download from the web app.
 
     Args:
         month: month for the report date
         year: year for the report date
 
     Returns:
-        HttpResponse for the CSV report to download
+        HttpResponse for the CSV report to download.
     """
     response = HttpResponse(
         content_type="text/csv",
@@ -246,7 +256,6 @@ def create_charges_report_for_download(month: int, year: int) -> HttpResponse:
     )
     writer = csv.writer(response)
     create_charges_report(month, year, writer)
-
     return response
 
 
@@ -258,11 +267,9 @@ def create_charges_report_for_attachment(month: int, year: int) -> str:
         year: year for the report date
 
     Returns:
-        String representing the charges report
+        String representing the charges report.
     """
     csv_file = io.StringIO()
-
     writer = csv.writer(csv_file)
     create_charges_report(month, year, writer)
-
     return csv_file.getvalue()

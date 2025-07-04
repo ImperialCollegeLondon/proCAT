@@ -146,7 +146,10 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         assert response.status_code == HTTPStatus.OK
 
     def test_form_valid(self, user):
-        """Tests the form_valid method."""
+        """Tests the form_valid method.
+
+        Tests that when the form is submitted, a CSV file is generated for download.
+        """
         from main import views
 
         rf = RequestFactory()
