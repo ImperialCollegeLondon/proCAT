@@ -252,12 +252,12 @@ def test_get_csv_header_block(project, funding):
             "ITPP",
             "G80410",
             "162104",
-            f"{charge.amount},RSE Projects: {charge.date.strftime('%B %Y')}",
+            f"{charge.amount}",
+            f"RSE Projects: {charge.date.strftime('%B %Y')}",
         ],
         ["", "", "", "", ""],
         ["Cost Centre", "Activity", "Analysis", "Debit", "Line Description"],
     ]
-
     assert block == report.get_csv_header_block(start_date)
 
 
@@ -293,7 +293,7 @@ def test_write_to_csv():
 
 
 @pytest.mark.django_db
-def test_create_charges_report(department, user, analysis_code):
+def test_create_charges_report_for_download(department, user, analysis_code):
     """Test the create_charges_report function."""
     from main import models, report
 
@@ -327,8 +327,9 @@ def test_create_charges_report(department, user, analysis_code):
         end_time=datetime(2025, 6, 2, 12, 30),
     )
     n_days = (time_entry.end_time - time_entry.start_time).seconds / 3600 / 7
-    response = report.create_charges_report(6, 2025)
-    fname = "cost_report_6-2025.csv"
+
+    response = report.create_charges_report_for_download(6, 2025)
+    fname = "charges_report_6-2025.csv"
 
     assert response.status_code == HTTPStatus.OK
     assert response["Content-Type"] == "text/csv"
@@ -347,3 +348,50 @@ def test_create_charges_report(department, user, analysis_code):
         ]
     )
     assert charge_row in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_create_charges_report_for_attachment(department, user, analysis_code):
+    """Test the create_charges_report_for_attachment function."""
+    from main import models, report
+
+    start_date = date(2025, 6, 1)
+    end_date = date(2025, 7, 1)
+
+    project = models.Project.objects.create(
+        name="ProCAT",
+        department=department,
+        lead=user,
+        start_date=start_date,
+        end_date=end_date,
+        status="Active",
+        charging="Actual",
+    )
+    funding = models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date,
+        budget=2100.00,
+        daily_rate=100.00,
+    )
+    time_entry = models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=datetime(2025, 6, 2, 9, 0),
+        end_time=datetime(2025, 6, 2, 12, 30),
+    )
+    n_days = (time_entry.end_time - time_entry.start_time).seconds / 3600 / 7
+
+    csv_string = report.create_charges_report_for_attachment(6, 2025)
+    charge_row = (
+        f"{funding.cost_centre},{funding.activity},{funding.analysis_code.code},"
+        f"{funding.daily_rate * n_days:.2f},"
+        f"RSE Project {project.name} ({funding.cost_centre}_"
+        f"{funding.activity}): 6/2025 [rcs-manager@imperial.ac.uk]\r\n"
+    )
+
+    assert charge_row in csv_string
