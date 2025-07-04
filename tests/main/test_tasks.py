@@ -1,11 +1,15 @@
 """Tests for the tasks module."""
 
-from datetime import datetime
+from datetime import date, datetime
 from unittest.mock import patch
 
 import pytest
 
-from main.tasks import notify_left_threshold_logic, notify_monthly_time_logged_logic
+from main.tasks import (
+    email_monthly_charges_report_logic,
+    notify_left_threshold_logic,
+    notify_monthly_time_logged_logic,
+)
 
 
 @pytest.mark.parametrize(
@@ -175,4 +179,67 @@ def test_process_time_logged_summary_multiple_projects(user, department):
             subject=expected_subject,
             message=expected_message,
             email=user.email,
+        )
+
+
+@pytest.mark.django_db
+def test_email_monthly_charges_report(user, department, analysis_code):
+    """Tests that the monthly charges report is generated and emailed."""
+    from main import models, report
+
+    start_date = date(2025, 6, 1)
+    end_date = date(2025, 7, 1)
+
+    admin_user = models.User.objects.create(
+        first_name="admin",
+        last_name="user",
+        email="admin.user@mail.com",
+        password="1234",
+        username="admin_user",
+        is_superuser=True,
+    )
+
+    project = models.Project.objects.create(
+        name="ProCAT",
+        department=department,
+        lead=admin_user,
+        start_date=start_date,
+        end_date=end_date,
+        status="Active",
+        charging="Actual",
+    )
+    funding = models.Funding.objects.create(  # noqa: F841
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date,
+        budget=2100.00,
+        daily_rate=100.00,
+    )
+    time_entry = models.TimeEntry.objects.create(  # noqa: F841
+        user=user,
+        project=project,
+        start_time=datetime(2025, 6, 2, 9, 0),
+        end_time=datetime(2025, 6, 2, 12, 30),
+    )
+    attachment = report.create_charges_report_for_attachment(6, 2025)
+    fname = "charges_report_6-2025.csv"
+    expected_message = (
+        f"\nDear {admin_user.get_full_name()},\n\n"
+        "Please find attached the charges report for the last month: June.\n\n"
+        "Best regards,\nProCAT\n"
+    )
+    with patch("main.tasks.email_attachment") as mock_email_attachment:
+        email_monthly_charges_report_logic(6, 2025, "June")
+        expected_subject = "Charges report for June"
+        mock_email_attachment.assert_called_with(
+            expected_subject,
+            admin_user.email,
+            expected_message,
+            fname,
+            attachment,
+            "text/csv",
         )
