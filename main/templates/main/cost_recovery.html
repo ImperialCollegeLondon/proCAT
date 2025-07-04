@@ -1,0 +1,13 @@
+{% extends "main/base.html" %}
+{% load django_bootstrap5 %}
+{% block content %}
+  <h2>Cost recovery</h2>
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form layout="horizontal" %}
+    {% if user.is_superuser %}
+      {% bootstrap_button button_type="submit" content="Download CSV" %}
+    {% endif %}
+  </form>
+
+{% endblock content %}

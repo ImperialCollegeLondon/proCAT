@@ -5,7 +5,8 @@ from datetime import datetime
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
-from .notify import email_user
+from .notify import email_attachment, email_user
+from .report import create_charges_report_for_attachment
 from .utils import get_current_and_last_month, get_logged_hours
 
 _template = """
@@ -145,4 +146,45 @@ def notify_monthly_time_logged_summary() -> None:
         last_month_name,
         current_month_start,
         current_month_name,
+    )
+
+
+_template_charges_report = """
+Dear {HoRSE},
+
+Please find attached the charges report for the last month: {month}.
+
+Best regards,
+ProCAT
+"""
+
+
+def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -> None:
+    """Logic to email the HoRSE the charges report for the last month."""
+    from .models import User
+
+    HoRSE = User.objects.filter(is_superuser=True)[0]  # Assuming there is 1 superuser
+    message = _template_charges_report.format(
+        HoRSE=HoRSE.get_full_name(), month=month_name, year=year
+    )
+    csv_attachment = create_charges_report_for_attachment(month, year)
+    subject = f"Charges report for {month_name}"
+
+    email_attachment(
+        subject,
+        HoRSE.email,
+        message,
+        f"charges_report_{month}-{year}.csv",
+        csv_attachment,
+        "text/csv",
+    )
+
+
+# Runs on the 10th day of every month at 10:00 AM
+@db_periodic_task(crontab(day=10, hour=10))
+def email_monthly_charges_report() -> None:
+    """Email the HoRSE the charges report for the last month."""
+    last_month_start, last_month_name, _, _ = get_current_and_last_month()
+    email_monthly_charges_report_logic(
+        last_month_start.month, last_month_start.year, last_month_name
     )

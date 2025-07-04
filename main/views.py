@@ -6,15 +6,21 @@ from typing import Any
 import bokeh
 from bokeh.embed import components
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.forms import ModelForm
+from django.forms import Form, ModelForm
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+from django.views.generic import (
+    CreateView,
+    FormView,
+    ListView,
+    TemplateView,
+    UpdateView,
+)
 from django_filters.views import FilterView
 from django_tables2 import RequestConfig, SingleTableMixin
 
-from . import forms, models, plots, tables
+from . import forms, models, plots, report, tables
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -140,3 +146,17 @@ class CapacityPlanningView(LoginRequiredMixin, TemplateView):
         context["div"] = div
         context["bokeh_version"] = bokeh.__version__
         return context
+
+
+class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
+    """View that renders the Cost Recovery page."""
+
+    template_name = "main/cost_recovery.html"
+    form_class = forms.CostRecoveryForm
+
+    def form_valid(self, form: Form) -> HttpResponse:
+        """Generate csv using the dates provided in the form."""
+        month = form.cleaned_data["month"]
+        year = form.cleaned_data["year"]
+        response = report.create_charges_report_for_download(month, year)
+        return response
