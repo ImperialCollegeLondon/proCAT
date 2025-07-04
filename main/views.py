@@ -158,5 +158,5 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
         """Generate csv using the dates provided in the form."""
         month = form.cleaned_data["month"]
         year = form.cleaned_data["year"]
-        response = report.create_charges_report(month, year)
+        response = report.create_charges_report_for_download(month, year)
         return response

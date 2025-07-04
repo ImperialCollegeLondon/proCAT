@@ -1,6 +1,7 @@
 """Report for including all the charges to be expensed for the month."""
 
 import csv
+import io
 from _csv import Writer
 from datetime import date, datetime
 
@@ -165,7 +166,8 @@ def get_csv_header_block(start_date: date) -> list[list[str]]:
             "ITPP",
             "G80410",
             "162104",
-            f"{amount},RSE Projects: {start_date.strftime('%B %Y')}",
+            f"{amount}",
+            f"RSE Projects: {start_date.strftime('%B %Y')}",
         ],
         ["", "", "", "", ""],
         ["Cost Centre", "Activity", "Analysis", "Debit", "Line Description"],
@@ -192,15 +194,13 @@ def write_to_csv(
             writer.writerow(row)
 
 
-def create_charges_report(month: int, year: int) -> HttpResponse:
-    """Generate the CSV report by creating Monthly Charge objects.
+def create_charges_report(month: int, year: int, writer: Writer) -> None:
+    """Generate the CSV report by creating Monthly Charge objects and writing to CSV.
 
     Args:
         month: month for the report date
         year: year for the report date
-
-    Returns:
-        HttpResponse to download the CSV.
+        writer: csv.writer to create the CSV report as HTTPResponse or StringIO
     """
     start_date = date(year, month, 1)
     end_date = date(year, month + 1, 1)
@@ -223,12 +223,46 @@ def create_charges_report(month: int, year: int) -> HttpResponse:
 
     header_block = get_csv_header_block(start_date)
     charges_block = get_csv_charges_block(start_date)
-    csv_fname = f"cost_report_{month}-{year}.csv"
 
+    write_to_csv(header_block, charges_block, writer)
+
+
+def create_charges_report_for_download(month: int, year: int) -> HttpResponse:
+    """Create the charges report as a HTTPResponse.
+
+    Args:
+        month: month for the report date
+        year: year for the report date
+
+    Returns:
+        HttpResponse for the CSV report to download
+    """
     response = HttpResponse(
         content_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={csv_fname}"},
+        headers={
+            "Content-Disposition": "attachment; "
+            f"filename=charges_report_{month}-{year}.csv"
+        },
     )
     writer = csv.writer(response)
-    write_to_csv(header_block, charges_block, writer)
+    create_charges_report(month, year, writer)
+
     return response
+
+
+def create_charges_report_for_attachment(month: int, year: int) -> str:
+    """Create the charges report with StringIO to be attached to an email.
+
+    Args:
+        month: month for the report date
+        year: year for the report date
+
+    Returns:
+        String representing the charges report
+    """
+    csv_file = io.StringIO()
+
+    writer = csv.writer(csv_file)
+    create_charges_report(month, year, writer)
+
+    return csv_file.getvalue()
