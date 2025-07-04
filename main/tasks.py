@@ -1,12 +1,12 @@
 """Task definitions for project notifications using Huey."""
 
-from datetime import datetime
+import datetime
 
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
-from .notify import email_user
-from .utils import get_current_and_last_month, get_logged_hours
+from .notify import email_user, email_user_and_cc_admin
+from .utils import get_admin_email, get_current_and_last_month, get_logged_hours
 
 _template = """
 Dear {project_leader},
@@ -88,9 +88,9 @@ ProCAT
 
 
 def notify_monthly_time_logged_logic(
-    last_month_start: datetime,
+    last_month_start: datetime.date,
     last_month_name: str,
-    current_month_start: datetime,
+    current_month_start: datetime.date,
     current_month_name: str,
 ) -> None:
     """Logic to notify users about their monthly time logged."""
@@ -146,3 +146,89 @@ def notify_monthly_time_logged_summary() -> None:
         current_month_start,
         current_month_name,
     )
+
+
+_template_funds_ran_out_but_not_expired = """
+Dear {lead},
+
+The funding {activity} for project {project_name} has run out.
+
+If the project has been completed, no further action is needed. Otherwise,
+please check the funding status and take necessary actions.
+
+Best regards,
+ProCAT
+"""
+
+_template_funding_expired_but_has_budget = """
+Dear {lead},
+
+The project {project_name} has expired, but there is still unspent funds of
+£{budget} available.
+
+Please check the funding status and take necessary actions.
+
+Best regards,
+ProCAT
+"""
+
+
+def notify_funding_status_logic(
+    date: datetime.date | None = None,
+) -> None:
+    """Logic for notifying the lead about funding status."""
+    from .models import Funding
+
+    if date is None:
+        date = datetime.date.today()
+
+    funds_ran_out_but_not_expired = Funding.objects.filter(
+        expiry_date__gt=date, budget__lt=0
+    )
+    funding_expired_but_has_budget = Funding.objects.filter(
+        expiry_date__lt=date, budget__gt=0
+    )
+
+    if funds_ran_out_but_not_expired.exists():
+        for funding in funds_ran_out_but_not_expired:
+            subject = f"[Funding Update] {funding.project.name}"
+            admin_email = get_admin_email()
+            lead = funding.project.lead
+            lead_name = lead.get_full_name() if lead is not None else "Project Leader"
+            lead_email = lead.email if lead is not None else ""
+            message = _template_funds_ran_out_but_not_expired.format(
+                lead=lead_name,
+                project_name=funding.project.name,
+            )
+            email_user_and_cc_admin(
+                subject=subject,
+                message=message,
+                email=lead_email,
+                admin_email=admin_email,
+            )
+
+    if funding_expired_but_has_budget.exists():
+        for funding in funding_expired_but_has_budget:
+            subject = f"[Funding Expired] {funding.project.name}"
+            admin_email = get_admin_email()
+            lead = funding.project.lead
+            lead_name = lead.get_full_name() if lead is not None else "Project Leader"
+            lead_email = lead.email if lead is not None else ""
+            message = _template_funding_expired_but_has_budget.format(
+                lead=lead_name,
+                project_name=funding.project.name,
+                budget=funding.budget,
+            )
+            email_user_and_cc_admin(
+                subject=subject,
+                message=message,
+                email=lead_email,
+                admin_email=admin_email,
+            )
+
+
+# Runs every day at 11:00 AM
+@db_periodic_task(crontab(hour=11, minute=0))
+def notify_funding_status() -> None:
+    """Daily task to notify about funding status."""
+    notify_funding_status_logic()
