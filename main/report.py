@@ -212,6 +212,9 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
     """
     # get the start_date and end dates (as the 1st of the month)
     start_date = date(year, month, 1)
+    if start_date > datetime.today().date():
+        raise ValidationError("Report date must not be in the future.")
+
     end_date_year = start_date.year + (start_date.month // 12)
     end_date_month = (start_date.month % 12) + 1
     end_date = date(end_date_year, end_date_month, 1)

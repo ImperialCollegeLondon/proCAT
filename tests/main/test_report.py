@@ -302,6 +302,18 @@ def test_write_to_csv():
     writer.writerow.assert_any_call(charges_block[1])
 
 
+def test_invalid_date_charges_report():
+    """Test that a future date raises an error for create_charges_report."""
+    from main import report
+
+    current_date = datetime.now().date()
+    future_date = current_date + timedelta(40)
+    writer = Mock()
+
+    with pytest.raises(ValidationError, match="Report date must not be in the future."):
+        report.create_charges_report(future_date.month, future_date.year, writer)
+
+
 @pytest.mark.django_db
 def test_create_charges_report_for_download(department, user, analysis_code):
     """Test the create_charges_report_for_download function."""
