@@ -104,7 +104,7 @@ def create_monthly_charges(project: Project, start_date: date, end_date: date) -
         for funding in funding_sources:
             if total_days > 0:  # if there are days left to charge
                 days_deduce = min(total_days, funding.effort_left)
-                amount = days_deduce * float(funding.daily_rate)
+                amount = round(days_deduce * float(funding.daily_rate), 2)
                 charge = models.MonthlyCharge.objects.create(
                     project=project, funding=funding, amount=amount, date=start_date
                 )
@@ -157,6 +157,8 @@ def get_csv_header_block(start_date: date) -> list[list[str]]:
     amount = models.MonthlyCharge.objects.filter(date=start_date).aggregate(
         Sum("amount")
     )["amount__sum"]
+    if amount:
+        amount = f"{amount:.2f}"
 
     header_block = [
         ["Journal Name", f"RCS_MANAGER RSE {start_date.strftime('%Y-%m')}", "", "", ""],

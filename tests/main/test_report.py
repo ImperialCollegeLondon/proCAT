@@ -129,7 +129,7 @@ def test_create_monthly_charges_pro_rata(department, user, analysis_code):
 
     report.create_monthly_charges(project, start_date, end_date)
     charge = models.MonthlyCharge.objects.get(date=start_date)
-    assert charge.amount == funding.daily_rate * 21
+    assert charge.amount == round(funding.daily_rate * 21, 2)
 
 
 @pytest.mark.django_db
@@ -203,7 +203,7 @@ def test_create_monthly_charges_actual(department, user, analysis_code):
 
     report.create_monthly_charges(project, start_date, end_date)
     charge = models.MonthlyCharge.objects.get(date=start_date)
-    assert charge.amount == funding_A.daily_rate * chargeable_days
+    assert charge.amount == round(funding_A.daily_rate * chargeable_days, 2)
     assert charge in time_entry_A.monthly_charge.all()
 
 
@@ -239,6 +239,7 @@ def test_get_csv_header_block(project, funding):
     charge = models.MonthlyCharge.objects.create(
         date=start_date, project=project, funding=funding, amount=10
     )
+    amount = f"{charge.amount:.2f}"
 
     expected_block = [
         [
@@ -255,14 +256,14 @@ def test_get_csv_header_block(project, funding):
             "",
             "",
         ],
-        ["Journal Amount", str(charge.amount), "", "", ""],
+        ["Journal Amount", amount, "", "", ""],
         ["", "", "", "", ""],
         ["Cost Centre", "Activity", "Analysis", "Credit", "Line Description"],
         [
             "ITPP",
             "G80410",
             "162104",
-            f"{charge.amount}",
+            amount,
             f"RSE Projects: {charge.date.strftime('%B %Y')}",
         ],
         ["", "", "", "", ""],
