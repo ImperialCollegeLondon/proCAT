@@ -3,35 +3,14 @@
 import csv
 import io
 from _csv import Writer
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
-import pandas as pd
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.http import HttpResponse
 
 from . import models, utils
-from .models import Project
-
-
-def get_pro_rata_chargeable_days(
-    project: Project, start_date: date, end_date: date
-) -> int | None:
-    """Get the number of chargeable days for projects with Pro-rata charging.
-
-    Args:
-        project: the Project for charging
-        start_date: the start date for the charging period
-        end_date: the end date for the charging period
-
-    Returns:
-        The number of chargeable days for the month or None.
-    """
-    if project.start_date and project.end_date:
-        start = max(start_date, project.start_date)
-        end = min(end_date, project.end_date)
-        return len(pd.bdate_range(start, end, inclusive="left"))
-    return None
+from .models import Funding, Project
 
 
 def get_actual_chargeable_days(
@@ -66,20 +45,61 @@ def get_actual_chargeable_days(
     return total_days, pks
 
 
-def create_monthly_charges(project: Project, start_date: date, end_date: date) -> None:
-    """Create monthly charges for projects with Actual and Pro-rata charging.
+def get_valid_funding_sources(project: Project, end_date: date) -> list[Funding]:
+    """Get valid funding sources."""
+    funding_sources = list(
+        project.funding_source.all()
+        .filter(
+            expiry_date__gte=end_date,
+        )
+        .order_by("expiry_date")
+    )
+    funding_sources = [
+        funding for funding in funding_sources if funding.funding_left > 0
+    ]
+    return funding_sources
+
+
+def create_pro_rata_monthly_charges(
+    project: Project, start_date: date, end_date: date
+) -> None:
+    """Create monthly charges for projects with Pro-rata charging.
+
+    As the charge is constant and based on project duration and budget, this function
+    does not check if the charge exceeds total funding.
 
     Args:
         project: the Project for charging
         start_date: the start date for the charging period
         end_date: the end date for the charging period
     """
-    # get the amount of chargeable days for Actual or Pro-rata projects
-    if project.charging == "Actual":  # get pk values for the relevant time entries
-        total_days, pks = get_actual_chargeable_days(project, start_date, end_date)
-    if project.charging == "Pro-rata":
-        total_days = get_pro_rata_chargeable_days(project, start_date, end_date)
-        pks = None
+    funding_sources = get_valid_funding_sources(project, end_date)
+
+    for funding in funding_sources:
+        if not funding.monthly_pro_rata_charge:
+            continue
+
+        charge = models.MonthlyCharge.objects.create(
+            project=project,
+            funding=funding,
+            amount=funding.monthly_pro_rata_charge,
+            date=start_date,
+        )
+        charge.clean()
+        charge.save()
+
+
+def create_actual_monthly_charges(
+    project: Project, start_date: date, end_date: date
+) -> None:
+    """Create monthly charges for projects with Actual charging.
+
+    Args:
+        project: the Project for charging
+        start_date: the start date for the charging period
+        end_date: the end date for the charging period
+    """
+    total_days, pks = get_actual_chargeable_days(project, start_date, end_date)
 
     if total_days and project.days_left:
         if total_days > project.days_left[0]:
@@ -88,32 +108,24 @@ def create_monthly_charges(project: Project, start_date: date, end_date: date) -
                 f"for project {project.name}."
             )
 
-        # get non-expired funding with funding left
-        funding_sources = list(
-            project.funding_source.all()
-            .filter(
-                expiry_date__gte=end_date,
-            )
-            .order_by("expiry_date")
-        )
-        funding_sources = [
-            funding for funding in funding_sources if funding.funding_left > 0
-        ]
-
         # create a monthly charge for each funding source
+        funding_sources = get_valid_funding_sources(project, end_date)
         for funding in funding_sources:
-            if total_days > 0:  # if there are days left to charge
-                days_deduce = min(total_days, funding.effort_left)
-                amount = round(days_deduce * float(funding.daily_rate), 2)
-                charge = models.MonthlyCharge.objects.create(
-                    project=project, funding=funding, amount=amount, date=start_date
-                )
-                total_days -= days_deduce
+            if total_days <= 0:  # we are done charging
+                break
 
-                # update time entries with monthly charge
-                if pks:
-                    for time_entry in models.TimeEntry.objects.filter(pk__in=pks):
-                        time_entry.monthly_charge.add(charge)
+            days_deduce = min(total_days, funding.effort_left)
+            amount = round(days_deduce * float(funding.daily_rate), 2)
+            charge = models.MonthlyCharge.objects.create(
+                project=project, funding=funding, amount=amount, date=start_date
+            )
+            charge.clean()
+            charge.save()
+            total_days -= days_deduce
+
+            # update time entries with monthly charge
+            for time_entry in models.TimeEntry.objects.filter(pk__in=pks):
+                time_entry.monthly_charge.add(charge)
 
 
 def get_csv_charges_block(start_date: date) -> list[list[str]]:
@@ -216,10 +228,7 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
     start_date = date(year, month, 1)
     if start_date > datetime.today().date():
         raise ValidationError("Report date must not be in the future.")
-
-    end_date_year = start_date.year + (start_date.month // 12)
-    end_date_month = (start_date.month % 12) + 1
-    end_date = date(end_date_year, end_date_month, 1)
+    end_date = (start_date + timedelta(days=31)).replace(day=1)
 
     # delete existing Pro-rata and Actual charges so they can be re-created
     models.MonthlyCharge.objects.filter(date=start_date).exclude(
@@ -235,7 +244,10 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
     ).exclude(charging="Manual")
 
     for project in projects:
-        create_monthly_charges(project, start_date, end_date)
+        if project.charging == "Pro-rata":
+            create_pro_rata_monthly_charges(project, start_date, end_date)
+        elif project.charging == "Actual":
+            create_actual_monthly_charges(project, start_date, end_date)
 
     header_block = get_csv_header_block(start_date)
     charges_block = get_csv_charges_block(start_date)

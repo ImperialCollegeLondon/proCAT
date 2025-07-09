@@ -1,7 +1,7 @@
 """Tests for the models."""
 
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -376,6 +376,53 @@ class TestFunding:
         )
         with expectation:
             funding.full_clean()
+
+    @pytest.mark.django_db
+    def test_monthly_pro_rata_charge_is_none(self, user, department, analysis_code):
+        """Test the monthly_pro_rata_charge property."""
+        from main import models
+
+        project = models.Project.objects.create(
+            name="Invalid project",
+            department=department,
+            lead=user,
+            charging="Actual",
+        )
+        funding = models.Funding.objects.create(
+            project=project,
+            source="External",
+            cost_centre="centre",
+            activity="G12345",
+            analysis_code=analysis_code,
+            budget=10000.00,
+        )
+        assert funding.monthly_pro_rata_charge is None
+
+    @pytest.mark.django_db
+    def test_monthly_pro_rata_charge(self, user, department, analysis_code):
+        """Test the monthly_pro_rata_charge property."""
+        start_date = date(2025, 3, 15)
+        end_date = date(2025, 7, 8)  # 5 equal monthly charges will be created
+        from main import models
+
+        project = models.Project.objects.create(
+            name="Invalid project",
+            department=department,
+            lead=user,
+            charging="Pro-rata",
+            start_date=start_date,
+            end_date=end_date,
+        )
+        funding = models.Funding.objects.create(
+            project=project,
+            source="External",
+            cost_centre="centre",
+            activity="G12345",
+            analysis_code=analysis_code,
+            budget=10000.00,
+        )
+        expected_charge = funding.budget / 5
+        assert funding.monthly_pro_rata_charge == expected_charge
 
 
 class TestCapacity:

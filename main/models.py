@@ -1,7 +1,6 @@
 """Models module for main app."""
 
 from datetime import datetime
-from typing import Any
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -501,6 +500,27 @@ class Funding(models.Model):
         """
         return float(self.daily_rate) * self.effort_left
 
+    @property
+    def monthly_pro_rata_charge(self) -> float | None:
+        """Calculate the charge per month if the project has Pro-rata charging.
+
+        Calculates the number of months between project start and end date regardless
+        of the day of the month so the monthly charge will be the same regardless
+        of the number of days in the month.
+        """
+        if (
+            self.project.charging == "Pro-rata"
+            and self.project.start_date
+            and self.project.end_date
+        ):
+            months = (
+                (self.project.end_date.year - self.project.start_date.year) * 12
+                + (self.project.end_date.month - self.project.start_date.month)
+                + 1
+            )
+            return float(self.budget / months)
+        return None
+
 
 class Capacity(models.Model):
     """Proportion of working time that team members are able to work on projects."""
@@ -614,11 +634,6 @@ class MonthlyCharge(models.Model):
                 f"RSE Project {self.project} ({self.funding.project_code}): "
                 f"{self.date.month}/{self.date.year} [rcs-manager@imperial.ac.uk]"
             )
-
-    def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore
-        """Call the clean method when saving the model."""
-        self.clean()
-        super().save(*args, **kwargs)
 
 
 class TimeEntry(models.Model):

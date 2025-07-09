@@ -41,5 +41,15 @@ class CostRecoveryForm(forms.Form):
     current_year = datetime.now().year
     _YEARS = ((year, str(year)) for year in range(current_year, current_year - 5, -1))
 
-    month = forms.TypedChoiceField(choices=_MONTHS, label="Month", coerce=int)
-    year = forms.TypedChoiceField(choices=_YEARS, label="Year", coerce=int)
+    month = forms.TypedChoiceField(
+        choices=_MONTHS,
+        label="Month",
+        coerce=int,
+        help_text="Month for which to generate the charges report.",
+    )
+    year = forms.TypedChoiceField(
+        choices=_YEARS,
+        label="Year",
+        coerce=int,
+        help_text="Year for which to generate the charges report.",
+    )

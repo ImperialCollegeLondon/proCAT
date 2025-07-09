@@ -8,21 +8,6 @@ import pytest
 from django.core.exceptions import ValidationError
 
 
-def test_get_pro_rata_chargeable_days():
-    """Test the get_pro_rata_chargeable_days function."""
-    from main import models, report
-
-    start_date = date(2025, 6, 1)
-    end_date = date(2025, 7, 1)
-    project = models.Project(name="ProCAT")
-    assert report.get_pro_rata_chargeable_days(project, start_date, end_date) is None
-
-    project = models.Project(
-        name="ProCAT", start_date=date(2025, 6, 3), end_date=date(2025, 6, 26)
-    )
-    assert report.get_pro_rata_chargeable_days(project, start_date, end_date) == 17
-
-
 @pytest.mark.django_db
 def test_get_actual_chargeable_days(user, project):
     """Test the get_actual_chargeable_days function."""
@@ -52,7 +37,76 @@ def test_get_actual_chargeable_days(user, project):
 
 
 @pytest.mark.django_db
-def test_create_monthly_charges_validate_effort_left(department, user, analysis_code):
+def test_get_valid_funding_sources(project, analysis_code):
+    """Test the get_valid_funding_sources function."""
+    from main import models, report
+
+    end_date = datetime.now().date() + timedelta(days=14)  # end date of charging period
+    expired_funding = models.Funding.objects.create(  # noqa: F841
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date - timedelta(10),
+        budget=1000.00,
+        daily_rate=1000.00,
+    )
+    valid_funding = models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G56789",
+        analysis_code=analysis_code,
+        expiry_date=end_date + timedelta(10),
+        budget=1000.00,
+        daily_rate=1000.00,
+    )
+    # TODO: add depleted funding when effort_left implemented
+
+    assert report.get_valid_funding_sources(project, end_date) == [valid_funding]
+
+
+@pytest.mark.django_db
+def test_create_pro_rata_monthly_charges(department, user, analysis_code):
+    """Test the create_pro_rata_monthly_charges function."""
+    from main import models, report
+
+    start_date = date(2025, 6, 1)
+    end_date = date(2025, 7, 15)
+
+    project = models.Project.objects.create(
+        name="ProCAT",
+        department=department,
+        lead=user,
+        start_date=start_date,
+        end_date=end_date,
+        status="Active",
+        charging="Pro-rata",
+    )
+    funding = models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date,
+        budget=1000.00,
+        daily_rate=100.00,
+    )
+
+    report.create_pro_rata_monthly_charges(project, start_date, end_date)
+    charge = models.MonthlyCharge.objects.get(date=start_date)
+    assert charge.amount == funding.monthly_pro_rata_charge
+
+
+@pytest.mark.django_db
+def test_create_actual_monthly_charges_validate_effort_left(
+    department, user, analysis_code
+):
     """Test the create_monthly_charges function when charge exceeds total effort.
 
     TODO: Update this to be more sensible when funding.effort_left implemented.
@@ -95,45 +149,11 @@ def test_create_monthly_charges_validate_effort_left(department, user, analysis_
             f"{project.name}."
         ),
     ):
-        report.create_monthly_charges(project, start_date, end_date)
+        report.create_actual_monthly_charges(project, start_date, end_date)
 
 
 @pytest.mark.django_db
-def test_create_monthly_charges_pro_rata(department, user, analysis_code):
-    """Test the create_monthly_charges function with pro-rata charging."""
-    from main import models, report
-
-    start_date = date(2025, 6, 1)
-    end_date = date(2025, 7, 1)
-
-    project = models.Project.objects.create(
-        name="ProCAT",
-        department=department,
-        lead=user,
-        start_date=start_date,
-        end_date=end_date,
-        status="Active",
-        charging="Pro-rata",
-    )
-    funding = models.Funding.objects.create(
-        project=project,
-        source="External",
-        funding_body="Funding body",
-        cost_centre="centre",
-        activity="G12345",
-        analysis_code=analysis_code,
-        expiry_date=end_date,
-        budget=10000.00,
-        daily_rate=100.00,
-    )
-
-    report.create_monthly_charges(project, start_date, end_date)
-    charge = models.MonthlyCharge.objects.get(date=start_date)
-    assert charge.amount == round(funding.daily_rate * 21, 2)
-
-
-@pytest.mark.django_db
-def test_create_monthly_charges_actual(department, user, analysis_code):
+def test_create_actual_monthly_charges(department, user, analysis_code):
     """Test the create_monthly_charges function with actual charging.
 
     TODO: Update when funding.effort_left implemented to test charges are created for
@@ -177,7 +197,7 @@ def test_create_monthly_charges_actual(department, user, analysis_code):
     )
 
     # check no Monthly Charge is created if there are no time entries
-    report.create_monthly_charges(project, start_date, end_date)
+    report.create_actual_monthly_charges(project, start_date, end_date)
     assert not models.MonthlyCharge.objects.exists()
 
     # TODO: check Monthly Charges are created for each funding source (when limited)
@@ -201,7 +221,7 @@ def test_create_monthly_charges_actual(department, user, analysis_code):
         ).total_seconds() / 3600
     chargeable_days = chargeable_hours / 7
 
-    report.create_monthly_charges(project, start_date, end_date)
+    report.create_actual_monthly_charges(project, start_date, end_date)
     charge = models.MonthlyCharge.objects.get(date=start_date)
     assert charge.amount == round(funding_A.daily_rate * chargeable_days, 2)
     assert charge in time_entry_A.monthly_charge.all()
