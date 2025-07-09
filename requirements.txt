@@ -55,7 +55,7 @@ pandas==2.3.0
     # via
     #   bokeh
     #   procat (pyproject.toml)
-pillow==11.2.1
+pillow==11.3.0
     # via bokeh
 python-dateutil==2.9.0.post0
     # via pandas
