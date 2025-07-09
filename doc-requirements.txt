@@ -26,7 +26,7 @@ contourpy==1.3.2
     # via bokeh
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
-django==5.2.3
+django==5.2.4
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
