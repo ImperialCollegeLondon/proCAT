@@ -193,9 +193,11 @@ def notify_funding_status_logic(
             lead = funding.project.lead
             lead_name = lead.get_full_name() if lead is not None else "Project Leader"
             lead_email = lead.email if lead is not None else ""
+            activity = funding.activity if funding.activity else "Funding Activity"
             message = _template_funds_ran_out_but_not_expired.format(
                 lead=lead_name,
                 project_name=funding.project.name,
+                activity=activity,
             )
             email_user_and_cc_admin(
                 subject=subject,
