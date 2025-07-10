@@ -2,11 +2,14 @@
 
 from collections import defaultdict
 from collections.abc import Iterable
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
+from django.contrib.auth import get_user_model
+from django.db.models.query import QuerySet
+
 from . import models
-from .models import TimeEntry
+from .models import Funding, TimeEntry
 
 ANALYSIS_CODES = (
     {
@@ -93,3 +96,28 @@ def get_current_and_last_month(
         current_month_start,
         current_month_name,
     )
+
+
+def get_admin_email() -> list[str]:
+    """Get the email of the first superuser."""
+    User = get_user_model()
+    admin_email = (
+        User.objects.filter(is_superuser=True).values_list("email", flat=True).first()
+    )
+    return [admin_email] if admin_email else []
+
+
+def get_budget_status(
+    date: date | None = None,
+) -> tuple[QuerySet[Funding], QuerySet[Funding]]:
+    """Get the budget status of a funding."""
+    if date is None:
+        date = datetime.today().date()
+
+    funds_ran_out_not_expired = Funding.objects.filter(
+        expiry_date__gt=date, budget__lt=0
+    )
+    funding_expired_budget_left = Funding.objects.filter(
+        expiry_date__lt=date, budget__gt=0
+    )
+    return funds_ran_out_not_expired, funding_expired_budget_left

@@ -1,12 +1,13 @@
 """Tests for the tasks module."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
 
 from main.tasks import (
     email_monthly_charges_report_logic,
+    notify_funding_status_logic,
     notify_left_threshold_logic,
     notify_monthly_time_logged_logic,
 )
@@ -179,6 +180,68 @@ def test_process_time_logged_summary_multiple_projects(user, department):
             subject=expected_subject,
             message=expected_message,
             email=user.email,
+        )
+
+
+@pytest.mark.django_db
+def test_funding_expired_but_has_budget(funding, project):
+    """Test that funding expired but has budget."""
+    # Create a funding object with expired date but still has budget
+    funding.expiry_date = datetime.now().date() - timedelta(days=1)
+    funding.budget = 1000
+    funding.save()
+    funding.refresh_from_db()
+    assert funding.expiry_date < datetime.now().date()
+    assert funding.budget > 0
+
+    expected_subject = f"[Funding Expired] {project.name}"
+
+    expected_message = (
+        f"\nDear {funding.project.lead.get_full_name()},\n\n"
+        f"The project {project.name} has expired, but there is still unspent "
+        f"funds of\n£{funding.budget} available.\n\n"
+        f"Please check the funding status and take necessary actions.\n\n"
+        f"Best regards,\nProCAT\n"
+    )
+
+    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+        notify_funding_status_logic()
+        mock_email_func.assert_called_once_with(
+            subject=expected_subject,
+            email=funding.project.lead.email,
+            admin_email=[],
+            message=expected_message,
+        )
+
+
+@pytest.mark.django_db
+def test_funding_ran_out_not_expired(funding, project):
+    """Test that funding ran out but not expired."""
+    # Create a funding object with not expired date but budget ran out
+    funding.expiry_date = datetime.now().date() + timedelta(days=30)
+    funding.budget = -1000
+    funding.save()
+    funding.refresh_from_db()
+    assert funding.expiry_date > datetime.now().date()
+    assert funding.budget < 0
+
+    expected_subject = f"[Funding Update] {project.name}"
+
+    expected_message = (
+        f"\nDear {funding.project.lead.get_full_name()},\n\n"
+        f"The funding {funding.activity} for project {project.name} has run out.\n\n"
+        f"If the project has been completed, no further action is needed. "
+        f"Otherwise,\nplease check the funding status and take necessary actions.\n\n"
+        f"Best regards,\nProCAT\n"
+    )
+
+    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+        notify_funding_status_logic()
+        mock_email_func.assert_called_once_with(
+            subject=expected_subject,
+            email=funding.project.lead.email,
+            admin_email=[],
+            message=expected_message,
         )
 
 
