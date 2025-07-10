@@ -32,7 +32,7 @@ cssbeautifier==1.15.4
     # via djlint
 distlib==0.3.9
     # via virtualenv
-django==5.2.3
+django==5.2.4
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -88,7 +88,7 @@ mypy==1.15.0
     #   procat (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
-narwhals==1.44.0
+narwhals==1.46.0
     # via bokeh
 nodeenv==1.9.1
     # via pre-commit
@@ -107,11 +107,11 @@ pandas==2.3.0
     # via
     #   bokeh
     #   procat (pyproject.toml)
-pandas-stubs==2.2.3.250527
+pandas-stubs==2.3.0.250703
     # via procat (pyproject.toml)
 pathspec==0.12.1
     # via djlint
-pillow==11.2.1
+pillow==11.3.0
     # via bokeh
 pip-tools==7.4.1
     # via procat (pyproject.toml)
