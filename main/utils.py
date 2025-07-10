@@ -109,7 +109,7 @@ def get_admin_email() -> list[str]:
 
 def get_budget_status(
     date: date | None = None,
-) -> tuple[QuerySet, QuerySet]:
+) -> tuple[QuerySet[Funding], QuerySet[Funding]]:
     """Get the budget status of a funding."""
     if date is None:
         date = datetime.today().date()

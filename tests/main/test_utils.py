@@ -85,15 +85,51 @@ def test_get_current_and_last_month_start():
 @pytest.mark.django_db
 def test_get_budget_status():
     """Test get_budget_status function."""
+    from main.models import Department, Funding, Project
     from main.utils import get_budget_status
 
-    # Test with no date provided
-    budgets, fundings = get_budget_status()
-    assert budgets.count() == 0
-    assert fundings.count() == 0
+    today = datetime.today().date()
 
-    # Test with a specific date
-    date = datetime(2025, 6, 15)
-    budgets, fundings = get_budget_status(date=date)
-    assert budgets.count() == 0
-    assert fundings.count() == 0
+    # Create a department
+    department = Department.objects.create(name="Test Department")
+
+    # Create a project
+    project = Project.objects.create(name="Test Project", department=department)
+
+    # Create some funding entries
+    funding1 = Funding.objects.create(
+        project=project,
+        budget=10000,
+        expiry_date=today + timedelta(days=30),  # Not expired
+    )
+    funding2 = Funding.objects.create(
+        project=project,
+        budget=5000,
+        expiry_date=today - timedelta(days=30),  # Expired
+    )
+    funding3 = Funding.objects.create(
+        project=project,
+        budget=-1000,
+        expiry_date=today + timedelta(days=30),  # Ran out but not expired
+    )
+    funding4 = Funding.objects.create(
+        project=project,
+        budget=2000,
+        expiry_date=today - timedelta(days=30),  # Expired but has budget
+    )
+
+    funds_ran_out_not_expired, funding_expired_budget_left = get_budget_status(
+        date=today
+    )
+
+    # Check the results
+    assert funds_ran_out_not_expired.count() == 1
+    assert funds_ran_out_not_expired.first() == funding3
+    assert funding2 not in funds_ran_out_not_expired
+    assert funding4 not in funds_ran_out_not_expired
+
+    # Check funding expired but has budget
+    assert funding2 in funding_expired_budget_left
+    assert funding4 in funding_expired_budget_left
+    assert funding1 not in funding_expired_budget_left
+    assert funding3 not in funding_expired_budget_left
