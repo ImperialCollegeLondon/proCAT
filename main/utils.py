@@ -2,13 +2,14 @@
 
 from collections import defaultdict
 from collections.abc import Iterable
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.db.models.query import QuerySet
 
 from . import models
-from .models import TimeEntry
+from .models import Funding, TimeEntry
 
 ANALYSIS_CODES = (
     {
@@ -104,3 +105,19 @@ def get_admin_email() -> list[str]:
         User.objects.filter(is_superuser=True).values_list("email", flat=True).first()
     )
     return [admin_email] if admin_email else []
+
+
+def get_budget_status(
+    date: date | None = None,
+) -> tuple[QuerySet, QuerySet]:
+    """Get the budget status of a funding."""
+    if date is None:
+        date = datetime.today().date()
+
+    funds_ran_out_not_expired = Funding.objects.filter(
+        expiry_date__gt=date, budget__lt=0
+    )
+    funding_expired_budget_left = Funding.objects.filter(
+        expiry_date__lt=date, budget__gt=0
+    )
+    return funds_ran_out_not_expired, funding_expired_budget_left

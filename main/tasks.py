@@ -6,7 +6,12 @@ from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
 from .notify import email_user, email_user_and_cc_admin
-from .utils import get_admin_email, get_current_and_last_month, get_logged_hours
+from .utils import (
+    get_admin_email,
+    get_budget_status,
+    get_current_and_last_month,
+    get_logged_hours,
+)
 
 _template = """
 Dear {project_leader},
@@ -177,20 +182,12 @@ def notify_funding_status_logic(
     date: datetime.date | None = None,
 ) -> None:
     """Logic for notifying the lead about funding status."""
-    from .models import Funding
-
-    if date is None:
-        date = datetime.date.today()
-
-    funds_ran_out_but_not_expired = Funding.objects.filter(
-        expiry_date__gt=date, budget__lt=0
-    )
-    funding_expired_but_has_budget = Funding.objects.filter(
-        expiry_date__lt=date, budget__gt=0
+    funds_ran_out_not_expired, funding_expired_budget_left = get_budget_status(
+        date=date
     )
 
-    if funds_ran_out_but_not_expired.exists():
-        for funding in funds_ran_out_but_not_expired:
+    if funds_ran_out_not_expired.exists():
+        for funding in funds_ran_out_not_expired:
             subject = f"[Funding Update] {funding.project.name}"
             admin_email = get_admin_email()
             lead = funding.project.lead
@@ -207,8 +204,8 @@ def notify_funding_status_logic(
                 admin_email=admin_email,
             )
 
-    if funding_expired_but_has_budget.exists():
-        for funding in funding_expired_but_has_budget:
+    if funding_expired_budget_left.exists():
+        for funding in funding_expired_budget_left:
             subject = f"[Funding Expired] {funding.project.name}"
             admin_email = get_admin_email()
             lead = funding.project.lead

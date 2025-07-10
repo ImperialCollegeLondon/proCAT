@@ -183,7 +183,7 @@ def test_process_time_logged_summary_multiple_projects(user, department):
 
 
 @pytest.mark.django_db
-def test_funding_expired_but_has_budget(funding, project, user):
+def test_funding_expired_but_has_budget(funding, project):
     """Test that funding expired but has budget."""
     # Create a funding object with expired date but still has budget
     funding.expiry_date = datetime.now().date() - timedelta(days=1)
