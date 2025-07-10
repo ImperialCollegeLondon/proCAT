@@ -1,11 +1,13 @@
 """Models module for main app."""
 
 from datetime import datetime
+from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Sum
 
 from procat.settings.settings import EFFORT_LEFT_THRESHOLD, WEEKS_LEFT_THRESHOLD
 
@@ -251,8 +253,18 @@ class Project(models.Model):
             The number of days and percentage worth of effort left, or None if there is
             no funding information.
         """
+        from .report import get_actual_chargeable_days
+
         if self.total_effort:
             left = sum([funding.effort_left for funding in self.funding_source.all()])
+
+            # subtract days logged for the month so far
+            end_date = datetime.today().date()
+            start_date = end_date.replace(day=1)
+            additional_days = get_actual_chargeable_days(self, start_date, end_date)[0]
+            if additional_days:
+                left -= round(additional_days)
+
             return left, round(left / self.total_effort * 100, 1)
 
         return None
@@ -479,26 +491,27 @@ class Funding(models.Model):
         return days_effort
 
     @property
-    def effort_left(self) -> int:
-        """Provide the effort left in days.
-
-        TODO: Placeholder. To be implemented when synced with Clockify.
-
-        Returns:
-            The number of days worth of effort left.
-        """
-        return 42
-
-    @property
-    def funding_left(self) -> float:
+    def funding_left(self) -> Decimal:
         """Provide the funding left in currency.
-
-        TODO: Placeholder. Update when synced with Clockify.
 
         Returns:
             The amount of funding left.
         """
-        return float(self.daily_rate) * self.effort_left
+        funding_spent = MonthlyCharge.objects.filter(funding=self).aggregate(
+            Sum("amount")
+        )["amount__sum"]
+        if funding_spent:
+            return self.budget - funding_spent
+        return self.budget
+
+    @property
+    def effort_left(self) -> int:
+        """Provide the effort left in days.
+
+        Returns:
+            The number of days worth of effort left.
+        """
+        return round(self.funding_left / self.daily_rate)
 
     @property
     def monthly_pro_rata_charge(self) -> float | None:
@@ -578,6 +591,7 @@ class MonthlyCharge(models.Model):
         null=False,
         blank=False,
         help_text="The funding source to be used for the charge.",
+        related_name="monthly_charge",
     )
 
     amount = models.DecimalField(
