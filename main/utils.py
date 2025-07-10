@@ -107,6 +107,13 @@ def get_admin_email() -> list[str]:
     return [admin_email] if admin_email else []
 
 
+def get_admin_name() -> str | None:
+    """Get the name of the first superuser."""
+    User = get_user_model()
+    admin_name = User.objects.filter(is_superuser=True).first()
+    return admin_name.get_full_name() if admin_name else None
+
+
 def get_budget_status(
     date: date | None = None,
 ) -> tuple[QuerySet[Funding], QuerySet[Funding]]:

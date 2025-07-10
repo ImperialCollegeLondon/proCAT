@@ -9,6 +9,7 @@ from .notify import email_attachment, email_user, email_user_and_cc_admin
 from .report import create_charges_report_for_attachment
 from .utils import (
     get_admin_email,
+    get_admin_name,
     get_budget_status,
     get_current_and_last_month,
     get_logged_hours,
@@ -246,18 +247,17 @@ ProCAT
 
 def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -> None:
     """Logic to email the HoRSE the charges report for the last month."""
-    from .models import User
-
-    HoRSE = User.objects.filter(is_superuser=True)[0]  # Assuming there is 1 superuser
+    subject = f"Charges report for {month_name}"
+    admin_email = get_admin_email()
+    admin_name = get_admin_name()
     message = _template_charges_report.format(
-        HoRSE=HoRSE.get_full_name(), month=month_name, year=year
+        HoRSE=admin_name, month=month_name, year=year
     )
     csv_attachment = create_charges_report_for_attachment(month, year)
-    subject = f"Charges report for {month_name}"
 
     email_attachment(
         subject,
-        HoRSE.email,
+        admin_email,
         message,
         f"charges_report_{month}-{year}.csv",
         csv_attachment,

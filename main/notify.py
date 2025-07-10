@@ -34,7 +34,7 @@ def email_user_and_cc_admin(
 
 def email_attachment(
     subject: str,
-    email: str,
+    email: list[str],
     message: str,
     attachment_fname: str,
     attachment: str,
@@ -45,7 +45,7 @@ def email_attachment(
         subject=subject,
         body=message,
         from_email=None,
-        to=[email],
+        to=email,
     )
     email_message.attach(
         filename=attachment_fname, content=attachment, mimetype=attachment_type

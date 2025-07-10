@@ -1,6 +1,6 @@
 """Tests for the tasks module."""
 
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -246,13 +246,11 @@ def test_funding_ran_out_not_expired(funding, project):
 
 
 @pytest.mark.django_db
-def test_email_monthly_charges_report(user, department, analysis_code):
+def test_email_monthly_charges_report():
     """Tests that the monthly charges report is generated and emailed."""
     from main import models, report
 
-    start_date = date(2025, 6, 1)
-    end_date = date(2025, 7, 1)
-
+    month, month_name, year = 6, "June", 2025
     admin_user = models.User.objects.create(
         first_name="admin",
         last_name="user",
@@ -261,47 +259,22 @@ def test_email_monthly_charges_report(user, department, analysis_code):
         username="admin_user",
         is_superuser=True,
     )
-    project = models.Project.objects.create(
-        name="ProCAT",
-        department=department,
-        lead=admin_user,
-        start_date=start_date,
-        end_date=end_date,
-        status="Active",
-        charging="Actual",
-    )
-    funding = models.Funding.objects.create(  # noqa: F841
-        project=project,
-        source="External",
-        funding_body="Funding body",
-        cost_centre="centre",
-        activity="G12345",
-        analysis_code=analysis_code,
-        expiry_date=end_date,
-        budget=10000.00,
-        daily_rate=100.00,
-    )
-    time_entry = models.TimeEntry.objects.create(  # noqa: F841
-        user=user,
-        project=project,
-        start_time=datetime(2025, 6, 2, 9, 0),
-        end_time=datetime(2025, 6, 2, 14, 0),  # 5 hours total
-    )
 
-    expected_attachment = report.create_charges_report_for_attachment(6, 2025)
-    expected_fname = "charges_report_6-2025.csv"
+    # Create attachment with empty charges row
+    expected_subject = f"Charges report for {month_name}"
+    expected_attachment = report.create_charges_report_for_attachment(month, year)
+    expected_fname = f"charges_report_{month}-{year}.csv"
     expected_message = (
         f"\nDear {admin_user.get_full_name()},\n\n"
-        "Please find attached the charges report for the last month: June.\n\n"
+        f"Please find attached the charges report for the last month: {month_name}.\n\n"
         "Best regards,\nProCAT\n"
     )
 
     with patch("main.tasks.email_attachment") as mock_email_attachment:
-        email_monthly_charges_report_logic(6, 2025, "June")
-        expected_subject = "Charges report for June"
+        email_monthly_charges_report_logic(month, year, month_name)
         mock_email_attachment.assert_called_with(
             expected_subject,
-            admin_user.email,
+            [admin_user.email],
             expected_message,
             expected_fname,
             expected_attachment,
