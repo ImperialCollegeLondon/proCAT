@@ -80,3 +80,20 @@ def test_get_current_and_last_month_start():
     # Current month is June 2025
     assert current_month_start == datetime(2025, 6, 1)
     assert current_month_name == "June"
+
+
+@pytest.mark.django_db
+def test_get_budget_status():
+    """Test get_budget_status function."""
+    from main.utils import get_budget_status
+
+    # Test with no date provided
+    budgets, fundings = get_budget_status()
+    assert budgets.count() == 0
+    assert fundings.count() == 0
+
+    # Test with a specific date
+    date = datetime(2025, 6, 15)
+    budgets, fundings = get_budget_status(date=date)
+    assert budgets.count() == 0
+    assert fundings.count() == 0
