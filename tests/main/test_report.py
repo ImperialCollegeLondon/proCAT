@@ -81,6 +81,40 @@ def test_get_valid_funding_sources(project, analysis_code):
 
 
 @pytest.mark.django_db
+def test_create_pro_rata_monthly_charges_missing_dates(department, user, analysis_code):
+    """Test the create_pro_rata_monthly_charges function with missing dates."""
+    from main import models, report
+
+    start_date = date(2025, 6, 1)
+    end_date = date(2025, 7, 15)
+
+    # Create project missing start and end date (skipped)
+    project = models.Project.objects.create(
+        name="ProCAT",
+        department=department,
+        lead=user,
+        status="Active",
+        charging="Pro-rata",
+    )
+    funding = models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date,
+        budget=500.00,
+        daily_rate=100.00,
+    )
+
+    # Check that no Pro-rata charge created (no funding.monthly_pro_rata_charge)
+    assert funding.monthly_pro_rata_charge is None
+    report.create_pro_rata_monthly_charges(project, start_date, end_date)
+    assert not models.MonthlyCharge.objects.exists()
+
+
+@pytest.mark.django_db
 def test_create_pro_rata_monthly_charges(department, user, analysis_code):
     """Test the create_pro_rata_monthly_charges function."""
     from main import models, report
@@ -88,7 +122,7 @@ def test_create_pro_rata_monthly_charges(department, user, analysis_code):
     start_date = date(2025, 6, 1)
     end_date = date(2025, 7, 15)
 
-    # Create project and funding with Pro-rata charging
+    # Create project with start and end date
     project = models.Project.objects.create(
         name="ProCAT",
         department=department,
@@ -362,11 +396,33 @@ def test_create_charges_report_for_download(department, user, analysis_code):
     from main import models, report
 
     start_date = date(2025, 6, 1)
-    end_date = date(2025, 7, 1)
+    end_date = date(2025, 7, 31)
 
-    # Create time entry for monthly charge
-    project = models.Project.objects.create(
-        name="ProCAT",
+    # Create project and funding for pro-rata monthly charge
+    project_A = models.Project.objects.create(
+        name="Pro-rata project",
+        department=department,
+        lead=user,
+        start_date=start_date,
+        end_date=end_date,
+        status="Active",
+        charging="Pro-rata",
+    )
+    funding_A = models.Funding.objects.create(
+        project=project_A,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date,
+        budget=500.00,
+        daily_rate=100.00,
+    )
+
+    # Create project and funding for Actual monthly charge
+    project_B = models.Project.objects.create(
+        name="Actual project",
         department=department,
         lead=user,
         start_date=start_date,
@@ -374,12 +430,12 @@ def test_create_charges_report_for_download(department, user, analysis_code):
         status="Active",
         charging="Actual",
     )
-    funding = models.Funding.objects.create(
-        project=project,
+    funding_B = models.Funding.objects.create(
+        project=project_B,
         source="External",
         funding_body="Funding body",
         cost_centre="centre",
-        activity="G12345",
+        activity="G56789",
         analysis_code=analysis_code,
         expiry_date=end_date,
         budget=10000.00,
@@ -387,7 +443,7 @@ def test_create_charges_report_for_download(department, user, analysis_code):
     )
     models.TimeEntry.objects.create(
         user=user,
-        project=project,
+        project=project_B,
         start_time=datetime(2025, 6, 2, 9, 0),
         end_time=datetime(2025, 6, 2, 12, 30),
     )  # 3.5 hours total (0.5 days)
@@ -402,22 +458,36 @@ def test_create_charges_report_for_download(department, user, analysis_code):
     assert response["Content-Type"] == "text/csv"
     assert expected_fname in response["Content-Disposition"]
 
-    n_days = 0.5
-    expected_charge_row = ",".join(
+    # Check the pro-rata charge row is in the CSV as expected
+    expected_pro_rata_charge_row = ",".join(
         [
-            funding.cost_centre,
-            funding.activity,
-            funding.analysis_code.code,
-            f"{funding.daily_rate * n_days:.2f}",
+            funding_A.cost_centre,
+            funding_A.activity,
+            funding_A.analysis_code.code,
+            f"{funding_A.budget / 2:.2f}",
             (
-                f"RSE Project {project.name} ({funding.cost_centre}_"
-                f"{funding.activity}): 6/2025 [rcs-manager@imperial.ac.uk]"
+                f"RSE Project {project_A.name} ({funding_A.cost_centre}_"
+                f"{funding_A.activity}): 6/2025 [rcs-manager@imperial.ac.uk]"
             ),
         ]
     )
+    assert expected_pro_rata_charge_row in response.content.decode("utf-8")
 
-    # Check the charge row in the CSV is as expected
-    assert expected_charge_row in response.content.decode("utf-8")
+    # Check the actual charge row is in the CSV is as expected
+    n_days = 0.5
+    expected_actual_charge_row = ",".join(
+        [
+            funding_B.cost_centre,
+            funding_B.activity,
+            funding_B.analysis_code.code,
+            f"{funding_B.daily_rate * n_days:.2f}",
+            (
+                f"RSE Project {project_B.name} ({funding_B.cost_centre}_"
+                f"{funding_B.activity}): 6/2025 [rcs-manager@imperial.ac.uk]"
+            ),
+        ]
+    )
+    assert expected_actual_charge_row in response.content.decode("utf-8")
 
 
 @pytest.mark.django_db
