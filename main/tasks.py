@@ -1,12 +1,16 @@
 """Task definitions for project notifications using Huey."""
 
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
 
+from django.utils import timezone
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
-from .notify import email_user
-from .utils import get_current_and_last_month, get_logged_hours
+from main.Clockify.api_interface import ClockifyAPI
+from main.models import Project, TimeEntry, User
+from main.notify import email_user
+from main.utils import get_current_and_last_month, get_logged_hours
 
 _template = """
 Dear {project_leader},
@@ -146,3 +150,94 @@ def notify_monthly_time_logged_summary() -> None:
         current_month_start,
         current_month_name,
     )
+
+
+@task()
+def sync_clockify_time_entries() -> None:
+    """Task to sync time entries from Clockify API to TimeEntry model."""
+    api_key = os.getenv("CLOCKIFY_API_KEY")
+    if not api_key:
+        print("Clockify API key not found in environment variables")
+        return
+
+    days_back = 30
+    api = ClockifyAPI(api_key)
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=days_back)
+
+    project_ids = list(
+        Project.objects.exclude(clockify_id="").values_list("clockify_id", flat=True)
+    )
+
+    total_entries_synced = 0
+    total_entries_skipped = 0
+
+    for project_id in project_ids:
+        try:
+            print(f"Processing project ID: {project_id}")
+            payload = {
+                "dateRangeStart": start_date.strftime("%Y-%m-%dT00:00:00.000Z"),
+                "dateRangeEnd": end_date.strftime("%Y-%m-%dT23:59:59.000Z"),
+                "detailedFilter": {"page": 1, "pageSize": 200},
+                "projects": {"contains": "CONTAINS", "ids": [project_id]},
+            }
+
+            response = api.get_time_entries(payload)
+            entries = response.get("timeentries", [])
+            if not isinstance(entries, list):
+                entries = []
+
+            project_entries_synced = 0
+            project_entries_skipped = 0
+
+            for entry in entries:
+                entry_id = entry.get("id") or entry.get("_id")
+                project_id = entry.get("projectId")
+                user_email = entry.get("userEmail")
+                time_interval = entry.get("timeInterval", {})
+                start = time_interval.get("start")
+                end = time_interval.get("end")
+
+                if not (project_id and user_email and start and end):
+                    continue
+
+                try:
+                    project = Project.objects.get(clockify_id=project_id)
+                except Project.DoesNotExist:
+                    print(f"Project with clockify_id {project_id} not found.")
+                    continue
+
+                try:
+                    user = User.objects.get(email=user_email)
+                except User.DoesNotExist:
+                    print(f"User with email {user_email} not found.")
+                    continue
+
+                start_time = datetime.fromisoformat(start.replace("Z", "+00:00"))
+                end_time = datetime.fromisoformat(end.replace("Z", "+00:00"))
+
+                existing_entry = TimeEntry.objects.filter(
+                    user=user,
+                    project=project,
+                    start_time=start_time,
+                    end_time=end_time,
+                ).exists()
+
+                if existing_entry:
+                    project_entries_skipped += 1
+                    continue
+
+                TimeEntry.objects.create(
+                    user=user,
+                    project=project,
+                    start_time=start_time,
+                    end_time=end_time,
+                    clockify_id=entry_id,
+                )
+                project_entries_synced += 1
+
+            total_entries_synced += project_entries_synced
+            total_entries_skipped += project_entries_skipped
+
+        except Exception as e:
+            print(f"Error syncing time entries for project {project_id}: {e}")
