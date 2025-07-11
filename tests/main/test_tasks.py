@@ -5,11 +5,13 @@ from unittest.mock import patch
 
 import pytest
 
+from main.models import TimeEntry
 from main.tasks import (
     email_monthly_charges_report_logic,
     notify_funding_status_logic,
     notify_left_threshold_logic,
     notify_monthly_time_logged_logic,
+    sync_clockify_time_entries,
 )
 
 
@@ -280,3 +282,56 @@ def test_email_monthly_charges_report():
             expected_attachment,
             "text/csv",
         )
+
+
+@pytest.mark.django_db
+@patch("main.tasks.os.getenv")
+@patch("main.tasks.ClockifyAPI")
+@patch("main.tasks.timezone.now")
+def test_sync_clockify_time_entries(
+    mock_now, mock_clockify_api, mock_getenv, user, project
+):
+    """Test that time entries are synced from Clockify."""
+    # Setup mock return values
+    mock_now.return_value = datetime(2025, 7, 10, 12, 0, 0)
+
+    def getenv_side_effect(key):
+        if key == "CLOCKIFY_API_KEY":
+            return "fake_api_key"
+        if key == "CLOCKIFY_WORKSPACE_ID":
+            return "fake_workspace_id"
+        return None
+
+    mock_getenv.side_effect = getenv_side_effect
+    project.clockify_id = "clockify_project_1"
+    project.save()
+
+    mock_api_instance = mock_clockify_api.return_value
+    mock_api_instance.get_time_entries.return_value = {
+        "timeentries": [
+            {
+                "id": "entry1",
+                "projectId": project.clockify_id,
+                "userEmail": user.email,
+                "timeInterval": {
+                    "start": "2025-07-09T10:00:00Z",
+                    "end": "2025-07-09T11:00:00Z",
+                },
+            }
+        ]
+    }
+
+    # Pre-create an entry to test skipping logic
+    TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=datetime.fromisoformat("2025-07-09T10:00:00+00:00"),
+        end_time=datetime.fromisoformat("2025-07-09T11:00:00+00:00"),
+        clockify_id="entry1",
+    )
+
+    # Run the task
+    sync_clockify_time_entries()
+
+    assert TimeEntry.objects.count() == 1
+    assert TimeEntry.objects.filter(clockify_id="entry1").exists()
