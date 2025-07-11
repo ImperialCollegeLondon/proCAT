@@ -279,7 +279,6 @@ def email_monthly_charges_report() -> None:
     )
 
 
-@task()
 def sync_clockify_time_entries() -> None:
     """Task to sync time entries from Clockify API to TimeEntry model."""
     api_key = os.getenv("CLOCKIFY_API_KEY")
@@ -370,3 +369,10 @@ def sync_clockify_time_entries() -> None:
 
         except Exception as e:
             print(f"Error syncing time entries for project {project_id}: {e}")
+
+
+@db_periodic_task(crontab(day_of_week="mon", hour=2, minute=0))
+def sync_clockify_time_entries_task() -> None:
+    """Scheduled task to sync time entries from Clockify API."""
+    sync_clockify_time_entries()
+    print("Clockify time entries sync completed.")
