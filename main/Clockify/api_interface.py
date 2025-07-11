@@ -2,6 +2,7 @@
 
 import json
 import os
+from collections.abc import Collection
 
 import requests
 
@@ -22,7 +23,9 @@ class ClockifyAPI:
         self.reports_base_url = "https://reports.api.clockify.me/v1"
         self.headers = {"Content-Type": "application/json", "X-Api-Key": self.api_key}
 
-    def get_time_entries(self, payload: dict[str, object]) -> dict[str, object]:
+    def get_time_entries(
+        self, payload: dict[str, Collection[str]]
+    ) -> dict[str, object]:
         """Retrieve detailed time entries for a specified workspace using the API.
 
         Args:
