@@ -34,7 +34,6 @@ def get_actual_chargeable_days(
         project=project,
         start_time__gte=start_time,
         start_time__lt=end_time,
-        monthly_charge__isnull=True,
     )
     pks = list(time_entries.values_list("pk", flat=True))
 
