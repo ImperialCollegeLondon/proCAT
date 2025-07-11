@@ -626,13 +626,12 @@ class MonthlyCharge(models.Model):
     def clean(self) -> None:
         """Ensure the charge has valid funding attached and description if Manual."""
         super().clean()
-
-        if not self.funding.expiry_date or not self.funding.funding_left:
-            raise ValidationError("Funding source must have expiry date and amount.")
+        if not self.funding.expiry_date:
+            raise ValidationError("Funding source must have an expiry date.")
 
         if (
             self.date > self.funding.expiry_date
-            or self.amount > self.funding.funding_left
+            or self.funding.funding_left < 0  # After deducting charge amount
         ):
             raise ValidationError(
                 "Monthly charge must not exceed the funding date or amount."

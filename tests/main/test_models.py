@@ -615,7 +615,7 @@ class TestMonthlyCharge:
         )
         with pytest.raises(
             ValidationError,
-            match="Funding source must have expiry date and amount.",
+            match="Funding source must have an expiry date.",
         ):
             monthly_charge.clean()
 
@@ -637,17 +637,18 @@ class TestMonthlyCharge:
         ):
             monthly_charge.clean()
 
-    @pytest.mark.usefixtures("project", "funding")
+    @pytest.mark.django_db
     def test_clean_invalid_funding(self, project, funding):
         """Test the model validation for the amount field."""
         from main import models
 
-        monthly_charge = models.MonthlyCharge(
+        monthly_charge = models.MonthlyCharge.objects.create(
             project=project,
             funding=funding,
             date=funding.expiry_date - timedelta(1),
-            amount=funding.funding_left + 1,  # invalid funding
+            amount=funding.funding_left + 1,  # Invalid funding
         )
+        funding.refresh_from_db()  # Update funding object
 
         with pytest.raises(
             ValidationError,
