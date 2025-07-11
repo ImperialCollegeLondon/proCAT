@@ -75,8 +75,20 @@ def test_get_valid_funding_sources(project, analysis_code):
         budget=1000.00,
         daily_rate=1000.00,
     )
-    # TODO: Create depleted funding when effort_left implemented
+    # Create depleted - expires first
+    models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="F12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date + timedelta(5),
+        budget=0.00,
+        daily_rate=1000.00,
+    )
 
+    # Check that only the non-expired funding is valid
     assert report.get_valid_funding_sources(project, end_date) == [valid_funding]
 
 
@@ -154,16 +166,13 @@ def test_create_pro_rata_monthly_charges(department, user, analysis_code):
 def test_create_actual_monthly_charges_validate_effort_left(
     department, user, analysis_code
 ):
-    """Test the create_actual_monthly_charges function when charge exceeds total effort.
-
-    TODO: Update this to be more sensible when funding.effort_left implemented.
-    """
+    """Test the create_actual_monthly_charges function when total effort exceeded."""
     from main import models, report
 
     start_date = date(2025, 6, 1)
     end_date = date(2025, 7, 1)
 
-    # Create project and time entry that will exceed funding budget
+    # Create project and funding
     project = models.Project.objects.create(
         name="ProCAT",
         department=department,
@@ -181,17 +190,42 @@ def test_create_actual_monthly_charges_validate_effort_left(
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=end_date,
-        budget=1000.00,
-        daily_rate=1000.00,
-    )  # Only 1 day worth of funding
+        budget=250.00,
+        daily_rate=100.00,
+    )  # 2.5 days funding
+    models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date,
+        budget=200.00,
+        daily_rate=200.00,
+    )  # 1 day funding
+
+    # Create some time entries that will exceed total funding budget
     models.TimeEntry.objects.create(
         user=user,
         project=project,
-        start_time=datetime(2025, 6, 1, 1, 0),
-        end_time=datetime(2026, 6, 1, 1, 0),
-    )  # 1 year total
+        start_time=datetime(2025, 6, 1, 9, 0),
+        end_time=datetime(2025, 6, 1, 16, 0),
+    )
+    models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=datetime(2025, 6, 10, 1, 0),
+        end_time=datetime(2025, 6, 10, 17, 45),
+    )
+    models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=datetime(2025, 6, 15, 12, 0),
+        end_time=datetime(2025, 6, 15, 15, 50),
+    )
 
-    # Check that the time entry exceeds 1 day
+    # Check that the time entries exceed the funding
     with pytest.raises(
         ValidationError,
         match=(
@@ -204,11 +238,7 @@ def test_create_actual_monthly_charges_validate_effort_left(
 
 @pytest.mark.django_db
 def test_create_actual_monthly_charges(department, user, analysis_code):
-    """Test the create_actual_monthly_charges function.
-
-    TODO: Update when funding.effort_left implemented to test charges are created for
-    multiple funding sources.
-    """
+    """Test the create_actual_monthly_charges function."""
     from main import models, report
 
     start_date = date(2025, 6, 1)
@@ -231,10 +261,10 @@ def test_create_actual_monthly_charges(department, user, analysis_code):
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=end_date,  # expires first
-        budget=1000.00,
-        daily_rate=100.00,
-    )
-    funding_B = models.Funding.objects.create(  # noqa: F841
+        budget=500.00,
+        daily_rate=375.00,
+    )  # 1.25 days worth of funds
+    funding_B = models.Funding.objects.create(
         project=project,
         source="External",
         funding_body="Funding body",
@@ -243,13 +273,14 @@ def test_create_actual_monthly_charges(department, user, analysis_code):
         analysis_code=analysis_code,
         expiry_date=end_date + timedelta(30),
         budget=5000.00,
-        daily_rate=500.00,
+        daily_rate=400.00,
     )
 
     # Check no monthly charge is created if there are no time entries
     report.create_actual_monthly_charges(project, start_date, end_date)
     assert not models.MonthlyCharge.objects.exists()
 
+    # Create time entries
     time_entry_A = models.TimeEntry.objects.create(
         user=user,
         project=project,
@@ -263,23 +294,24 @@ def test_create_actual_monthly_charges(department, user, analysis_code):
         end_time=datetime(2025, 6, 4, 13, 30),
     )  # 3.5 hours total
 
+    # Calculate the chargeable days to each funding source (1.5 days total)
+    # Funding A is depleted and remainder charged to funding B
+    funding_A_days = funding_A.effort_left
+    funding_B_days = 1.5 - funding_A_days
+
     # Create monthly charges
     report.create_actual_monthly_charges(project, start_date, end_date)
 
-    # Calculate the chargeable days from the time entries
-    chargeable_hours = 0
-    for time_entry in [time_entry_A, time_entry_B]:
-        chargeable_hours += (
-            time_entry.end_time - time_entry.start_time
-        ).total_seconds() / 3600
-    chargeable_days = chargeable_hours / 7
-
-    # Check monthly charge created against funding A
-    charge = models.MonthlyCharge.objects.get(date=start_date)
-    assert round(funding_A.daily_rate * chargeable_days, 2) == charge.amount
+    # Check monthly charges created against funding A (total) and funding B
+    charges = models.MonthlyCharge.objects.all().filter(date=start_date)
+    assert round(float(funding_A.daily_rate) * funding_A_days, 2) == charges[0].amount
+    assert round(float(funding_B.daily_rate) * funding_B_days, 2) == charges[1].amount
 
     # Check monthly charge has been added to time entries
-    assert charge in time_entry_A.monthly_charge.all()
+    assert charges[0] in time_entry_A.monthly_charge.all()
+    assert charges[1] in time_entry_A.monthly_charge.all()
+    assert charges[0] in time_entry_B.monthly_charge.all()
+    assert charges[1] in time_entry_B.monthly_charge.all()
 
 
 @pytest.mark.django_db
