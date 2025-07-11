@@ -30,3 +30,24 @@ def email_user_and_cc_admin(
         cc=cc_list,
     )
     email_message.send(fail_silently=False)
+
+
+def email_attachment(
+    subject: str,
+    email: list[str],
+    message: str,
+    attachment_fname: str,
+    attachment: str,
+    attachment_type: str,
+) -> None:
+    """Send email with attachment to HoRSEs."""
+    email_message = EmailMessage(
+        subject=subject,
+        body=message,
+        from_email=None,
+        to=email,
+    )
+    email_message.attach(
+        filename=attachment_fname, content=attachment, mimetype=attachment_type
+    )
+    email_message.send(fail_silently=False)

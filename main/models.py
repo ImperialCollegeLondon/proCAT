@@ -500,6 +500,27 @@ class Funding(models.Model):
         """
         return float(self.daily_rate) * self.effort_left
 
+    @property
+    def monthly_pro_rata_charge(self) -> float | None:
+        """Calculate the charge per month if the project has Pro-rata charging.
+
+        Calculates the number of months between project start and end date regardless
+        of the day of the month so the monthly charge will be the same regardless
+        of the number of days in the month.
+        """
+        if (
+            self.project.charging == "Pro-rata"
+            and self.project.start_date
+            and self.project.end_date
+        ):
+            months = (
+                (self.project.end_date.year - self.project.start_date.year) * 12
+                + (self.project.end_date.month - self.project.start_date.month)
+                + 1
+            )
+            return float(self.budget / months)
+        return None
+
 
 class Capacity(models.Model):
     """Proportion of working time that team members are able to work on projects."""
@@ -646,10 +667,8 @@ class TimeEntry(models.Model):
         blank=False,
         help_text="The date and time when the work ended.",
     )
-    monthly_charge = models.ForeignKey(
+    monthly_charge = models.ManyToManyField(
         MonthlyCharge,
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         help_text="The relevant monthly charge for this time entry.",
     )

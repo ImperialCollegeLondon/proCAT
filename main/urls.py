@@ -23,4 +23,9 @@ urlpatterns = [
         views.CapacityPlanningView.as_view(),
         name="capacity_planning",
     ),
+    path(
+        "cost_recovery/",
+        views.CostRecoveryView.as_view(),
+        name="cost_recovery",
+    ),
 ]

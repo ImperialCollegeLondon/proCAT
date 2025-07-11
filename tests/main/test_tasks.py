@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from main.tasks import (
+    email_monthly_charges_report_logic,
     notify_funding_status_logic,
     notify_left_threshold_logic,
     notify_monthly_time_logged_logic,
@@ -241,4 +242,41 @@ def test_funding_ran_out_not_expired(funding, project):
             email=funding.project.lead.email,
             admin_email=[],
             message=expected_message,
+        )
+
+
+@pytest.mark.django_db
+def test_email_monthly_charges_report():
+    """Tests that the monthly charges report is generated and emailed."""
+    from main import models, report
+
+    month, month_name, year = 6, "June", 2025
+    admin_user = models.User.objects.create(
+        first_name="admin",
+        last_name="user",
+        email="admin.user@mail.com",
+        password="1234",
+        username="admin_user",
+        is_superuser=True,
+    )
+
+    # Create attachment with empty charges row
+    expected_subject = f"Charges report for {month_name}"
+    expected_attachment = report.create_charges_report_for_attachment(month, year)
+    expected_fname = f"charges_report_{month}-{year}.csv"
+    expected_message = (
+        f"\nDear {admin_user.get_full_name()},\n\n"
+        f"Please find attached the charges report for the last month: {month_name}.\n\n"
+        "Best regards,\nProCAT\n"
+    )
+
+    with patch("main.tasks.email_attachment") as mock_email_attachment:
+        email_monthly_charges_report_logic(month, year, month_name)
+        mock_email_attachment.assert_called_with(
+            expected_subject,
+            [admin_user.email],
+            expected_message,
+            expected_fname,
+            expected_attachment,
+            "text/csv",
         )
