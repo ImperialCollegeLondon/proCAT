@@ -184,7 +184,7 @@ def get_projects_with_charges_exceeding_budget(
 
         total_charges = (total_hours / Decimal("7")) * Decimal(
             str(avg_daily_rate)
-        )  # Assuming 7 hours/workday
+        )  # Assuming 7 hours per workday
 
         if total_charges > total_active_budget:
             projects_with_charges_exceeding_budget.append(
