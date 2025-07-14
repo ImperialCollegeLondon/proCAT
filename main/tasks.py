@@ -326,8 +326,6 @@ def notify_monthly_charges_exceeding_budget_logic(
         )
 
         admin_email = get_admin_email()
-        if not admin_email:
-            continue
 
         email_user_and_cc_admin(
             subject=subject,
