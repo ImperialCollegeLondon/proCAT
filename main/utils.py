@@ -3,13 +3,15 @@
 from collections import defaultdict
 from collections.abc import Iterable
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django.db.models.query import QuerySet
 
 from . import models
-from .models import Funding, TimeEntry
+from .models import Funding, Project, TimeEntry
 
 ANALYSIS_CODES = (
     {
@@ -128,3 +130,63 @@ def get_budget_status(
         expiry_date__lt=date, budget__gt=0
     )
     return funds_ran_out_not_expired, funding_expired_budget_left
+
+
+def get_projects_with_charges_exceeding_budget(
+    date: date | None = None,
+) -> QuerySet[Funding]:
+    """Get projects whose monthly charges (for the last month) exceed their budget.
+
+    This function returns projects whose total charges
+    in the last month exceed the total budget available from all active
+    funding sources.
+    """
+    if date is None:
+        date = datetime.today().date()
+
+    projects_with_charges_exceeding_budget = []
+
+    last_month_start, _, current_month_start, _ = get_current_and_last_month(date)
+
+    projects = Project.objects.all()
+
+    for project in projects:
+        total_hours = Decimal("0.0")
+
+        time_entries = TimeEntry.objects.filter(
+            project=project,
+            start_time__gte=last_month_start,
+            end_time__lt=current_month_start,
+        )
+
+        if not time_entries.exists():
+            continue
+
+        for entry in time_entries:
+            duration = (entry.end_time - entry.start_time).total_seconds()
+            total_hours += Decimal(str(duration / 3600))
+
+        active_funding = Funding.objects.filter(
+            project=project,
+            expiry_date__gte=current_month_start,
+            budget__gt=0,
+        )
+
+        total_active_budget = (
+            active_funding.aggregate(total=Sum("budget"))["total"] or 0
+        )
+
+        rates = list(active_funding.values_list("daily_rate", flat=True))
+        if not rates:
+            continue
+
+        avg_daily_rate = sum(rates) / len(rates)
+
+        total_charges = (total_hours / 7) * avg_daily_rate  # Assuming 7 hours/workday
+
+        if total_charges > total_active_budget:
+            projects_with_charges_exceeding_budget.append(
+                (project, total_charges, total_active_budget)
+            )
+
+    return projects_with_charges_exceeding_budget
