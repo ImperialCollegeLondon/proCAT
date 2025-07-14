@@ -133,8 +133,8 @@ def get_budget_status(
 
 
 def get_projects_with_charges_exceeding_budget(
-    date: date | None = None,
-) -> QuerySet[Funding]:
+    date: datetime | None = None,
+) -> list[tuple[Project, Decimal, int | float]]:
     """Get projects whose monthly charges (for the last month) exceed their budget.
 
     This function returns projects whose total charges
@@ -142,7 +142,7 @@ def get_projects_with_charges_exceeding_budget(
     funding sources.
     """
     if date is None:
-        date = datetime.today().date()
+        date = datetime.today()
 
     projects_with_charges_exceeding_budget = []
 
@@ -182,7 +182,9 @@ def get_projects_with_charges_exceeding_budget(
 
         avg_daily_rate = sum(rates) / len(rates)
 
-        total_charges = (total_hours / 7) * avg_daily_rate  # Assuming 7 hours/workday
+        total_charges = (total_hours / Decimal("7")) * Decimal(
+            str(avg_daily_rate)
+        )  # Assuming 7 hours/workday
 
         if total_charges > total_active_budget:
             projects_with_charges_exceeding_budget.append(

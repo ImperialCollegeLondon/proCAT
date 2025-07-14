@@ -293,7 +293,7 @@ ProCAT
 
 
 def notify_monthly_charges_exceeding_budget_logic(
-    date: datetime.date | None = None,
+    date: datetime.datetime | None = None,
 ) -> None:
     """Logic to notify project lead and admin when total charges exceed budget.
 
@@ -304,7 +304,7 @@ def notify_monthly_charges_exceeding_budget_logic(
     from .models import Funding
 
     if date is None:
-        date = datetime.date.today()
+        date = datetime.datetime.today()
 
     projects = get_projects_with_charges_exceeding_budget(date=date)
 
