@@ -138,7 +138,7 @@ class CapacityPlanningView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add HTML components and Bokeh version to the context."""
         context = super().get_context_data(**kwargs)
-        plot = plots.create_timeseries_plot(
+        plot = plots.create_capacity_planning_plot(
             datetime.now(), datetime.now() + timedelta(365)
         )
         script, div = components(plot)

@@ -21,13 +21,15 @@ def test_calculate_capacity_planning_traces():
 
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
-def test_create_timeseries_plot():
+def test_create_capacity_planning_plot():
     """Test function to create a timeseries plot."""
     from bokeh.plotting import figure
 
     from main import plots
 
-    plot = plots.create_timeseries_plot(datetime.now(), datetime.now() + timedelta(365))
+    plot = plots.create_capacity_planning_plot(
+        datetime.now(), datetime.now() + timedelta(365)
+    )
     assert isinstance(plot, figure)
 
     title = "Project effort and team capacity over time"

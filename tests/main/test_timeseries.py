@@ -96,7 +96,7 @@ def test_get_effort_timeseries(
 @pytest.mark.django_db
 @pytest.mark.usefixtures("user")
 def test_get_capacity_timeseries(user):
-    """Test the get_effort_timeseries function."""
+    """Test the get_capacity_timeseries function."""
     from main import models, timeseries
 
     capacity_A = models.Capacity.objects.create(
