@@ -184,7 +184,7 @@ def test_project_within_budget(user, project):
 
     # Create time entry in the last month
     start_time = datetime(2025, 6, 1, 11, 0)
-    end_time = start_time + timedelta(hours=14)
+    end_time = start_time + timedelta(hours=14)  # 14 hrs, so 2 days of work
 
     TimeEntry.objects.create(
         user=user,
@@ -203,8 +203,8 @@ def test_project_within_budget(user, project):
     )
 
     result = get_projects_with_charges_exceeding_budget(date=date)
-
-    # Check if the project is not in the result
+    # Since the total charges (2 days * 400) = 800 < budget = 1000,
+    # the project should not be in the result
     assert len(result) == 0
 
 
@@ -219,7 +219,7 @@ def test_project_charges_exceeding_budget(user, project):
 
     # Create time entry in the last month
     start_time = datetime(2025, 6, 1, 11, 0)
-    end_time = start_time + timedelta(hours=21)
+    end_time = start_time + timedelta(hours=21)  # 21 hrs, so 3 days of work
 
     TimeEntry.objects.create(
         user=user,
@@ -238,8 +238,8 @@ def test_project_charges_exceeding_budget(user, project):
     )
 
     result = get_projects_with_charges_exceeding_budget(date=date)
-
-    # Check if the project is in the result
+    # Since total charges (3 days * 400) = 1200 > budget = 1000,
+    # the project should be in the result
     assert len(result) == 1
     assert result[0][0] == project
     assert result[0][1] > 1000
