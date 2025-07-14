@@ -160,3 +160,13 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
         year = form.cleaned_data["year"]
         response = report.create_charges_report_for_download(month, year)
         return response
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
+        """Add HTML components and Bokeh version to the context."""
+        context = super().get_context_data(**kwargs)
+        plot = plots.create_cost_recovery_plot()
+        script, div = components(plot)
+        context["script"] = script
+        context["div"] = div
+        context["bokeh_version"] = bokeh.__version__
+        return context

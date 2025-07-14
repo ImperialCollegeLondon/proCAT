@@ -6,13 +6,15 @@ import pytest
 
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
-def test_calculate_traces():
+def test_calculate_capacity_planning_traces():
     """Test function to get plotting data as dataframe."""
     from bokeh.models import ColumnDataSource
 
     from main import plots
 
-    source = plots.calculate_traces(datetime.now(), datetime.now() + timedelta(365))
+    source = plots.calculate_capacity_planning_traces(
+        datetime.now(), datetime.now() + timedelta(365)
+    )
     assert isinstance(source, ColumnDataSource)
     assert "Effort" in source.data
     assert "Capacity" in source.data
