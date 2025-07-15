@@ -282,7 +282,6 @@ def email_monthly_charges_report() -> None:
     )
 
 
-@task()
 def sync_clockify_time_entries() -> None:
     """Task to sync time entries from Clockify API to TimeEntry model."""
     if not settings.CLOCKIFY_API_KEY:

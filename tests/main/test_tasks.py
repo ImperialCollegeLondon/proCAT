@@ -285,24 +285,17 @@ def test_email_monthly_charges_report():
 
 
 @pytest.mark.django_db
-@patch("main.tasks.os.getenv")
+@patch("main.tasks.settings")
 @patch("main.tasks.ClockifyAPI")
 @patch("main.tasks.timezone.now")
 def test_sync_clockify_time_entries(
-    mock_now, mock_clockify_api, mock_getenv, user, project
+    mock_now, mock_clockify_api, mock_settings, user, project
 ):
     """Test that time entries are synced from Clockify."""
     # Setup mock return values
     mock_now.return_value = datetime(2025, 7, 10, 12, 0, 0)
+    mock_settings.CLOCKIFY_API_KEY = "fake_api_key"
 
-    def getenv_side_effect(key):
-        if key == "CLOCKIFY_API_KEY":
-            return "fake_api_key"
-        if key == "CLOCKIFY_WORKSPACE_ID":
-            return "fake_workspace_id"
-        return None
-
-    mock_getenv.side_effect = getenv_side_effect
     project.clockify_id = "clockify_project_1"
     project.save()
 
@@ -333,5 +326,15 @@ def test_sync_clockify_time_entries(
     # Run the task
     sync_clockify_time_entries()
 
+    # Verify the API was called with correct parameters
+    expected_payload = {
+        "dateRangeStart": "2025-06-10T00:00:00.000Z",
+        "dateRangeEnd": "2025-07-10T23:59:59.000Z",
+        "detailedFilter": {"page": 1, "pageSize": 200},
+        "projects": {"contains": "CONTAINS", "ids": [project.clockify_id]},
+    }
+    mock_api_instance.get_time_entries.assert_called_once_with(expected_payload)
+
+    # Verify that no duplicate entry was created
     assert TimeEntry.objects.count() == 1
     assert TimeEntry.objects.filter(clockify_id="entry1").exists()
