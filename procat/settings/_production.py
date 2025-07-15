@@ -21,3 +21,5 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smarthost.cc.ic.ac.uk"
 SERVER_EMAIL = "noreply@imperial.ac.uk"
 DEFAULT_FROM_EMAIL = SERVER_EMAIL
+CLOCKIFY_API_KEY = os.environ.get("CLOCKIFY_API_KEY")
+CLOCKIFY_WORKSPACE_ID = os.environ.get("CLOCKIFY_WORKSPACE_ID")
