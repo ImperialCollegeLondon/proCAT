@@ -199,7 +199,7 @@ class TestProject:
         # Check days_left when there are no extra time entries
         total_effort = funding_A.effort + funding_B.effort
         left = funding_A.effort_left + funding_B.effort_left
-        days_left = left, round(left / total_effort * 100, 1)
+        days_left = round(left), round(left / total_effort * 100, 1)
         assert project.days_left == days_left
 
         # Create a time entry object for yesterday
@@ -213,8 +213,8 @@ class TestProject:
         )  # 3.5 hours total (0.5 days)
 
         # Check days_left has been updated
-        left -= round(0.5)
-        days_left = left, round(left / total_effort * 100, 1)
+        left -= 0.5
+        days_left = round(left), round(left / total_effort * 100, 1)
         assert project.days_left == days_left
 
     @pytest.mark.parametrize(
@@ -445,7 +445,7 @@ class TestFunding:
 
         # No monthly charges
         funding.refresh_from_db()
-        assert funding.effort_left == funding.effort
+        assert round(funding.effort_left) == funding.effort
 
         # Check when monthly charge created
         charge_date = funding.expiry_date - timedelta(days=5)
@@ -453,7 +453,7 @@ class TestFunding:
             project=project, funding=funding, amount=100.00, date=charge_date
         )
         monthly_charge.refresh_from_db()
-        effort_left = round(
+        effort_left = float(
             (funding.budget - monthly_charge.amount) / funding.daily_rate
         )
         assert funding.effort_left == effort_left

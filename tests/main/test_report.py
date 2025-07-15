@@ -211,19 +211,19 @@ def test_create_actual_monthly_charges_validate_effort_left(
         project=project,
         start_time=datetime(2025, 6, 1, 9, 0),
         end_time=datetime(2025, 6, 1, 16, 0),
-    )
+    )  # 7 hours total
     models.TimeEntry.objects.create(
         user=user,
         project=project,
-        start_time=datetime(2025, 6, 10, 1, 0),
-        end_time=datetime(2025, 6, 10, 17, 45),
-    )
+        start_time=datetime(2025, 6, 10, 8, 0),
+        end_time=datetime(2025, 6, 10, 19, 0),
+    )  # 11 hours total
     models.TimeEntry.objects.create(
         user=user,
         project=project,
         start_time=datetime(2025, 6, 15, 12, 0),
-        end_time=datetime(2025, 6, 15, 15, 50),
-    )
+        end_time=datetime(2025, 6, 15, 22, 30),
+    )  # 10.5 hours total
 
     # Check that the time entries exceed the funding
     with pytest.raises(
@@ -304,8 +304,8 @@ def test_create_actual_monthly_charges(department, user, analysis_code):
 
     # Check monthly charges created against funding A (total) and funding B
     charges = models.MonthlyCharge.objects.all().filter(date=start_date)
-    assert round(float(funding_A.daily_rate) * funding_A_days, 2) == charges[0].amount
-    assert round(float(funding_B.daily_rate) * funding_B_days, 2) == charges[1].amount
+    assert round(funding_A.daily_rate * funding_A_days, 2) == float(charges[0].amount)
+    assert round(funding_B.daily_rate * funding_B_days, 2) == float(charges[1].amount)
 
     # Check monthly charge has been added to time entries
     assert charges[0] in time_entry_A.monthly_charge.all()

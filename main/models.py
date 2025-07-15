@@ -239,10 +239,8 @@ class Project(models.Model):
         Returns:
             The percentage of effort left, or None if there is no funding information.
         """
-        if self.total_effort:
-            left = sum([funding.effort_left for funding in self.funding_source.all()])
-            return round(left / self.total_effort * 100, 1)
-
+        if left := self.days_left:
+            return left[1]
         return None
 
     @property
@@ -263,9 +261,9 @@ class Project(models.Model):
             start_date = end_date.replace(day=1)
             additional_days = get_actual_chargeable_days(self, start_date, end_date)[0]
             if additional_days:
-                left -= round(additional_days)
+                left -= additional_days
 
-            return left, round(left / self.total_effort * 100, 1)
+            return round(left), round(left / self.total_effort * 100, 1)
 
         return None
 
@@ -505,13 +503,13 @@ class Funding(models.Model):
         return self.budget
 
     @property
-    def effort_left(self) -> int:
+    def effort_left(self) -> float:
         """Provide the effort left in days.
 
         Returns:
             The number of days worth of effort left.
         """
-        return round(self.funding_left / self.daily_rate)
+        return float(self.funding_left / self.daily_rate)
 
     @property
     def monthly_pro_rata_charge(self) -> float | None:
