@@ -22,7 +22,7 @@ def test_calculate_capacity_planning_traces():
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
 def test_create_capacity_planning_plot():
-    """Test function to create a timeseries plot."""
+    """Test function to create the capacity planning plot."""
     from bokeh.plotting import figure
 
     from main import plots
@@ -39,4 +39,30 @@ def test_create_capacity_planning_plot():
 
     legend_items = [item.label.value for item in plot.legend.items]
     assert "Project effort" in legend_items
+    assert "Capacity" in legend_items
+
+
+def test_create_cost_recovery_plot(project, funding):
+    """Test function to create the cost recovery plot."""
+    from bokeh.plotting import figure
+
+    from main import models, plots
+
+    # Create a Monthly Charge for the plot
+    models.MonthlyCharge.objects.create(
+        project=project,
+        funding=funding,
+        amount=100.00,
+        date=datetime.today().date() - timedelta(100),
+    )
+    plot = plots.create_cost_recovery_plot()
+    assert isinstance(plot, figure)
+
+    title = "Team capacity and project charging for the past year"
+    assert plot.title.text == title
+    assert plot.yaxis.axis_label == "Value"
+    assert plot.xaxis.axis_label == "Date"
+
+    legend_items = [item.label.value for item in plot.legend.items]
+    assert "Charge per day" in legend_items
     assert "Capacity" in legend_items
