@@ -136,6 +136,34 @@ class TestProject:
         assert project.total_effort == total_effort
 
     @pytest.mark.django_db
+    def test_percent_effort_left(self, project, analysis_code):
+        """Test the percent_effort_left method."""
+        from main import models
+
+        # Check when there is no Funding objrect
+        assert project.percent_effort_left is None
+
+        # Create Funding object and Monthly Charge
+        funding = models.Funding.objects.create(
+            project=project,
+            source="External",
+            funding_body="Funding body",
+            cost_centre="centre",
+            activity="G12345",
+            analysis_code=analysis_code,
+            expiry_date=datetime.now().date() + timedelta(days=42),
+            budget=1000.00,
+            daily_rate=200.00,
+        )
+        models.MonthlyCharge.objects.create(
+            date=datetime.today().date(),
+            project=project,
+            funding=funding,
+            amount=100.00,
+        )
+        assert project.days_left[1] == project.percent_effort_left
+
+    @pytest.mark.django_db
     def test_days_left(self, user, department, analysis_code):
         """Test the days_left method."""
         from main import models
