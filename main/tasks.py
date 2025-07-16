@@ -1,10 +1,15 @@
 """Task definitions for project notifications using Huey."""
 
 import datetime
+import logging
 
+from django.conf import settings
+from django.utils import timezone
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
+from .Clockify.api_interface import ClockifyAPI
+from .models import Project, TimeEntry, User
 from .notify import email_attachment, email_user, email_user_and_cc_admin
 from .report import create_charges_report_for_attachment
 from .utils import (
@@ -14,6 +19,8 @@ from .utils import (
     get_current_and_last_month,
     get_logged_hours,
 )
+
+logger = logging.getLogger(__name__)
 
 _template = """
 Dear {project_leader},
@@ -273,3 +280,76 @@ def email_monthly_charges_report() -> None:
     email_monthly_charges_report_logic(
         last_month_start.month, last_month_start.year, last_month_name
     )
+
+
+def sync_clockify_time_entries() -> None:
+    """Task to sync time entries from Clockify API to TimeEntry model."""
+    if not settings.CLOCKIFY_API_KEY or not settings.CLOCKIFY_WORKSPACE_ID:
+        logger.warning("Clockify API key not found in environment variables")
+        return
+    days_back = 30
+    api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
+    end_date = timezone.now()
+    start_date = end_date - datetime.timedelta(days=days_back)
+
+    projects = Project.objects.filter(status="Active").exclude(clockify_id="")
+    for project in projects:
+        logger.info(f"Processing project ID: {project.clockify_id}")
+        payload = {
+            "dateRangeStart": start_date.strftime("%Y-%m-%dT00:00:00.000Z"),
+            "dateRangeEnd": end_date.strftime("%Y-%m-%dT23:59:59.000Z"),
+            "detailedFilter": {"page": 1, "pageSize": 200},
+            "projects": {"contains": "CONTAINS", "ids": [project.clockify_id]},
+        }
+
+        try:
+            response = api.get_time_entries(payload)
+        except Exception as e:
+            logger.error(
+                f"Error fetching time entries for project {project.clockify_id}: {e}"
+            )
+            continue
+
+        entries = response.get("timeentries", [])
+        if not isinstance(entries, list):
+            entries = []
+
+        for entry in entries:
+            entry_id = entry.get("id") or entry.get("_id")
+            project_id = entry.get("projectId")
+            user_email = entry.get("userEmail")
+            time_interval = entry.get("timeInterval", {})
+            start = time_interval.get("start")
+            end = time_interval.get("end")
+
+            if not (project_id and user_email and start and end):
+                logger.warning(f"Skipping incomplete entry: {entry_id}")
+                continue
+
+            try:
+                user = User.objects.get(email=user_email)
+            except User.DoesNotExist:
+                logger.warning(
+                    f"User {user_email} not found. Skipping entry {entry_id}."
+                )
+                continue
+
+            start_time = datetime.datetime.fromisoformat(start)
+            end_time = datetime.datetime.fromisoformat(end)
+
+            TimeEntry.objects.get_or_create(
+                clockify_id=entry_id,
+                defaults={
+                    "user": user,
+                    "project": project,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                },
+            )
+
+
+@db_periodic_task(crontab(day_of_week="mon", hour=2, minute=0))
+def sync_clockify_time_entries_task() -> None:
+    """Scheduled task to sync time entries from Clockify API."""
+    sync_clockify_time_entries()
+    logger.info("Clockify time entries sync completed.")
