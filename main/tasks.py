@@ -356,7 +356,6 @@ def sync_clockify_time_entries_task() -> None:
     logger.info("Clockify time entries sync completed.")
 
 
-
 _template_budget_exceeded = """
 Dear {lead},
 

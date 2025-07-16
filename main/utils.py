@@ -147,7 +147,6 @@ def get_month_dates_for_previous_year() -> list[tuple[date, date]]:
     return dates
 
 
-
 def get_projects_with_charges_exceeding_budget(
     date: datetime | None = None,
 ) -> list[tuple[Project, Decimal, Decimal]]:
