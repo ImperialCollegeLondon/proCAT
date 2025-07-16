@@ -140,10 +140,15 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         return reverse("main:cost_recovery")
 
     def test_get(self, auth_client):
-        """Tests the get method."""
+        """Tests the get method and the data provided."""
+        import bokeh
+
         endpoint = reverse("main:cost_recovery")
         response = auth_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
+        assert "<script" in response.context["script"]
+        assert "<div" in response.context["div"]
+        assert response.context["bokeh_version"] == bokeh.__version__
 
     def test_form_valid(self, user):
         """Tests the form_valid method.

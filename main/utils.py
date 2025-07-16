@@ -128,3 +128,19 @@ def get_budget_status(
         expiry_date__lt=date, budget__gt=0
     )
     return funds_ran_out_not_expired, funding_expired_budget_left
+
+
+def get_month_dates_for_previous_year() -> list[tuple[date, date]]:
+    """Get the start and end date of each month for the previous year."""
+    dates = []
+    today = datetime.today().date()
+
+    start_current_month = today.replace(day=1)
+    for _ in range(12):
+        end_prev_month = start_current_month - timedelta(days=1)
+        start_prev_month = end_prev_month.replace(day=1)
+        dates.append((start_prev_month, end_prev_month))
+        start_current_month = start_prev_month
+
+    dates.reverse()
+    return dates
