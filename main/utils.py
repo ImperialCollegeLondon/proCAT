@@ -133,7 +133,7 @@ def get_budget_status(
 
 def get_projects_with_charges_exceeding_budget(
     date: datetime | None = None,
-) -> list[tuple[Project, Decimal, int | float]]:
+) -> list[tuple[Project, Decimal, Decimal]]:
     """Get projects whose monthly charges (for the last month) exceed their budget.
 
     This function returns projects whose total charges
@@ -174,7 +174,9 @@ def get_projects_with_charges_exceeding_budget(
             budget__gt=0,
         )
 
-        total_active_budget = sum(fund.funding_left for fund in active_funding)
+        total_active_budget = sum(
+            (fund.funding_left for fund in active_funding), Decimal("0.0")
+        )
 
         rates = list(active_funding.values_list("daily_rate", flat=True))
         if not rates:
