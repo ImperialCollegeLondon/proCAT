@@ -148,9 +148,12 @@ def get_projects_with_charges_exceeding_budget(
 
     last_month_start, _, current_month_start, _ = get_current_and_last_month(date)
 
-    projects = Project.objects.all()
+    projects = Project.objects.filter(status="Active")
 
     for project in projects:
+        funding_sources = Funding.objects.filter(project=project)
+        if not funding_sources.exists():
+            continue  # No funding sources for this project
         total_hours = Decimal("0.0")
 
         time_entries = TimeEntry.objects.filter(
