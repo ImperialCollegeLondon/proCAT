@@ -328,7 +328,7 @@ def sync_clockify_time_entries() -> None:
                 try:
                     user = User.objects.get(email=user_email)
                 except User.DoesNotExist:
-                    logger.info(f"User with email {user_email} not found.")
+                    logger.warning(f"User with email {user_email} not found.")
                     continue
 
                 start_time = datetime.datetime.fromisoformat(start)
