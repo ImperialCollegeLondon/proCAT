@@ -318,13 +318,6 @@ def sync_clockify_time_entries() -> None:
 
                 if not (project_id and user_email and start and end):
                     continue
-
-                try:
-                    project = Project.objects.get(clockify_id=project_id)
-                except Project.DoesNotExist:
-                    logger.info(f"Project with clockify_id {project_id} not found.")
-                    continue
-
                 try:
                     user = User.objects.get(email=user_email)
                 except User.DoesNotExist:
