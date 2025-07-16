@@ -316,7 +316,7 @@ def test_monthly_charges_exceeding_budget(funding, project):
         end_time=datetime(2025, 6, 1, 16, 0),  # 7 hours, so equal to 1 work day
     )
 
-    funding.budget = Decimal("100")
+    funding.budget = Decimal("100.00")
     funding.save()
 
     expected_subject = f"[Monthly Charge Exceeding Budget] {project.name}"

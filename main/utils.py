@@ -7,7 +7,6 @@ from decimal import Decimal
 from typing import Any
 
 from django.contrib.auth import get_user_model
-from django.db.models import Sum
 from django.db.models.query import QuerySet
 
 from . import models
@@ -175,9 +174,7 @@ def get_projects_with_charges_exceeding_budget(
             budget__gt=0,
         )
 
-        total_active_budget = (
-            active_funding.aggregate(total=Sum("budget"))["total"] or 0
-        )
+        total_active_budget = sum(fund.funding_left for fund in active_funding)
 
         rates = list(active_funding.values_list("daily_rate", flat=True))
         if not rates:
