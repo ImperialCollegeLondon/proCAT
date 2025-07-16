@@ -188,8 +188,10 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
 
 
 @pytest.mark.django_db
-def test_get_cost_recovery_timeseries_one_person(department, user, analysis_code):
-    """Testthe get_cost_recovery_timeseries function when all time in project work.
+def test_get_cost_recovery_timeseries_equal_to_num_people(
+    department, user, analysis_code
+):
+    """Test the get_cost_recovery_timeseries function when all time in project work.
 
     Tests the value given is equal to the number of people working if all time is
     invested in project work.
