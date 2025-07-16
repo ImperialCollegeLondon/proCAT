@@ -288,7 +288,7 @@ def sync_clockify_time_entries() -> None:
         logger.warning("Clockify API key not found in environment variables")
         return
     days_back = 30
-    api = ClockifyAPI(settings.CLOCKIFY_API_KEY)
+    api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
     end_date = timezone.now()
     start_date = end_date - datetime.timedelta(days=days_back)
 
