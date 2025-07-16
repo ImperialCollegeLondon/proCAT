@@ -284,7 +284,7 @@ def email_monthly_charges_report() -> None:
 
 def sync_clockify_time_entries() -> None:
     """Task to sync time entries from Clockify API to TimeEntry model."""
-    if not settings.CLOCKIFY_API_KEY:
+    if not settings.CLOCKIFY_API_KEY or not settings.CLOCKIFY_WORKSPACE_ID:
         logger.warning("Clockify API key not found in environment variables")
         return
     days_back = 30
