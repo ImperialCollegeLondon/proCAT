@@ -1,12 +1,9 @@
 """Clockify API Interface Module."""
 
 import json
-import os
 from collections.abc import Collection
 
 import requests
-
-WORKSPACE_ID = os.getenv("CLOCKIFY_WORKSPACE_ID")
 
 
 class ClockifyAPI:

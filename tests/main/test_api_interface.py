@@ -23,7 +23,6 @@ class TestClockifyAPI:
         assert api.reports_base_url == "https://reports.api.clockify.me/v1"
         assert api.headers == {"Content-Type": "application/json", "X-Api-Key": api_key}
 
-    @patch("main.Clockify.api_interface.WORKSPACE_ID", "test_workspace_id")
     @patch("main.Clockify.api_interface.requests.request")
     def test_get_time_entries_success(self, mock_request):
         """Test successful API call to get time entries."""
@@ -76,7 +75,6 @@ class TestClockifyAPI:
         assert "timeentries" in result
         assert len(result["timeentries"]) == 1
 
-    @patch("main.Clockify.api_interface.WORKSPACE_ID", "test_workspace_id")
     @patch("main.Clockify.api_interface.requests.request")
     def test_get_time_entries_http_error(self, mock_request):
         """Test API call with HTTP error response."""
@@ -95,7 +93,6 @@ class TestClockifyAPI:
 
         mock_response.raise_for_status.assert_called_once()
 
-    @patch("main.Clockify.api_interface.WORKSPACE_ID", "test_workspace_id")
     @patch("main.Clockify.api_interface.requests.request")
     def test_get_time_entries_empty_payload(self, mock_request):
         """Test API call with empty payload."""

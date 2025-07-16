@@ -315,36 +315,37 @@ def sync_clockify_time_entries() -> None:
             entries = []
 
         for entry in entries:
+            entry_id = entry.get("id") or entry.get("_id")
+            project_id = entry.get("projectId")
+            user_email = entry.get("userEmail")
+            time_interval = entry.get("timeInterval", {})
+            start = time_interval.get("start")
+            end = time_interval.get("end")
+
+            if not (project_id and user_email and start and end):
+                logger.warning(f"Skipping incomplete entry: {entry_id}")
+                continue
+
             try:
-                entry_id = entry.get("id") or entry.get("_id")
-                project_id = entry.get("projectId")
-                user_email = entry.get("userEmail")
-                time_interval = entry.get("timeInterval", {})
-                start = time_interval.get("start")
-                end = time_interval.get("end")
-
-                if not (project_id and user_email and start and end):
-                    logger.warning(f"Skipping incomplete entry: {entry_id}")
-                    continue
-
                 user = User.objects.get(email=user_email)
-                start_time = datetime.datetime.fromisoformat(start)
-                end_time = datetime.datetime.fromisoformat(end)
-
-                TimeEntry.objects.get_or_create(
-                    clockify_id=entry_id,
-                    defaults={
-                        "user": user,
-                        "project": project,
-                        "start_time": start_time,
-                        "end_time": end_time,
-                    },
-                )
             except User.DoesNotExist:
                 logger.warning(
                     f"User {user_email} not found. Skipping entry {entry_id}."
                 )
                 continue
+
+            start_time = datetime.datetime.fromisoformat(start)
+            end_time = datetime.datetime.fromisoformat(end)
+
+            TimeEntry.objects.get_or_create(
+                clockify_id=entry_id,
+                defaults={
+                    "user": user,
+                    "project": project,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                },
+            )
 
 
 @db_periodic_task(crontab(day_of_week="mon", hour=2, minute=0))
