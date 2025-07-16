@@ -15,7 +15,8 @@ class TestClockifyAPI:
         from main.Clockify.api_interface import ClockifyAPI
 
         api_key = "test_api_key"
-        api = ClockifyAPI(api_key)
+        workspace_id = "test_workspace_id"
+        api = ClockifyAPI(api_key, workspace_id)
 
         assert api.api_key == api_key
         assert api.base_url == "https://api.clockify.me/api"
@@ -49,7 +50,7 @@ class TestClockifyAPI:
         }
         mock_request.return_value = mock_response
 
-        api = ClockifyAPI("test_api_key")
+        api = ClockifyAPI("test_api_key", "test_workspace_id")
         payload = {
             "dateRangeStart": "2024-09-01T00:00:00.000Z",
             "dateRangeEnd": "2025-01-01T23:59:59.000Z",
@@ -86,7 +87,7 @@ class TestClockifyAPI:
         mock_response.raise_for_status.side_effect = requests.HTTPError("Unauthorized")
         mock_request.return_value = mock_response
 
-        api = ClockifyAPI("invalid_api_key")
+        api = ClockifyAPI("invalid_api_key", "test_workspace_id")
         payload = {"dateRangeStart": "2024-09-01T00:00:00.000Z"}
 
         with pytest.raises(requests.HTTPError, match="Unauthorized"):
@@ -105,7 +106,7 @@ class TestClockifyAPI:
         mock_response.json.return_value = {"timeentries": []}
         mock_request.return_value = mock_response
 
-        api = ClockifyAPI("test_api_key")
+        api = ClockifyAPI("test_api_key", "test_workspace_id")
         payload = {}
 
         result = api.get_time_entries(payload)
