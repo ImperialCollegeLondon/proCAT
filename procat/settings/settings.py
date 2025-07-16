@@ -9,6 +9,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -154,3 +155,5 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 EFFORT_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for effort left (percent)
 WEEKS_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for weeks left (percent)
+CLOCKIFY_API_KEY = os.environ.get("CLOCKIFY_API_KEY")
+CLOCKIFY_WORKSPACE_ID = os.environ.get("CLOCKIFY_WORKSPACE_ID")

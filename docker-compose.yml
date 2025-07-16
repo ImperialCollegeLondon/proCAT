@@ -1,6 +1,9 @@
 services:
   app:
     build: .
+    environment:
+      - CLOCKIFY_API_KEY
+      - CLOCKIFY_WORKSPACE_ID
     command:
       - sh
       - -c

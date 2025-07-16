@@ -15,14 +15,14 @@ class TestClockifyAPI:
         from main.Clockify.api_interface import ClockifyAPI
 
         api_key = "test_api_key"
-        api = ClockifyAPI(api_key)
+        workspace_id = "test_workspace_id"
+        api = ClockifyAPI(api_key, workspace_id)
 
         assert api.api_key == api_key
         assert api.base_url == "https://api.clockify.me/api"
         assert api.reports_base_url == "https://reports.api.clockify.me/v1"
         assert api.headers == {"Content-Type": "application/json", "X-Api-Key": api_key}
 
-    @patch("main.Clockify.api_interface.WORKSPACE_ID", "test_workspace_id")
     @patch("main.Clockify.api_interface.requests.request")
     def test_get_time_entries_success(self, mock_request):
         """Test successful API call to get time entries."""
@@ -49,7 +49,7 @@ class TestClockifyAPI:
         }
         mock_request.return_value = mock_response
 
-        api = ClockifyAPI("test_api_key")
+        api = ClockifyAPI("test_api_key", "test_workspace_id")
         payload = {
             "dateRangeStart": "2024-09-01T00:00:00.000Z",
             "dateRangeEnd": "2025-01-01T23:59:59.000Z",
@@ -75,7 +75,6 @@ class TestClockifyAPI:
         assert "timeentries" in result
         assert len(result["timeentries"]) == 1
 
-    @patch("main.Clockify.api_interface.WORKSPACE_ID", "test_workspace_id")
     @patch("main.Clockify.api_interface.requests.request")
     def test_get_time_entries_http_error(self, mock_request):
         """Test API call with HTTP error response."""
@@ -86,7 +85,7 @@ class TestClockifyAPI:
         mock_response.raise_for_status.side_effect = requests.HTTPError("Unauthorized")
         mock_request.return_value = mock_response
 
-        api = ClockifyAPI("invalid_api_key")
+        api = ClockifyAPI("invalid_api_key", "test_workspace_id")
         payload = {"dateRangeStart": "2024-09-01T00:00:00.000Z"}
 
         with pytest.raises(requests.HTTPError, match="Unauthorized"):
@@ -94,7 +93,6 @@ class TestClockifyAPI:
 
         mock_response.raise_for_status.assert_called_once()
 
-    @patch("main.Clockify.api_interface.WORKSPACE_ID", "test_workspace_id")
     @patch("main.Clockify.api_interface.requests.request")
     def test_get_time_entries_empty_payload(self, mock_request):
         """Test API call with empty payload."""
@@ -105,7 +103,7 @@ class TestClockifyAPI:
         mock_response.json.return_value = {"timeentries": []}
         mock_request.return_value = mock_response
 
-        api = ClockifyAPI("test_api_key")
+        api = ClockifyAPI("test_api_key", "test_workspace_id")
         payload = {}
 
         result = api.get_time_entries(payload)
