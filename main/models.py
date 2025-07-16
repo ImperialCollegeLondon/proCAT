@@ -683,6 +683,13 @@ class TimeEntry(models.Model):
         help_text="The relevant monthly charge for this time entry.",
     )
 
+    clockify_id = models.CharField(
+        "Clockify ID",
+        blank=True,
+        null=False,
+        help_text="The ID of the time entry in Clockify, if applicable.",
+    )
+
     def __str__(self) -> str:
         """String representation of the Time Entry object."""
         return f"{self.user} - {self.project} - {self.start_time} to {self.end_time}"

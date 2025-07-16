@@ -1,7 +1,14 @@
 {% extends "main/base.html" %}
 {% load django_bootstrap5 %}
 {% block content %}
-  <h2>Cost recovery</h2>
+
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-{{ bokeh_version }}.min.js"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{ bokeh_version }}.min.js"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{ bokeh_version }}.min.js"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-{{ bokeh_version }}.min.js"></script>
+  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-{{ bokeh_version }}.min.js"></script>
+
+  <h2>Charges report</h2>
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form form layout="horizontal" %}
@@ -9,5 +16,11 @@
       {% bootstrap_button button_type="submit" content="Download CSV" %}
     {% endif %}
   </form>
+
+  <br>
+
+  <h2>Cost recovery plot</h2>
+  {{ script | safe }}
+  {{ div | safe }}
 
 {% endblock content %}

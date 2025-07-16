@@ -1,11 +1,18 @@
-"""Timeseries for Capacity and Project data for plotting."""
+"""Timeseries for generating ProCAT plots."""
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 import pandas as pd
-from django.db.models import F, Window
+from django.db.models import (
+    ExpressionWrapper,
+    F,
+    FloatField,
+    Sum,
+    Value,
+    Window,
+)
 from django.db.models.functions import Coalesce, Lead
 
 from . import models
@@ -114,5 +121,51 @@ def get_capacity_timeseries(
     timeseries = pd.Series(0.0, index=dates)
     for capacity in capacities:
         timeseries = update_timeseries(timeseries, capacity, "value")
+
+    return timeseries
+
+
+def get_cost_recovery_timeseries(dates: list[tuple[date, date]]) -> pd.Series[float]:
+    """Get the cost recovery timeseries for the previous year.
+
+    For each month in the past year, this function aggregates all monthly charges and
+    divides this by the daily rate (dependent on funding source) and the number of
+    working days. This value is summed across all funding sources and added to the
+    timeseries.
+
+    Args:
+        dates: list of tuples (from oldest to most recent) containing dates for all
+            months of the previous year; each tuple contains two dates for the first
+            and last date of the month
+
+    Returns:
+        Pandas series containing cost recovery timeseries data.
+    """
+    date_range = pd.bdate_range(
+        start=dates[0][0],
+        end=dates[-1][1],
+        inclusive="both",
+    )
+    # initialize timeseries
+    timeseries = pd.Series(0.0, index=date_range)
+
+    for month in dates:
+        month_dates = pd.bdate_range(start=month[0], end=month[1], inclusive="both")
+        n_working_days = len(month_dates)
+        charges = (
+            models.MonthlyCharge.objects.filter(date=month[0])
+            .values("funding")  # group by funding
+            .annotate(total=Sum("amount"))  # get total Amount across monthly charges
+            .annotate(  # divide total by daily rate and working days
+                recovered=ExpressionWrapper(
+                    F("total") * Value(1.0) / F("funding__daily_rate") / n_working_days,
+                    output_field=FloatField(),
+                )
+            )
+        )
+
+        # aggregate across all funding sources (defaults to 0 if None)
+        month_total = charges.aggregate(Sum("recovered"))["recovered__sum"] or 0
+        timeseries[month_dates] += month_total  # Update timeseries
 
     return timeseries
