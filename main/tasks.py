@@ -301,18 +301,12 @@ def notify_monthly_charges_exceeding_budget_logic(
     their funding sources for the last month exceed the budget. If they do,
     it sends an email notification to the project lead and admin.
     """
-    from .models import Funding
-
     if date is None:
         date = datetime.datetime.today()
 
     projects = get_projects_with_charges_exceeding_budget(date=date)
 
     for project, total_charges, total_budget in projects:
-        funding_sources = Funding.objects.filter(project=project)
-        if not funding_sources.exists():
-            continue  # No funding sources for this project
-
         lead = project.lead
         lead_name = lead.get_full_name() if lead else "Project Leader"
         lead_email = lead.email if lead else ""
