@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-asgiref==3.8.1
+asgiref==3.9.1
     # via django
 bokeh==3.7.3
     # via procat (pyproject.toml)
@@ -51,7 +51,7 @@ numpy==2.3.1
     #   pandas
 packaging==25.0
     # via bokeh
-pandas==2.3.0
+pandas==2.3.1
     # via
     #   bokeh
     #   procat (pyproject.toml)
