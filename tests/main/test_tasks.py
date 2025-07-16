@@ -1,7 +1,6 @@
 """Tests for the tasks module."""
 
-import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pytest
