@@ -141,7 +141,7 @@ def create_cost_recovery_plot() -> figure:
         {
             "col_name": "Cost recovery",
             "colour": "gold",
-            "legend_label": "Charge per day",
+            "legend_label": "Capacity used",
         },
         {"col_name": "Capacity", "colour": "navy", "legend_label": "Capacity"},
     ]

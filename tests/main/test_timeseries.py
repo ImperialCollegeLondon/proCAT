@@ -185,3 +185,82 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     )
     assert isinstance(ts, pd.Series)
     assert ts.value_counts()[expected_value] == n_days
+
+
+@pytest.mark.django_db
+def test_get_cost_recovery_timeseries_one_person(department, user, analysis_code):
+    """Testthe get_cost_recovery_timeseries function when all time in project work.
+
+    Tests the value given is equal to the number of people working if all time is
+    invested in project work.
+    """
+    from main import models, report, timeseries, utils
+
+    today = datetime.today().date()
+
+    # Create a project and associated funding
+    project = models.Project.objects.create(
+        name="ProCAT",
+        department=department,
+        lead=user,
+        start_date=today - timedelta(days=365),
+        end_date=today + timedelta(days=365),
+        status="Active",
+        charging="Actual",
+    )
+    # Create funding objects
+    models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=today + timedelta(15),
+        budget=1900.00,
+        daily_rate=200.00,
+    )
+    models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=today + timedelta(30),
+        budget=540000.00,
+        daily_rate=123.00,
+    )
+
+    end_last_month = today.replace(day=1) - timedelta(days=1)
+    start_last_month = end_last_month.replace(day=1)
+    n_working_days = len(
+        pd.bdate_range(start_last_month, end_last_month, inclusive="both")
+    )
+
+    # Create 2 time entries where number of hours is exactly equal to the full capacity
+    # of an individual (7 * n_working_days)
+    start_time = datetime.combine(start_last_month, time(hour=9))
+    end_time = start_time + timedelta(hours=7 * n_working_days)
+    models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=start_time,
+        end_time=end_time,
+    )
+    models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    # Create monthly charges
+    report.create_actual_monthly_charges(project, start_last_month, end_last_month)
+
+    # Create cost recovery timeseries
+    dates = utils.get_month_dates_for_previous_year()
+    ts = timeseries.get_cost_recovery_timeseries(dates)
+
+    # Expected value for 2 individuals working full-time on projects would be 2.0
+    assert ts.value_counts()[2.0] == n_working_days

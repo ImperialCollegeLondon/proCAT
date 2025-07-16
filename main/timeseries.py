@@ -133,6 +133,11 @@ def get_cost_recovery_timeseries(dates: list[tuple[date, date]]) -> pd.Series[fl
     working days. This value is summed across all funding sources and added to the
     timeseries.
 
+    Args:
+        dates: list of tuples (from oldest to most recent) containing dates for all
+            months of the previous year; each tuple contains two dates for the first
+            and last date of the month
+
     Returns:
         Pandas series containing cost recovery timeseries data.
     """

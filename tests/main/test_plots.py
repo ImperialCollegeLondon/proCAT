@@ -64,5 +64,5 @@ def test_create_cost_recovery_plot(project, funding):
     assert plot.xaxis.axis_label == "Date"
 
     legend_items = [item.label.value for item in plot.legend.items]
-    assert "Charge per day" in legend_items
+    assert "Capacity used" in legend_items
     assert "Capacity" in legend_items
