@@ -136,21 +136,57 @@ class TestProject:
         assert project.total_effort == total_effort
 
     @pytest.mark.django_db
-    @pytest.mark.usefixtures("department", "user", "analysis_code")
-    def test_days_left(self):
+    def test_percent_effort_left(self, project, analysis_code):
+        """Test the percent_effort_left method."""
+        from main import models
+
+        # Check when there is no Funding objrect
+        assert project.percent_effort_left is None
+
+        # Create Funding object and Monthly Charge
+        funding = models.Funding.objects.create(
+            project=project,
+            source="External",
+            funding_body="Funding body",
+            cost_centre="centre",
+            activity="G12345",
+            analysis_code=analysis_code,
+            expiry_date=datetime.now().date() + timedelta(days=42),
+            budget=1000.00,
+            daily_rate=200.00,
+        )
+        models.MonthlyCharge.objects.create(
+            date=datetime.today().date(),
+            project=project,
+            funding=funding,
+            amount=100.00,
+        )
+        assert project.days_left[1] == project.percent_effort_left
+
+    @pytest.mark.django_db
+    def test_days_left(self, user, department, analysis_code):
         """Test the days_left method."""
         from main import models
 
-        department = models.Department.objects.get(name="ICT")
-        user = models.User.objects.get(username="testuser")
+        # Get start and end date as 1st last month-1st current month
+        today = datetime.today().date()
+        end_date = today.replace(day=1)
+        start_date = (end_date - timedelta(days=1)).replace(day=1)
+
         project = models.Project.objects.create(
             name="ProCAT",
             department=department,
             lead=user,
+            start_date=start_date,
+            end_date=end_date,
+            status="Active",
+            charging="Actual",
         )
+
+        # Check days_left is None when no funding assigned
         assert project.days_left is None
 
-        analysis_code = models.AnalysisCode.objects.get(code="1234")
+        # Create multiple funding objects
         funding_A = models.Funding.objects.create(
             project=project,
             source="External",
@@ -158,6 +194,8 @@ class TestProject:
             activity="G12345",
             analysis_code=analysis_code,
             budget=10000.00,
+            daily_rate=50.00,
+            expiry_date=end_date,
         )
         funding_B = models.Funding.objects.create(
             project=project,
@@ -166,10 +204,45 @@ class TestProject:
             activity="G56789",
             analysis_code=analysis_code,
             budget=5000.00,
+            daily_rate=250.00,
+            expiry_date=end_date,
         )
+        funding_A.refresh_from_db()
+        funding_B.refresh_from_db()
+
+        # create some monthly charges
+        models.MonthlyCharge.objects.create(
+            date=start_date,
+            project=project,
+            funding=funding_A,
+            amount=100.00,
+        )
+        models.MonthlyCharge.objects.create(
+            date=start_date,
+            project=project,
+            funding=funding_B,
+            amount=300.00,
+        )
+
+        # Check days_left when there are no extra time entries
         total_effort = funding_A.effort + funding_B.effort
         left = funding_A.effort_left + funding_B.effort_left
-        days_left = left, round(left / total_effort * 100, 1)
+        days_left = round(left), round(left / total_effort * 100, 1)
+        assert project.days_left == days_left
+
+        # Create a time entry object for yesterday
+        yesterday = today - timedelta(days=1)
+        start_time = datetime.combine(yesterday, datetime.min.time())
+        models.TimeEntry.objects.create(
+            user=user,
+            project=project,
+            start_time=start_time,
+            end_time=start_time + timedelta(hours=3.5),
+        )  # 3.5 hours total (0.5 days)
+
+        # Check days_left has been updated
+        left -= 0.5
+        days_left = round(left), round(left / total_effort * 100, 1)
         assert project.days_left == days_left
 
     @pytest.mark.parametrize(
@@ -378,6 +451,42 @@ class TestFunding:
             funding.full_clean()
 
     @pytest.mark.django_db
+    def test_funding_left(self, project, funding):
+        """Test the funding_left property."""
+        from main import models
+
+        # No monthly charges
+        funding.refresh_from_db()
+        assert funding.funding_left == funding.budget
+
+        # Check when monthly charge created
+        charge_date = funding.expiry_date - timedelta(days=5)
+        monthly_charge = models.MonthlyCharge.objects.create(
+            project=project, funding=funding, amount=100.00, date=charge_date
+        )
+        monthly_charge.refresh_from_db()
+        assert funding.funding_left == funding.budget - monthly_charge.amount
+
+    def test_effort_left(self, project, funding):
+        """Test the effort_left property."""
+        from main import models
+
+        # No monthly charges
+        funding.refresh_from_db()
+        assert round(funding.effort_left) == funding.effort
+
+        # Check when monthly charge created
+        charge_date = funding.expiry_date - timedelta(days=5)
+        monthly_charge = models.MonthlyCharge.objects.create(
+            project=project, funding=funding, amount=100.00, date=charge_date
+        )
+        monthly_charge.refresh_from_db()
+        effort_left = float(
+            (funding.budget - monthly_charge.amount) / funding.daily_rate
+        )
+        assert funding.effort_left == effort_left
+
+    @pytest.mark.django_db
     def test_monthly_pro_rata_charge_is_none(self, user, department, analysis_code):
         """Test the monthly_pro_rata_charge property."""
         from main import models
@@ -534,7 +643,7 @@ class TestMonthlyCharge:
         )
         with pytest.raises(
             ValidationError,
-            match="Funding source must have expiry date and amount.",
+            match="Funding source must have an expiry date.",
         ):
             monthly_charge.clean()
 
@@ -556,17 +665,18 @@ class TestMonthlyCharge:
         ):
             monthly_charge.clean()
 
-    @pytest.mark.usefixtures("project", "funding")
+    @pytest.mark.django_db
     def test_clean_invalid_funding(self, project, funding):
         """Test the model validation for the amount field."""
         from main import models
 
-        monthly_charge = models.MonthlyCharge(
+        monthly_charge = models.MonthlyCharge.objects.create(
             project=project,
             funding=funding,
             date=funding.expiry_date - timedelta(1),
-            amount=funding.funding_left + 1,  # invalid funding
+            amount=funding.funding_left + 1,  # Invalid funding
         )
+        funding.refresh_from_db()  # Update funding object
 
         with pytest.raises(
             ValidationError,

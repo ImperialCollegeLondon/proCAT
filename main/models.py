@@ -1,11 +1,13 @@
 """Models module for main app."""
 
 from datetime import datetime
+from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Sum
 
 from procat.settings.settings import EFFORT_LEFT_THRESHOLD, WEEKS_LEFT_THRESHOLD
 
@@ -237,10 +239,8 @@ class Project(models.Model):
         Returns:
             The percentage of effort left, or None if there is no funding information.
         """
-        if self.total_effort:
-            left = sum([funding.effort_left for funding in self.funding_source.all()])
-            return round(left / self.total_effort * 100, 1)
-
+        if left := self.days_left:
+            return left[1]
         return None
 
     @property
@@ -251,9 +251,19 @@ class Project(models.Model):
             The number of days and percentage worth of effort left, or None if there is
             no funding information.
         """
+        from .report import get_actual_chargeable_days
+
         if self.total_effort:
             left = sum([funding.effort_left for funding in self.funding_source.all()])
-            return left, round(left / self.total_effort * 100, 1)
+
+            # subtract days logged for the month so far
+            end_date = datetime.today().date()
+            start_date = end_date.replace(day=1)
+            additional_days = get_actual_chargeable_days(self, start_date, end_date)[0]
+            if additional_days:
+                left -= additional_days
+
+            return round(left), round(left / self.total_effort * 100, 1)
 
         return None
 
@@ -479,26 +489,27 @@ class Funding(models.Model):
         return days_effort
 
     @property
-    def effort_left(self) -> int:
-        """Provide the effort left in days.
-
-        TODO: Placeholder. To be implemented when synced with Clockify.
-
-        Returns:
-            The number of days worth of effort left.
-        """
-        return 42
-
-    @property
-    def funding_left(self) -> float:
+    def funding_left(self) -> Decimal:
         """Provide the funding left in currency.
-
-        TODO: Placeholder. Update when synced with Clockify.
 
         Returns:
             The amount of funding left.
         """
-        return float(self.daily_rate) * self.effort_left
+        funding_spent = MonthlyCharge.objects.filter(funding=self).aggregate(
+            Sum("amount")
+        )["amount__sum"]
+        if funding_spent:
+            return self.budget - funding_spent
+        return self.budget
+
+    @property
+    def effort_left(self) -> float:
+        """Provide the effort left in days.
+
+        Returns:
+            The number of days worth of effort left.
+        """
+        return float(self.funding_left / self.daily_rate)
 
     @property
     def monthly_pro_rata_charge(self) -> float | None:
@@ -612,13 +623,12 @@ class MonthlyCharge(models.Model):
     def clean(self) -> None:
         """Ensure the charge has valid funding attached and description if Manual."""
         super().clean()
-
-        if not self.funding.expiry_date or not self.funding.funding_left:
-            raise ValidationError("Funding source must have expiry date and amount.")
+        if not self.funding.expiry_date:
+            raise ValidationError("Funding source must have an expiry date.")
 
         if (
             self.date > self.funding.expiry_date
-            or self.amount > self.funding.funding_left
+            or self.funding.funding_left < 0  # After deducting charge amount
         ):
             raise ValidationError(
                 "Monthly charge must not exceed the funding date or amount."
