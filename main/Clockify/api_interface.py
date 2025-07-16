@@ -1,28 +1,30 @@
 """Clockify API Interface Module."""
 
 import json
-import os
+from collections.abc import Collection
 
 import requests
-
-WORKSPACE_ID = os.getenv("CLOCKIFY_WORKSPACE_ID")
 
 
 class ClockifyAPI:
     """A class to interact with the Clockify API for project management."""
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, workspace_id: str):
         """Initialize the ClockifyAPI instance.
 
         Args:
             api_key (str): Your personal Clockify API key.
+            workspace_id (str): The ID of the Clockify workspace to interact with.
         """
         self.api_key = api_key
         self.base_url = "https://api.clockify.me/api"
         self.reports_base_url = "https://reports.api.clockify.me/v1"
         self.headers = {"Content-Type": "application/json", "X-Api-Key": self.api_key}
+        self.workspace_id = workspace_id
 
-    def get_time_entries(self, payload: dict[str, object]) -> dict[str, object]:
+    def get_time_entries(
+        self, payload: dict[str, Collection[str]]
+    ) -> dict[str, object]:
         """Retrieve detailed time entries for a specified workspace using the API.
 
         Args:
@@ -50,7 +52,7 @@ class ClockifyAPI:
         Raises:
             HTTPError: If the API request fails.
         """
-        url = f"{self.reports_base_url}/workspaces/{WORKSPACE_ID}/reports/detailed"
+        url = f"{self.reports_base_url}/workspaces/{self.workspace_id}/reports/detailed"
 
         headers = {
             "Accept": "",
