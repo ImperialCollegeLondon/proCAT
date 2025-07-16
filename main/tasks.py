@@ -294,21 +294,28 @@ def sync_clockify_time_entries() -> None:
 
     projects = Project.objects.filter(status="Active").exclude(clockify_id="")
     for project in projects:
+        logger.info(f"Processing project ID: {project.clockify_id}")
+        payload = {
+            "dateRangeStart": start_date.strftime("%Y-%m-%dT00:00:00.000Z"),
+            "dateRangeEnd": end_date.strftime("%Y-%m-%dT23:59:59.000Z"),
+            "detailedFilter": {"page": 1, "pageSize": 200},
+            "projects": {"contains": "CONTAINS", "ids": [project.clockify_id]},
+        }
+
         try:
-            logger.info(f"Processing project ID: {project.clockify_id}")
-            payload = {
-                "dateRangeStart": start_date.strftime("%Y-%m-%dT00:00:00.000Z"),
-                "dateRangeEnd": end_date.strftime("%Y-%m-%dT23:59:59.000Z"),
-                "detailedFilter": {"page": 1, "pageSize": 200},
-                "projects": {"contains": "CONTAINS", "ids": [project.clockify_id]},
-            }
-
             response = api.get_time_entries(payload)
-            entries = response.get("timeentries", [])
-            if not isinstance(entries, list):
-                entries = []
+        except Exception as e:
+            logger.error(
+                f"Error fetching time entries for project {project.clockify_id}: {e}"
+            )
+            continue
 
-            for entry in entries:
+        entries = response.get("timeentries", [])
+        if not isinstance(entries, list):
+            entries = []
+
+        for entry in entries:
+            try:
                 entry_id = entry.get("id") or entry.get("_id")
                 project_id = entry.get("projectId")
                 user_email = entry.get("userEmail")
@@ -317,13 +324,10 @@ def sync_clockify_time_entries() -> None:
                 end = time_interval.get("end")
 
                 if not (project_id and user_email and start and end):
-                    continue
-                try:
-                    user = User.objects.get(email=user_email)
-                except User.DoesNotExist:
-                    logger.warning(f"User with email {user_email} not found.")
+                    logger.warning(f"Skipping incomplete entry: {entry_id}")
                     continue
 
+                user = User.objects.get(email=user_email)
                 start_time = datetime.datetime.fromisoformat(start)
                 end_time = datetime.datetime.fromisoformat(end)
 
@@ -336,8 +340,11 @@ def sync_clockify_time_entries() -> None:
                         "end_time": end_time,
                     },
                 )
-        except Exception as e:
-            logger.error(f"Error syncing time entries for project {project_id}: {e}")
+            except User.DoesNotExist:
+                logger.warning(
+                    f"User {user_email} not found. Skipping entry {entry_id}."
+                )
+                continue
 
 
 @db_periodic_task(crontab(day_of_week="mon", hour=2, minute=0))
