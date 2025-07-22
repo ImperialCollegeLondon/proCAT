@@ -6,21 +6,6 @@ import pytest
 
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
-def test_calculate_capacity_planning_traces():
-    """Test function to get plotting data as dataframe."""
-    from bokeh.models import ColumnDataSource
-
-    from main import plots
-
-    source = plots.calculate_capacity_planning_traces(
-        datetime.now(), datetime.now() + timedelta(365)
-    )
-    assert isinstance(source, ColumnDataSource)
-    assert "Effort" in source.data
-    assert "Capacity" in source.data
-
-
-@pytest.mark.usefixtures("project", "funding", "capacity")
 def test_create_capacity_planning_plot():
     """Test function to create the capacity planning plot."""
     from bokeh.plotting import figure
@@ -44,6 +29,7 @@ def test_create_capacity_planning_plot():
 
 def test_create_cost_recovery_plot(project, funding):
     """Test function to create the cost recovery plot."""
+    from bokeh.models import HoverTool
     from bokeh.plotting import figure
 
     from main import models, plots
@@ -55,14 +41,25 @@ def test_create_cost_recovery_plot(project, funding):
         amount=100.00,
         date=datetime.today().date() - timedelta(100),
     )
-    plot = plots.create_cost_recovery_plot()
-    assert isinstance(plot, figure)
+    ts_plot, bar_plot = plots.create_cost_recovery_plots()
 
-    title = "Team capacity and project charging for the past year"
-    assert plot.title.text == title
-    assert plot.yaxis.axis_label == "Value"
-    assert plot.xaxis.axis_label == "Date"
+    # Test timeseries plot
+    assert isinstance(ts_plot, figure)
 
-    legend_items = [item.label.value for item in plot.legend.items]
-    assert "Capacity used" in legend_items
-    assert "Capacity" in legend_items
+    ts_title = "Team capacity and project charging for the past year"
+    assert ts_plot.title.text == ts_title
+    assert ts_plot.yaxis.axis_label == "Value"
+    assert ts_plot.xaxis.axis_label == "Date"
+
+    ts_legend_items = [item.label.value for item in ts_plot.legend.items]
+    assert "Capacity used" in ts_legend_items
+    assert "Capacity" in ts_legend_items
+
+    # Test bar plot
+    assert isinstance(bar_plot, figure)
+
+    bar_title = "Monthly charges for the past year"
+    assert bar_plot.title.text == bar_title
+    assert bar_plot.yaxis.axis_label == "Total charge (£)"
+    assert bar_plot.xaxis.axis_label == "Date"
+    assert isinstance(bar_plot.tools[-1], HoverTool)
