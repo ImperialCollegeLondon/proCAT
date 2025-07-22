@@ -550,28 +550,24 @@ class TestCapacity:
         )
 
     @pytest.mark.parametrize(
-        ["value", "is_valid"],
+        ["value", "expectation"],
         [
-            [-0.5, False],
-            [0.0, True],
-            [0.5, True],
-            [1.0, True],
-            [1.5, False],
+            [-0.5, pytest.raises(ValidationError)],
+            [0.0, does_not_raise()],
+            [0.5, does_not_raise()],
+            [1.0, does_not_raise()],
+            [1.5, pytest.raises(ValidationError)],
         ],
     )
-    def test_value(self, user, value, is_valid):
+    def test_value(self, user, value, expectation):
         """Test that the value of capacity can only between 0 and 1."""
         from main import models
 
         capacity = models.Capacity(
             user=user, value=value, start_date=datetime.now().date()
         )
-        if is_valid:
-            # Should not raise
+        with expectation:
             capacity.full_clean()
-        else:
-            with pytest.raises(ValidationError):
-                capacity.full_clean()
 
 
 class TestTimeEntry:
