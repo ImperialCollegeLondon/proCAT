@@ -136,17 +136,17 @@ def test_get_budget_status():
 
 
 @pytest.mark.django_db
-def test_get_projects_with_charges_exceeding_budget(user, project):
-    """Test get_projects_with_charges_exceeding_budget function."""
+def test_days_used_within_days_left(user, project):
+    """Test if days used within days left."""
     from main.models import Funding, TimeEntry
-    from main.utils import get_projects_with_charges_exceeding_budget
+    from main.utils import get_projects_with_days_used_exceeding_days_left
 
     date = datetime(2025, 7, 10)
     current_month_start = datetime(date.year, date.month, 1)
 
     # Create time entry in the last month
     start_time = datetime(2025, 6, 1, 11, 0)
-    end_time = start_time + timedelta(hours=16)
+    end_time = start_time + timedelta(hours=14)
 
     TimeEntry.objects.create(
         user=user,
@@ -158,88 +158,57 @@ def test_get_projects_with_charges_exceeding_budget(user, project):
     # Create funding for the project
     Funding.objects.create(
         project=project,
-        budget=100,
+        budget=1000,
         source="Test Source",
         daily_rate=400,
         expiry_date=current_month_start + timedelta(days=30),  # Not expired
     )
 
-    result = get_projects_with_charges_exceeding_budget(date=date)
+    result = get_projects_with_days_used_exceeding_days_left(date=date)
+
+    # Check if the project is not in the result
+    assert len(result) == 0, (
+        "Project should not be in the result as days used is within days left"
+    )
+    assert project.days_left == (2.5, 125.0)
+
+
+@pytest.mark.django_db
+def test_days_used_exceeding_days_left(user, project):
+    """Test if days used exceeds days left."""
+    from main.models import Funding, TimeEntry
+    from main.utils import get_projects_with_days_used_exceeding_days_left
+
+    date = datetime(2025, 7, 10)
+    current_month_start = datetime(date.year, date.month, 1)
+
+    # Create time entry in the last month
+    start_time = datetime(2025, 6, 1, 11, 0)
+    end_time = start_time + timedelta(hours=50)
+
+    TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    # Create funding for the project
+    Funding.objects.create(
+        project=project,
+        budget=1000,
+        source="Test Source",
+        daily_rate=400,
+        expiry_date=current_month_start + timedelta(days=30),  # Not expired
+    )
+
+    result = get_projects_with_days_used_exceeding_days_left(date=date)
 
     # Check if the project is in the result
-    assert len(result) == 1
-    assert result[0][0] == project
-    assert result[0][1] > 100  # Total charges should exceed the budget
-    assert result[0][2] == 100
-
-
-@pytest.mark.django_db
-def test_project_within_budget(user, project):
-    """Test if a project is within budget."""
-    from main.models import Funding, TimeEntry
-    from main.utils import get_projects_with_charges_exceeding_budget
-
-    date = datetime(2025, 7, 10)
-    current_month_start = datetime(date.year, date.month, 1)
-
-    # Create time entry in the last month
-    start_time = datetime(2025, 6, 1, 11, 0)
-    end_time = start_time + timedelta(hours=14)  # 14 hrs, so 2 days of work
-
-    TimeEntry.objects.create(
-        user=user,
-        project=project,
-        start_time=start_time,
-        end_time=end_time,
+    assert len(result) == 1, (
+        "Project should be in the result as days used exceeds days left"
     )
-
-    # Create funding for the project
-    Funding.objects.create(
-        project=project,
-        budget=1000,
-        source="Test Source",
-        daily_rate=400,
-        expiry_date=current_month_start + timedelta(days=30),  # Not expired
-    )
-
-    result = get_projects_with_charges_exceeding_budget(date=date)
-    # Since the total charges (2 days * 400) = 800 < budget = 1000,
-    # the project should not be in the result
-    assert len(result) == 0
-
-
-@pytest.mark.django_db
-def test_project_charges_exceeding_budget(user, project):
-    """Test if a project charges exceed the budget."""
-    from main.models import Funding, TimeEntry
-    from main.utils import get_projects_with_charges_exceeding_budget
-
-    date = datetime(2025, 7, 10)
-    current_month_start = datetime(date.year, date.month, 1)
-
-    # Create time entry in the last month
-    start_time = datetime(2025, 6, 1, 11, 0)
-    end_time = start_time + timedelta(hours=21)  # 21 hrs, so 3 days of work
-
-    TimeEntry.objects.create(
-        user=user,
-        project=project,
-        start_time=start_time,
-        end_time=end_time,
-    )
-
-    # Create funding for the project
-    Funding.objects.create(
-        project=project,
-        budget=1000,
-        source="Test Source",
-        daily_rate=400,
-        expiry_date=current_month_start + timedelta(days=30),  # Not expired
-    )
-
-    result = get_projects_with_charges_exceeding_budget(date=date)
-    # Since total charges (3 days * 400) = 1200 > budget = 1000,
-    # the project should be in the result
-    assert len(result) == 1
-    assert result[0][0] == project
-    assert result[0][1] > 1000
+    project_result, days_used, days_left = result[0]
+    assert project_result == project
+    assert round(days_used, 1) == 7.1
+    assert round(days_left, 1) == 2.5

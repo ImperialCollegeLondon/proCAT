@@ -18,7 +18,7 @@ from .utils import (
     get_budget_status,
     get_current_and_last_month,
     get_logged_hours,
-    get_projects_with_charges_exceeding_budget,
+    # get_projects_with_charges_exceeding_budget,
 )
 
 logger = logging.getLogger(__name__)
@@ -372,45 +372,45 @@ ProCAT
 """
 
 
-def notify_monthly_charges_exceeding_budget_logic(
-    date: datetime.datetime | None = None,
-) -> None:
-    """Logic to notify project lead and admin when total charges exceed budget.
+# def notify_monthly_charges_exceeding_budget_logic(
+#     date: datetime.datetime | None = None,
+# ) -> None:
+#     """Logic to notify project lead and admin when total charges exceed budget.
 
-    This function checks each project to see if the total charges from all of
-    their funding sources for the last month exceed the budget. If they do,
-    it sends an email notification to the project lead and admin.
-    """
-    if date is None:
-        date = datetime.datetime.today()
+#     This function checks each project to see if the total charges from all of
+#     their funding sources for the last month exceed the budget. If they do,
+#     it sends an email notification to the project lead and admin.
+#     """
+#     if date is None:
+#         date = datetime.datetime.today()
 
-    projects = get_projects_with_charges_exceeding_budget(date=date)
+#     projects = get_projects_with_charges_exceeding_budget(date=date)
 
-    for project, total_charges, total_budget in projects:
-        lead = project.lead
-        lead_name = lead.get_full_name() if lead else "Project Leader"
-        lead_email = lead.email if lead else ""
+#     for project, total_charges, total_budget in projects:
+#         lead = project.lead
+#         lead_name = lead.get_full_name() if lead else "Project Leader"
+#         lead_email = lead.email if lead else ""
 
-        subject = f"[Monthly Charge Exceeding Budget] {project.name}"
-        message = _template_budget_exceeded.format(
-            lead=lead_name,
-            project_name=project.name,
-            total_charges=total_charges,
-            budget=total_budget,
-        )
+#         subject = f"[Monthly Charge Exceeding Budget] {project.name}"
+#         message = _template_budget_exceeded.format(
+#             lead=lead_name,
+#             project_name=project.name,
+#             total_charges=total_charges,
+#             budget=total_budget,
+#         )
 
-        admin_email = get_admin_email()
+#         admin_email = get_admin_email()
 
-        email_user_and_cc_admin(
-            subject=subject,
-            message=message,
-            email=lead_email,
-            admin_email=admin_email,
-        )
+#         email_user_and_cc_admin(
+#             subject=subject,
+#             message=message,
+#             email=lead_email,
+#             admin_email=admin_email,
+#         )
 
 
-# Runs every 7th day of the month at 9:30 AM
-@db_periodic_task(crontab(day=7, hour=9, minute=30))
-def notify_monthly_charges_exceeding_budget() -> None:
-    """Monthly task to notify project leads and admin when budget exceeds."""
-    notify_monthly_charges_exceeding_budget_logic()
+# # Runs every 7th day of the month at 9:30 AM
+# @db_periodic_task(crontab(day=7, hour=9, minute=30))
+# def notify_monthly_charges_exceeding_budget() -> None:
+#     """Monthly task to notify project leads and admin when budget exceeds."""
+#     notify_monthly_charges_exceeding_budget_logic()
