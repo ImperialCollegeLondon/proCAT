@@ -428,3 +428,42 @@ def test_monthly_days_used_not_exceeding_days_left(user, project):
     with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
         notify_monthly_days_used_exceeding_days_left_logic(date=datetime(2025, 7, 10))
         mock_email_func.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_monthly_days_used_exceeding_days_left(user, project, funding):
+    """Test that an email is sent when days used exceed days left."""
+    from main.models import TimeEntry
+
+    funding.project = project
+    funding.save()
+
+    # Create a time entry that exceeds the days left
+    start_time = datetime(2025, 6, 1, 11, 0)
+    end_time = start_time + timedelta(hours=203)
+
+    TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+        notify_monthly_days_used_exceeding_days_left_logic(date=datetime(2025, 7, 10))
+
+        mock_email_func.assert_called_once_with(
+            subject=f"[Monthly Days Used Exceed Days Left] {project.name}",
+            message=(
+                "\nDear test user,\n\n"
+                f"The total days used for project {project.name} has exceeded "
+                "the days left\n"
+                "for the project.\n\n"
+                "Days used: 29.0\n"
+                "Days left: 25.7\n\n"
+                "Please review the project budget and take necessary actions.\n\n"
+                "Best regards,\nProCAT\n"
+            ),
+            email=project.lead.email if project.lead else user.email,
+            admin_email=[],
+        )
