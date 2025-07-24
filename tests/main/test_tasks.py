@@ -410,13 +410,16 @@ class TestSyncClockifyTimeEntries:
 
 
 @pytest.mark.django_db
-def test_monthly_days_used_not_exceeding_days_left(user, project):
+def test_monthly_days_used_not_exceeding_days_left(user, project, funding):
     """Test that no email is sent if days used do not exceed days left."""
     from main.models import TimeEntry
 
+    funding.project = project
+    funding.save()
+
     # Create a time entry within the allowed days
     start_time = datetime(2025, 6, 1, 11, 0)
-    end_time = start_time + timedelta(hours=14)
+    end_time = start_time + timedelta(hours=14)  # So days_used is only 2.0 days
 
     TimeEntry.objects.create(
         user=user,
@@ -440,7 +443,7 @@ def test_monthly_days_used_exceeding_days_left(user, project, funding):
 
     # Create a time entry that exceeds the days left
     start_time = datetime(2025, 6, 1, 11, 0)
-    end_time = start_time + timedelta(hours=203)
+    end_time = start_time + timedelta(hours=203)  # So days_used is 29.0 days
 
     TimeEntry.objects.create(
         user=user,
@@ -460,7 +463,7 @@ def test_monthly_days_used_exceeding_days_left(user, project, funding):
                 "the days left\n"
                 "for the project.\n\n"
                 "Days used: 29.0\n"
-                "Days left: 25.7\n\n"
+                "Days left: 25.7\n\n"  # 10000 (budget)/389 (daily rate)
                 "Please review the project budget and take necessary actions.\n\n"
                 "Best regards,\nProCAT\n"
             ),
