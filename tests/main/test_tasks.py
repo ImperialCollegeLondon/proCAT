@@ -11,7 +11,7 @@ from main.tasks import (
     email_monthly_charges_report_logic,
     notify_funding_status_logic,
     notify_left_threshold_logic,
-    # notify_monthly_charges_exceeding_budget_logic,
+    notify_monthly_days_used_exceeding_days_left_logic,
     notify_monthly_time_logged_logic,
     sync_clockify_time_entries,
 )
@@ -409,58 +409,22 @@ class TestSyncClockifyTimeEntries:
         assert TimeEntry.objects.count() == 0
 
 
-# @pytest.mark.django_db
-# def test_monthly_charges_not_exceeding_budget(funding, project):
-#     """Test that no email is sent if monthly charges do not exceed budget."""
-#     from main.models import TimeEntry
+@pytest.mark.django_db
+def test_monthly_days_used_not_exceeding_days_left(user, project):
+    """Test that no email is sent if days used do not exceed days left."""
+    from main.models import TimeEntry
 
-#     # Create a time entry with charges within budget
-#     TimeEntry.objects.create(
-#         user=funding.project.lead,
-#         project=project,
-#         start_time=datetime(2025, 6, 1, 9, 0),
-#         end_time=datetime(2025, 6, 1, 16, 0),  # 7 hours, so equal to 1 work day
-#     )
+    # Create a time entry within the allowed days
+    start_time = datetime(2025, 6, 1, 11, 0)
+    end_time = start_time + timedelta(hours=14)
 
-#     with patch("main.tasks.email_user_and_cc_admin") as mock_email_user:
-#         notify_monthly_charges_exceeding_budget_logic()
-#         # No email sent since available budget = 1000 > charges = 389 for 1 day work
-#         mock_email_user.assert_not_called()
+    TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=start_time,
+        end_time=end_time,
+    )
 
-
-# @pytest.mark.django_db
-# def test_monthly_charges_exceeding_budget(funding, project):
-#     """Test that an email is sent if monthly charges exceed budget."""
-#     from main.models import TimeEntry
-
-#     # Create a time entry with charges exceeding budget
-#     TimeEntry.objects.create(
-#         user=funding.project.lead,
-#         project=project,
-#         start_time=datetime(2025, 6, 1, 9, 0),
-#         end_time=datetime(2025, 6, 1, 16, 0),  # 7 hours, so equal to 1 work day
-#     )
-
-#     funding.budget = Decimal("100.00")
-#     funding.save()
-
-#     expected_subject = f"[Monthly Charge Exceeding Budget] {project.name}"
-#     expected_message = (
-#         f"\nDear {funding.project.lead.get_full_name()},\n\n"
-#         f"The total charges for project {project.name} in the last month have "
-#         f"exceeded\nthe budget.\n\n"
-#         f"Total charges: £389.000\n"
-#         f"Budget: £{funding.budget}\n\n"
-#         f"Please review the project budget and take necessary actions.\n\n"
-#         f"Best regards,\nProCAT\n"
-#     )
-
-#     with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
-#         notify_monthly_charges_exceeding_budget_logic()
-#         # Email sent since available budget = 100 < charges = 389 for 1 day work
-#         mock_email_func.assert_called_once_with(
-#             subject=expected_subject,
-#             email=funding.project.lead.email,
-#             admin_email=[],
-#             message=expected_message,
-#         )
+    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+        notify_monthly_days_used_exceeding_days_left_logic(date=datetime(2025, 7, 10))
+        mock_email_func.assert_not_called()
