@@ -12,33 +12,33 @@ from . import timeseries
 from .utils import get_month_dates_for_previous_year
 
 
-def create_bar_plot(title: str, dates: list[str], values: list[float]) -> figure:
+def create_bar_plot(title: str, months: list[str], values: list[float]) -> figure:
     """Creates a bar plot with dates versus values.
 
     Args:
         title: plot title
-        dates: a list of dates to display on the x-axis
+        months: a list of months to display on the x-axis
         values: a list of total charge values for the bar height indicate on the y-axis
 
     Returns:
         Bokeh figure for the bar chart.
     """
-    source = ColumnDataSource(data=dict(dates=dates, values=values))
+    source = ColumnDataSource(data=dict(months=months, values=values))
     plot = figure(
-        x_range=dates,  # type: ignore[arg-type]
+        x_range=months,  # type: ignore[arg-type]
         title=title,
         width=1000,
         height=500,
         background_fill_color="#efefef",
     )
     plot.yaxis.axis_label = "Total charge (£)"
-    plot.xaxis.axis_label = "Date"
-    plot.vbar(x="dates", top="values", width=0.5, source=source)
+    plot.xaxis.axis_label = "Month-Year"
+    plot.vbar(x="months", top="values", width=0.5, source=source)
 
     # Add basic tooltips to show monthly totals
     hover = HoverTool()
     hover.tooltips = [
-        ("Month", "@dates"),
+        ("Month", "@months"),
         ("Total", "£@values"),
     ]
     plot.add_tools(hover)
@@ -156,13 +156,13 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
     )
 
     # Create bar plot for monthly charges
-    chart_dates = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
+    chart_months = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
     bar_plot = create_bar_plot(
         title=(
             f"Monthly charges from {start_date.strftime('%B')} {start_date.year} to "
             f"{end_date.strftime('%B')} {end_date.year}"
         ),
-        dates=chart_dates,
+        months=chart_months,
         values=monthly_totals,
     )
 

@@ -71,5 +71,5 @@ def test_create_cost_recovery_plot(project, funding):
     )
     assert bar_plot.title.text == bar_title
     assert bar_plot.yaxis.axis_label == "Total charge (£)"
-    assert bar_plot.xaxis.axis_label == "Date"
+    assert bar_plot.xaxis.axis_label == "Month-Year"
     assert isinstance(bar_plot.tools[-1], HoverTool)
