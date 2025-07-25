@@ -18,7 +18,7 @@ def create_bar_plot(title: str, dates: list[str], values: list[float]) -> figure
     Args:
         title: plot title
         dates: a list of dates to display on the x-axis
-        values: a list of values for the bars
+        values: a list of total charge values for the bar height indicate on the y-axis
 
     Returns:
         Bokeh figure for the bar chart.
@@ -148,13 +148,20 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
         {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
     ]
     timeseries_plot = create_timeseries_plot(
-        title="Team capacity and project charging for the past year", traces=traces
+        title=(
+            f"Team capacity and project charging from {start_date.strftime('%B')} "
+            f"{start_date.year} to {end_date.strftime('%B')} {end_date.year}"
+        ),
+        traces=traces,
     )
 
     # Create bar plot for monthly charges
     chart_dates = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
     bar_plot = create_bar_plot(
-        title="Monthly charges for the past year",
+        title=(
+            f"Monthly charges from {start_date.strftime('%B')} {start_date.year} to "
+            f"{end_date.strftime('%B')} {end_date.year}"
+        ),
         dates=chart_dates,
         values=monthly_totals,
     )

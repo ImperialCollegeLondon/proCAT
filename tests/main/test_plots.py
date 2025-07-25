@@ -46,7 +46,14 @@ def test_create_cost_recovery_plot(project, funding):
     # Test timeseries plot
     assert isinstance(ts_plot, figure)
 
-    ts_title = "Team capacity and project charging for the past year"
+    first_of_month = datetime.today().date().replace(day=1)
+    end_date = (first_of_month - timedelta(days=1)).replace(day=1)
+    start_date = first_of_month.replace(year=end_date.year - 1)
+
+    ts_title = (
+        f"Team capacity and project charging from {start_date.strftime('%B')} "
+        f"{start_date.year} to {end_date.strftime('%B')} {end_date.year}"
+    )
     assert ts_plot.title.text == ts_title
     assert ts_plot.yaxis.axis_label == "Value"
     assert ts_plot.xaxis.axis_label == "Date"
@@ -58,7 +65,10 @@ def test_create_cost_recovery_plot(project, funding):
     # Test bar plot
     assert isinstance(bar_plot, figure)
 
-    bar_title = "Monthly charges for the past year"
+    bar_title = (
+        f"Monthly charges from {start_date.strftime('%B')} {start_date.year} "
+        f"to {end_date.strftime('%B')} {end_date.year}"
+    )
     assert bar_plot.title.text == bar_title
     assert bar_plot.yaxis.axis_label == "Total charge (£)"
     assert bar_plot.xaxis.axis_label == "Date"
