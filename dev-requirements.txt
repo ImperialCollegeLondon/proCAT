@@ -52,7 +52,7 @@ django-filter==25.1
     # via procat (pyproject.toml)
 django-stubs[compatible-mypy]==5.2.1
     # via procat (pyproject.toml)
-django-stubs-ext==5.2.1
+django-stubs-ext==5.2.2
     # via django-stubs
 django-tables2==2.7.5
     # via procat (pyproject.toml)
