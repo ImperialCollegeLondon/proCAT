@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from django.contrib.auth.models import Group
 from django.utils import timezone
 
 from main.models import TimeEntry
@@ -262,13 +263,15 @@ def test_email_monthly_charges_report():
         username="admin_user",
         is_superuser=True,
     )
+    group = Group.objects.get(name="HoRSE")
+    admin_user.groups.add(group)
 
     # Create attachment with empty charges row
     expected_subject = f"Charges report for {month_name}"
     expected_attachment = report.create_charges_report_for_attachment(month, year)
     expected_fname = f"charges_report_{month}-{year}.csv"
     expected_message = (
-        f"\nDear {admin_user.get_full_name()},\n\n"
+        f"\nDear Head of the RSE team,\n\n"
         f"Please find attached the charges report for the last month: {month_name}.\n\n"
         "Best regards,\nProCAT\n"
     )

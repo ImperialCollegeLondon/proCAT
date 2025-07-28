@@ -3,6 +3,17 @@
 from datetime import datetime, timedelta
 
 import pytest
+from django.contrib.auth.models import Group
+
+
+def test_get_admin_email(user):
+    """Test get_admin_email function."""
+    from main import utils
+
+    group = Group.objects.get(name="HoRSE")
+    user.groups.add(group)
+    email = utils.get_admin_email()
+    assert email == [user.email]
 
 
 @pytest.mark.django_db

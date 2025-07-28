@@ -14,7 +14,6 @@ from .notify import email_attachment, email_user, email_user_and_cc_admin
 from .report import create_charges_report_for_attachment
 from .utils import (
     get_admin_email,
-    get_admin_name,
     get_budget_status,
     get_current_and_last_month,
     get_logged_hours,
@@ -243,7 +242,7 @@ def notify_funding_status() -> None:
 
 
 _template_charges_report = """
-Dear {HoRSE},
+Dear Head of the RSE team,
 
 Please find attached the charges report for the last month: {month}.
 
@@ -256,10 +255,7 @@ def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -
     """Logic to email the HoRSE the charges report for the last month."""
     subject = f"Charges report for {month_name}"
     admin_email = get_admin_email()
-    admin_name = get_admin_name()
-    message = _template_charges_report.format(
-        HoRSE=admin_name, month=month_name, year=year
-    )
+    message = _template_charges_report.format(month=month_name, year=year)
     csv_attachment = create_charges_report_for_attachment(month, year)
 
     email_attachment(
