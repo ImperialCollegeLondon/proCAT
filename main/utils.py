@@ -168,6 +168,7 @@ def get_projects_with_days_used_exceeding_days_left(
         time_entries = project.timeentry_set.filter(
             start_time__gte=last_month_start,
             end_time__lt=current_month_start,
+            monthly_charge__isnull=True,  # include entries that are not yet charged
         )
 
         if not time_entries.exists():

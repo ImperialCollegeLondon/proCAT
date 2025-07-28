@@ -356,7 +356,7 @@ def sync_clockify_time_entries_task() -> None:
     logger.info("Clockify time entries sync completed.")
 
 
-_template_budget_exceeded = """
+_template_days_used_exceeded_days_left = """
 Dear {lead},
 
 The total days used for project {project_name} has exceeded the days left
@@ -392,7 +392,7 @@ def notify_monthly_days_used_exceeding_days_left_logic(
         lead_email = lead.email if lead else ""
 
         subject = f"[Monthly Days Used Exceed Days Left] {project.name}"
-        message = _template_budget_exceeded.format(
+        message = _template_days_used_exceeded_days_left.format(
             lead=lead_name,
             project_name=project.name,
             days_used=days_used,
