@@ -50,9 +50,9 @@ django-crispy-forms==2.4
     #   procat (pyproject.toml)
 django-filter==25.1
     # via procat (pyproject.toml)
-django-stubs[compatible-mypy]==5.2.1
+django-stubs[compatible-mypy]==5.2.2
     # via procat (pyproject.toml)
-django-stubs-ext==5.2.1
+django-stubs-ext==5.2.2
     # via django-stubs
 django-tables2==2.7.5
     # via procat (pyproject.toml)
@@ -154,7 +154,7 @@ regex==2024.11.6
     # via djlint
 requests==2.32.4
     # via procat (pyproject.toml)
-ruff==0.12.3
+ruff==0.12.5
     # via procat (pyproject.toml)
 six==1.17.0
     # via
@@ -184,7 +184,7 @@ urllib3==2.5.0
     # via
     #   requests
     #   types-requests
-virtualenv==20.31.2
+virtualenv==20.32.0
     # via pre-commit
 wheel==0.45.1
     # via pip-tools
