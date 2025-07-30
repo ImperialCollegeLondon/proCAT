@@ -244,7 +244,7 @@ def notify_funding_status() -> None:
 _template_charges_report = """
 Dear Head of the RSE team,
 
-Please find attached the charges report for the last month: {month}.
+Please find attached the charges report for the last month: {month}/{year}.
 
 Best regards,
 ProCAT
@@ -253,7 +253,7 @@ ProCAT
 
 def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -> None:
     """Logic to email the HoRSE the charges report for the last month."""
-    subject = f"Charges report for {month_name}"
+    subject = f"Charges report for {month_name}/{year}"
     admin_email = get_admin_email()
     message = _template_charges_report.format(month=month_name, year=year)
     csv_attachment = create_charges_report_for_attachment(month, year)
