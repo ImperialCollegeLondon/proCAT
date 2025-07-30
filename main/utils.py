@@ -151,7 +151,7 @@ def order_queryset_by_property(  # type: ignore[explicit-any]
     queryset: QuerySet[Any], property: str, is_descending: bool
 ) -> QuerySet[Any]:
     """Orders a queryset according to a specified property."""
-    model_ids = [obj.id for obj in queryset]
+    model_ids = list(queryset.values_list("id", flat=True))
     values = [getattr(obj, property) for obj in queryset]
     sorted_indexes = sorted(
         range(len(values)), key=lambda i: values[i], reverse=is_descending
