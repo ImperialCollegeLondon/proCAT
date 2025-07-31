@@ -185,8 +185,7 @@ def html_components_from_plot(
             f"{prefix}_div": div,
         }
 
-    else:
-        return {
-            "script": script,
-            "div": div,
-        }
+    return {
+        "script": script,
+        "div": div,
+    }
