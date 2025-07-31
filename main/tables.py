@@ -4,9 +4,7 @@ from decimal import Decimal
 from typing import ClassVar
 
 import django_tables2 as tables
-from django.db.models import (
-    QuerySet,
-)
+from django.db.models import QuerySet
 from django.utils.safestring import mark_safe
 
 from .models import Capacity, Funding, Project

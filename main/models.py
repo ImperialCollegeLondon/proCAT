@@ -589,7 +589,6 @@ class MonthlyCharge(models.Model):
         null=False,
         blank=False,
         help_text="The funding source to be used for the charge.",
-        related_name="charge",
     )
 
     amount = models.DecimalField(
