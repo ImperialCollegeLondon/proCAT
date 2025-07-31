@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.db.models import Case, When
 from django.db.models.query import QuerySet
 
 from . import models
@@ -144,3 +145,22 @@ def get_month_dates_for_previous_year() -> list[tuple[date, date]]:
 
     dates.reverse()
     return dates
+
+
+def order_queryset_by_property(  # type: ignore[explicit-any]
+    queryset: QuerySet[Any], property: str, is_descending: bool
+) -> QuerySet[Any]:
+    """Orders a queryset according to a specified property."""
+    model_ids = list(queryset.values_list("id", flat=True))
+    values = [getattr(obj, property) for obj in queryset]
+    sorted_indexes = sorted(
+        range(len(values)), key=lambda i: values[i], reverse=is_descending
+    )
+    preserved_ordering = Case(
+        *[
+            When(id=model_ids[id], then=position)
+            for position, id in enumerate(sorted_indexes)
+        ]
+    )
+    queryset = queryset.order_by(preserved_ordering)
+    return queryset
