@@ -1,80 +1,69 @@
 """Plots for displaying database data."""
 
 from datetime import datetime, time
+from typing import Any
 
 import pandas as pd
-from bokeh.models import ColumnDataSource
+from bokeh.embed import components
+from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.plotting import figure
 
 from . import timeseries
 from .utils import get_month_dates_for_previous_year
 
 
-def calculate_capacity_planning_traces(
-    start_date: datetime, end_date: datetime
-) -> ColumnDataSource:
-    """Get data from the Django database for the capacity planning traces.
+def create_bar_plot(title: str, months: list[str], values: list[float]) -> figure:
+    """Creates a bar plot with dates versus values.
 
     Args:
-        start_date: datetime object representing the start of the plotting period
-        end_date: datetime object representing the end of the plotting period
+        title: plot title
+        months: a list of months to display on the x-axis
+        values: a list of total charge values for the bar height indicate on the y-axis
 
     Returns:
-        Bokeh ColumnDataSource object containing Effort and Capacity timeseries
-        columns.
+        Bokeh figure for the bar chart.
     """
-    effort_timeseries = timeseries.get_effort_timeseries(start_date, end_date)
-    capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
-    timeseries_df = pd.DataFrame(
-        {"Effort": effort_timeseries, "Capacity": capacity_timeseries}
+    source = ColumnDataSource(data=dict(months=months, values=values))
+    plot = figure(
+        x_range=months,  # type: ignore[arg-type]
+        title=title,
+        width=1000,
+        height=500,
+        background_fill_color="#efefef",
     )
-    timeseries_df.reset_index(inplace=True)
-    source = ColumnDataSource(timeseries_df)
-    return source
+    plot.yaxis.axis_label = "Total charge (£)"
+    plot.xaxis.axis_label = "Month-Year"
+    plot.vbar(x="months", top="values", width=0.5, source=source)
+
+    # Add basic tooltips to show monthly totals
+    hover = HoverTool()
+    hover.tooltips = [
+        ("Month", "@months"),
+        ("Total", "£@values"),
+    ]
+    plot.add_tools(hover)
+    return plot
 
 
-def calculate_cost_recovery_traces() -> ColumnDataSource:
-    """Get data from the Django database for the capacity and cost recovery traces.
-
-    Returns:
-        Bokeh ColumnDataSource object containing the Monthly charge and Capacity
-        timeseries columns.
-    """
-    dates = get_month_dates_for_previous_year()
-
-    # Get start and end date as datetimes for capacity timeseries
-    start_date = datetime.combine(dates[0][0], time.min)
-    end_date = datetime.combine(dates[-1][1], time.min)
-    capacity_timeseries = timeseries.get_capacity_timeseries(
-        start_date=start_date, end_date=end_date
-    )
-
-    # Create cost recovery timeseries
-    cost_recovery_timeseries = timeseries.get_cost_recovery_timeseries(dates)
-    timeseries_df = pd.DataFrame(
-        {"Capacity": capacity_timeseries, "Cost recovery": cost_recovery_timeseries}
-    )
-    timeseries_df.reset_index(inplace=True)
-    source = ColumnDataSource(timeseries_df)
-    return source
-
-
-def create_timeseries_plot(
-    source: ColumnDataSource,
+def create_timeseries_plot(  # type: ignore[explicit-any]
     title: str,
-    traces: list[dict[str, str]],
+    traces: list[dict[str, Any]],
 ) -> figure:
     """Creates a generic timeseries plot.
 
     Args:
-        source: Bokeh ColumnDataSource object containing the timeseries columns.
         title: plot title
-        traces: a list of dictionaries with keys for the 'col_name', 'colour', and
-            'legend_label' for each trace
+        traces: a list of dictionaries with keys for the 'timeseries' data, 'label' and
+            'colour'
 
     Returns:
         Bokeh figure containing timeseries data.
     """
+    # Create ColumnDataSource from trace data
+    df = pd.DataFrame({trace["label"]: trace["timeseries"] for trace in traces})
+    df.reset_index(inplace=True)
+    source = ColumnDataSource(df)
+
     plot = figure(
         title=title,
         width=1000,
@@ -88,18 +77,18 @@ def create_timeseries_plot(
     for trace in traces:
         plot.line(
             "index",
-            trace["col_name"],
+            trace["label"],
             source=source,
             line_width=2,
             color=trace["colour"],
-            legend_label=trace["legend_label"],
+            legend_label=trace["label"],
         )
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
     return plot
 
 
 def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> figure:
-    """Generates all the time series data for the capacity planning plot.
+    """Generates all the time series data and creates the capacity planning plot.
 
     Includes all business days between the selected start and end date, inclusive of
     the start date. Time for the effort (aggregated over all projects) and
@@ -112,43 +101,91 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> f
     Returns:
         Bokeh figure containing timeseries data.
     """
-    source = calculate_capacity_planning_traces(start_date, end_date)
-
-    # provide info needed to plot as dictionary for each trace
+    effort_timeseries = timeseries.get_effort_timeseries(start_date, end_date)
+    capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
     traces = [
-        {"col_name": "Effort", "colour": "firebrick", "legend_label": "Project effort"},
-        {"col_name": "Capacity", "colour": "navy", "legend_label": "Capacity"},
+        {
+            "timeseries": effort_timeseries,
+            "colour": "firebrick",
+            "label": "Project effort",
+        },
+        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
     ]
     plot = create_timeseries_plot(
-        source=source, title="Project effort and team capacity over time", traces=traces
+        title="Project effort and team capacity over time", traces=traces
     )
-
     return plot
 
 
-def create_cost_recovery_plot() -> figure:
+def create_cost_recovery_plots() -> tuple[figure, figure]:
     """Creates the cost recovery plot for the last year.
 
     Provides an overview of team capacity over the past year and the project charging.
 
     Returns:
-        Bokeh figure containing cost recovery data.
+        Tuple of Bokeh figures containing cost recovery data timeseries data and
+            monthly charges for the past year.
     """
-    source = calculate_cost_recovery_traces()
+    dates = get_month_dates_for_previous_year()
 
-    # provide info needed to plot as dictionary for each trace
+    # Get start and end date as datetimes for capacity timeseries
+    start_date = datetime.combine(dates[0][0], time.min)
+    end_date = datetime.combine(dates[-1][1], time.min)
+
+    # Create timeseries plot
+    cost_recovery_timeseries, monthly_totals = timeseries.get_cost_recovery_timeseries(
+        dates
+    )
+    capacity_timeseries = timeseries.get_capacity_timeseries(
+        start_date=start_date, end_date=end_date
+    )
     traces = [
         {
-            "col_name": "Cost recovery",
+            "timeseries": cost_recovery_timeseries,
             "colour": "gold",
-            "legend_label": "Capacity used",
+            "label": "Capacity used",
         },
-        {"col_name": "Capacity", "colour": "navy", "legend_label": "Capacity"},
+        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
     ]
-    plot = create_timeseries_plot(
-        source=source,
-        title="Team capacity and project charging for the past year",
+    timeseries_plot = create_timeseries_plot(
+        title=(
+            f"Team capacity and project charging from {start_date.strftime('%B')} "
+            f"{start_date.year} to {end_date.strftime('%B')} {end_date.year}"
+        ),
         traces=traces,
     )
 
-    return plot
+    # Create bar plot for monthly charges
+    chart_months = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
+    bar_plot = create_bar_plot(
+        title=(
+            f"Monthly charges from {start_date.strftime('%B')} {start_date.year} to "
+            f"{end_date.strftime('%B')} {end_date.year}"
+        ),
+        months=chart_months,
+        values=monthly_totals,
+    )
+
+    return timeseries_plot, bar_plot
+
+
+def html_components_from_plot(
+    plot: figure, prefix: str | None = None
+) -> dict[str, str]:
+    """Generate HTML components from a Bokeh plot that can be added to the context.
+
+    Args:
+        plot: Bokeh figure to be added to the context
+        prefix: optional prefix to use in the context keys
+    """
+    script, div = components(plot)
+    if prefix:
+        return {
+            f"{prefix}_script": script,
+            f"{prefix}_div": div,
+        }
+
+    return {
+        "script": script,
+        "div": div,
+    }

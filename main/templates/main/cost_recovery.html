@@ -19,8 +19,12 @@
 
   <br>
 
-  <h2>Cost recovery plot</h2>
-  {{ script | safe }}
-  {{ div | safe }}
+  <h2>Cost recovery plots</h2>
+
+  {{ timeseries_script | safe }}
+  {{ timeseries_div | safe }}
+
+  {{ bar_script | safe }}
+  {{ bar_div | safe }}
 
 {% endblock content %}
