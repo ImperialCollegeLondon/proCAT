@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import bokeh
-from bokeh.embed import components
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import Form, ModelForm
 from django.http import HttpRequest, HttpResponse
@@ -141,9 +140,7 @@ class CapacityPlanningView(LoginRequiredMixin, TemplateView):
         plot = plots.create_capacity_planning_plot(
             datetime.now(), datetime.now() + timedelta(365)
         )
-        script, div = components(plot)
-        context["script"] = script
-        context["div"] = div
+        context.update(plots.html_components_from_plot(plot))
         context["bokeh_version"] = bokeh.__version__
         return context
 
@@ -164,9 +161,8 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add HTML components and Bokeh version to the context."""
         context = super().get_context_data(**kwargs)
-        plot = plots.create_cost_recovery_plot()
-        script, div = components(plot)
-        context["script"] = script
-        context["div"] = div
+        timeseries_plot, bar_plot = plots.create_cost_recovery_plots()
+        context.update(plots.html_components_from_plot(timeseries_plot, "timeseries"))
+        context.update(plots.html_components_from_plot(bar_plot, "bar"))
         context["bokeh_version"] = bokeh.__version__
         return context
