@@ -227,7 +227,7 @@ class TestProject:
         # Check days_left when there are no extra time entries
         total_effort = funding_A.effort + funding_B.effort
         left = funding_A.effort_left + funding_B.effort_left
-        days_left = round(left), round(left / total_effort * 100, 1)
+        days_left = round(left, 1), round(left / total_effort * 100, 1)
         assert project.days_left == days_left
 
         # Create a time entry object for yesterday
@@ -242,7 +242,7 @@ class TestProject:
 
         # Check days_left has been updated
         left -= 0.5
-        days_left = round(left), round(left / total_effort * 100, 1)
+        days_left = round(left, 1), round(left / total_effort * 100, 1)
         assert project.days_left == days_left
 
     @pytest.mark.parametrize(

@@ -244,7 +244,7 @@ class Project(models.Model):
         return None
 
     @property
-    def days_left(self) -> tuple[int, float] | None:
+    def days_left(self) -> tuple[float, float] | None:
         """Provide the days worth of effort left.
 
         Returns:
@@ -263,7 +263,7 @@ class Project(models.Model):
             if additional_days:
                 left -= additional_days
 
-            return round(left), round(left / self.total_effort * 100, 1)
+            return round(left, 1), round(left / self.total_effort * 100, 1)
 
         return None
 
