@@ -1,6 +1,7 @@
 """Tests for the timeseries module."""
 
 from datetime import datetime, time, timedelta
+from decimal import Decimal
 
 import pandas as pd
 import pytest
@@ -137,8 +138,8 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=today + timedelta(15),
-        budget=500.00,
-        daily_rate=400.00,
+        budget=Decimal("500.00"),
+        daily_rate=Decimal("400.00"),
     )  # 1.25 days worth of funds
     funding_B = models.Funding.objects.create(
         project=project,
@@ -148,8 +149,8 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
         activity="G56789",
         analysis_code=analysis_code,
         expiry_date=today + timedelta(30),
-        budget=5000.00,
-        daily_rate=400.00,
+        budget=Decimal("5000.00"),
+        daily_rate=Decimal("400.00"),
     )
 
     # Create time entries (1.5 days total) in last month
@@ -174,17 +175,17 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     # Create cost recovery timeseries
     dates = utils.get_month_dates_for_previous_year()
     ts, charge_totals = timeseries.get_cost_recovery_timeseries(dates)
-
+    print(f"Charge totals: {charge_totals[-1]} is of type {type(charge_totals)[-1]}")
     # Get expected value
     n_days = len(
         pd.bdate_range(start=start_last_month, end=end_last_month, inclusive="both")
     )
     # £500 charged to funding A; £100 charged to funding B
-    expected_value = (500 / funding_A.daily_rate / n_days) + (
-        100 / funding_B.daily_rate / n_days
+    expected_value = (Decimal("500") / funding_A.daily_rate / n_days) + (
+        Decimal("100") / funding_B.daily_rate / n_days
     )
     assert isinstance(ts, pd.Series)
-    assert ts.value_counts()[expected_value] == n_days
+    assert ts.value_counts()[float(expected_value)] == n_days
     assert charge_totals[-1] == 600.00
 
 
@@ -220,8 +221,8 @@ def test_get_cost_recovery_timeseries_equal_to_num_people(
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=today + timedelta(15),
-        budget=1900.00,
-        daily_rate=200.00,
+        budget=Decimal("1900.00"),
+        daily_rate=Decimal("200.00"),
     )
     models.Funding.objects.create(
         project=project,
@@ -231,8 +232,8 @@ def test_get_cost_recovery_timeseries_equal_to_num_people(
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=today + timedelta(30),
-        budget=540000.00,
-        daily_rate=123.00,
+        budget=Decimal("540000.00"),
+        daily_rate=Decimal("123.00"),
     )
 
     end_last_month = today.replace(day=1) - timedelta(days=1)

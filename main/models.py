@@ -1,6 +1,6 @@
 """Models module for main app."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
@@ -220,7 +220,7 @@ class Project(models.Model):
         return None
 
     @property
-    def total_effort(self) -> int | None:
+    def total_effort(self) -> Decimal | None:
         """Provide the total days worth of effort available from funding.
 
         Returns:
@@ -244,7 +244,7 @@ class Project(models.Model):
         return None
 
     @property
-    def days_left(self) -> tuple[int, float] | None:
+    def days_left(self) -> tuple[Decimal, Decimal] | None:
         """Provide the days worth of effort left.
 
         Returns:
@@ -258,12 +258,12 @@ class Project(models.Model):
 
             # subtract days logged for the month so far
             end_date = datetime.today().date()
-            start_date = end_date.replace(day=1)
+            start_date = (end_date.replace(day=1) - timedelta(days=1)).replace(day=1)
             additional_days = get_actual_chargeable_days(self, start_date, end_date)[0]
             if additional_days:
-                left -= additional_days
+                left -= Decimal(additional_days)
 
-            return round(left), round(left / self.total_effort * 100, 1)
+            return round(left, 1), round(left / self.total_effort * 100, 1)
 
         return None
 
@@ -421,7 +421,7 @@ class Funding(models.Model):
 
     daily_rate = models.DecimalField(
         "Daily rate",
-        default=389.00,
+        default=Decimal("389.00"),
         blank=False,
         null=False,
         max_digits=12,
@@ -479,13 +479,13 @@ class Funding(models.Model):
         return None
 
     @property
-    def effort(self) -> int:
+    def effort(self) -> Decimal:
         """Provide the effort in days, calculated based on the budget and daily rate.
 
         Returns:
             The total number of days of effort provided by the funding.
         """
-        days_effort = round(self.budget / self.daily_rate)
+        days_effort = round(self.budget / self.daily_rate, 1)
         return days_effort
 
     @property
@@ -503,13 +503,13 @@ class Funding(models.Model):
         return self.budget
 
     @property
-    def effort_left(self) -> float:
+    def effort_left(self) -> Decimal:
         """Provide the effort left in days.
 
         Returns:
             The number of days worth of effort left.
         """
-        return float(self.funding_left / self.daily_rate)
+        return round(self.funding_left / self.daily_rate, 1)
 
     @property
     def monthly_pro_rata_charge(self) -> float | None:
