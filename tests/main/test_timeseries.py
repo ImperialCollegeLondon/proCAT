@@ -175,7 +175,7 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     # Create cost recovery timeseries
     dates = utils.get_month_dates_for_previous_year()
     ts, charge_totals = timeseries.get_cost_recovery_timeseries(dates)
-    print(f"Charge totals: {charge_totals[-1]} is of type {type(charge_totals)[-1]}")
+
     # Get expected value
     n_days = len(
         pd.bdate_range(start=start_last_month, end=end_last_month, inclusive="both")
