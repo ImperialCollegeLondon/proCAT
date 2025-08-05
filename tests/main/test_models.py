@@ -2,6 +2,7 @@
 
 from contextlib import nullcontext as does_not_raise
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -122,7 +123,8 @@ class TestProject:
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
-            budget=10000.00,
+            budget=Decimal("10000.00"),
+            daily_rate=Decimal("200.00"),
         )
         funding_B = models.Funding.objects.create(
             project=project,
@@ -130,7 +132,8 @@ class TestProject:
             cost_centre="centre",
             activity="G56789",
             analysis_code=analysis_code,
-            budget=5000.00,
+            budget=Decimal("5000.00"),
+            daily_rate=Decimal("250.00"),
         )
         total_effort = funding_A.effort + funding_B.effort
         assert project.total_effort == total_effort
@@ -193,8 +196,8 @@ class TestProject:
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
-            budget=10000.00,
-            daily_rate=50.00,
+            budget=Decimal("10000.00"),
+            daily_rate=Decimal("50.00"),
             expiry_date=end_date,
         )
         funding_B = models.Funding.objects.create(
@@ -203,8 +206,8 @@ class TestProject:
             cost_centre="centre",
             activity="G56789",
             analysis_code=analysis_code,
-            budget=5000.00,
-            daily_rate=250.00,
+            budget=Decimal("5000.00"),
+            daily_rate=Decimal("250.00"),
             expiry_date=end_date,
         )
         funding_A.refresh_from_db()
@@ -215,19 +218,21 @@ class TestProject:
             date=start_date,
             project=project,
             funding=funding_A,
-            amount=100.00,
+            amount=Decimal("100.00"),
         )
         models.MonthlyCharge.objects.create(
             date=start_date,
             project=project,
             funding=funding_B,
-            amount=300.00,
+            amount=Decimal("300.00"),
         )
 
         # Check days_left when there are no extra time entries
-        total_effort = funding_A.effort + funding_B.effort
-        left = funding_A.effort_left + funding_B.effort_left
-        days_left = round(left), round(left / total_effort * 100, 1)
+        total_effort = funding_A.effort + funding_B.effort  # (10000/50 + 5000/250)
+        left = funding_A.effort_left + funding_B.effort_left  # (9900/50 + 4700/250)
+        days_left = (round(left, 1), round(left / total_effort * 100, 1))
+        print(f"Expected days_left: {days_left}")
+        print(f"Actual days_left: {project.days_left}")
         assert project.days_left == days_left
 
         # Create a time entry object for yesterday
@@ -241,8 +246,10 @@ class TestProject:
         )  # 3.5 hours total (0.5 days)
 
         # Check days_left has been updated
-        left -= 0.5
-        days_left = round(left), round(left / total_effort * 100, 1)
+        left -= Decimal("0.5")
+        days_left = (round(left, 1), round(left / total_effort * 100, 1))
+        print(f"Updated days_left: {days_left}")
+        print(f"Actual days_left after time entry: {project.days_left}")
         assert project.days_left == days_left
 
     @pytest.mark.parametrize(
@@ -335,7 +342,7 @@ class TestFunding:
         from main import models
 
         funding = models.Funding(budget=10000.00, daily_rate=389.00)
-        assert funding.effort == 26
+        assert funding.effort == 25.7
 
     def test_clean_when_internal(self):
         """Test the clean method."""
@@ -473,7 +480,7 @@ class TestFunding:
 
         # No monthly charges
         funding.refresh_from_db()
-        assert round(funding.effort_left) == funding.effort
+        assert funding.effort_left == funding.effort
 
         # Check when monthly charge created
         charge_date = funding.expiry_date - timedelta(days=5)
@@ -481,8 +488,8 @@ class TestFunding:
             project=project, funding=funding, amount=100.00, date=charge_date
         )
         monthly_charge.refresh_from_db()
-        effort_left = float(
-            (funding.budget - monthly_charge.amount) / funding.daily_rate
+        effort_left = round(
+            (funding.budget - monthly_charge.amount) / funding.daily_rate, 1
         )
         assert funding.effort_left == effort_left
 

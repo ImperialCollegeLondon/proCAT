@@ -1,6 +1,7 @@
 """Tests for the report module."""
 
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from http import HTTPStatus
 from unittest.mock import Mock
 
@@ -261,8 +262,8 @@ def test_create_actual_monthly_charges(department, user, analysis_code):
         activity="G12345",
         analysis_code=analysis_code,
         expiry_date=end_date,  # expires first
-        budget=500.00,
-        daily_rate=375.00,
+        budget=Decimal("500.00"),
+        daily_rate=Decimal("375.00"),
     )  # 1.25 days worth of funds
     funding_B = models.Funding.objects.create(
         project=project,
@@ -272,8 +273,8 @@ def test_create_actual_monthly_charges(department, user, analysis_code):
         activity="G56789",
         analysis_code=analysis_code,
         expiry_date=end_date + timedelta(30),
-        budget=5000.00,
-        daily_rate=400.00,
+        budget=Decimal("5000.00"),
+        daily_rate=Decimal("400.00"),
     )
 
     # Check no monthly charge is created if there are no time entries
@@ -297,7 +298,7 @@ def test_create_actual_monthly_charges(department, user, analysis_code):
     # Calculate the chargeable days to each funding source (1.5 days total)
     # Funding A is depleted and remainder charged to funding B
     funding_A_days = funding_A.effort_left
-    funding_B_days = 1.5 - funding_A_days
+    funding_B_days = Decimal("1.5") - funding_A_days
 
     # Create monthly charges
     report.create_actual_monthly_charges(project, start_date, end_date)
