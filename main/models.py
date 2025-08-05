@@ -233,7 +233,7 @@ class Project(models.Model):
         return None
 
     @property
-    def percent_effort_left(self) -> float | None:
+    def percent_effort_left(self) -> Decimal | None:
         """Provide the percentage of effort left.
 
         Returns:
@@ -263,7 +263,9 @@ class Project(models.Model):
             if additional_days:
                 left -= Decimal(additional_days)
 
-            return round(left, 1), round(left / self.total_effort * 100, 1)
+            return Decimal(str(round(left, 1))), Decimal(
+                str(round(left / self.total_effort * 100, 1))
+            )
 
         return None
 
@@ -335,7 +337,7 @@ class Project(models.Model):
         return None
 
     @property
-    def effort_per_day(self) -> float | None:
+    def effort_per_day(self) -> Decimal | None:
         """Calculate the estimated effort per day.
 
         Considers only working (business) days.
