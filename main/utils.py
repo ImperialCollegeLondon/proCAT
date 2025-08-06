@@ -150,12 +150,30 @@ def get_month_dates_for_previous_year() -> list[tuple[date, date]]:
 def order_queryset_by_property(  # type: ignore[explicit-any]
     queryset: QuerySet[Any], property: str, is_descending: bool
 ) -> QuerySet[Any]:
-    """Orders a queryset according to a specified property."""
+    """Orders a queryset according to a specified Model property.
+
+    Creates a Django conditional expression to assign the position
+    of the model in a queryset according to its model ID (using a
+    custom ordering). The conditional expression is then provided to
+    the QuerySet.order_by() function. This can be used to update the
+    ordering of a queryset column in a Table.
+
+    Args:
+        queryset: a model queryset for ordering
+        property: the name of the model property with which to order
+            the queryset
+        is_descending: bool to indicate whether the property should
+            be sorted by descending (or ascending) order
+
+    Returns:
+        The queryset ordered according to the property.
+    """
     model_ids = list(queryset.values_list("id", flat=True))
     values = [getattr(obj, property) for obj in queryset]
     sorted_indexes = sorted(
         range(len(values)), key=lambda i: values[i], reverse=is_descending
     )
+    # Create conditional expression using custom ordering
     preserved_ordering = Case(
         *[
             When(id=model_ids[id], then=position)
