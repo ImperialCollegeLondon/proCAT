@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 
 
 @pytest.mark.django_db
-def test_get_actual_chargeable_days(user, project):
+def test_get_actual_chargeable_days(user, project, funding):
     """Test the get_actual_chargeable_days function."""
     from main import models, report
 
@@ -35,6 +35,21 @@ def test_get_actual_chargeable_days(user, project):
         start_time=datetime(2025, 6, 4, 10, 0),
         end_time=datetime(2025, 6, 4, 14, 0),
     )  # 4 hours total
+
+    # Add time entry with monthly charge assigned (should not be counted)
+    time_entry_C = models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=datetime(2025, 6, 4, 12, 0),
+        end_time=datetime(2025, 6, 4, 17, 0),
+    )  # 5 hours total
+    charge = models.MonthlyCharge.objects.create(
+        date=start_date,
+        project=project,
+        funding=funding,
+        amount=10.00,
+    )
+    time_entry_C.monthly_charge.add(charge)
 
     pks = [time_entry_A.pk, time_entry_B.pk]
     expected_result = (1, pks)  # 7 hours total = 1 day
