@@ -125,7 +125,9 @@ def get_capacity_timeseries(
     return timeseries
 
 
-def get_cost_recovery_timeseries(dates: list[tuple[date, date]]) -> pd.Series[float]:
+def get_cost_recovery_timeseries(
+    dates: list[tuple[date, date]],
+) -> tuple[pd.Series[float], list[float]]:
     """Get the cost recovery timeseries for the previous year.
 
     For each month in the past year, this function aggregates all monthly charges and
@@ -139,7 +141,8 @@ def get_cost_recovery_timeseries(dates: list[tuple[date, date]]) -> pd.Series[fl
             and last date of the month
 
     Returns:
-        Pandas series containing cost recovery timeseries data.
+        Tuple of Pandas series containing cost recovery timeseries data and a list of
+        monthly totals.
     """
     date_range = pd.bdate_range(
         start=dates[0][0],
@@ -149,12 +152,18 @@ def get_cost_recovery_timeseries(dates: list[tuple[date, date]]) -> pd.Series[fl
     # initialize timeseries
     timeseries = pd.Series(0.0, index=date_range)
 
+    # store monthly totals for bar plot
+    monthly_totals = []
+
     for month in dates:
         month_dates = pd.bdate_range(start=month[0], end=month[1], inclusive="both")
         n_working_days = len(month_dates)
+        monthly_charges = models.MonthlyCharge.objects.filter(date=month[0])
+        monthly_total = monthly_charges.aggregate(Sum("amount"))["amount__sum"]
+
+        # group by funding
         charges = (
-            models.MonthlyCharge.objects.filter(date=month[0])
-            .values("funding")  # group by funding
+            monthly_charges.values("funding")
             .annotate(total=Sum("amount"))  # get total Amount across monthly charges
             .annotate(  # divide total by daily rate and working days
                 recovered=ExpressionWrapper(
@@ -165,7 +174,10 @@ def get_cost_recovery_timeseries(dates: list[tuple[date, date]]) -> pd.Series[fl
         )
 
         # aggregate across all funding sources (defaults to 0 if None)
-        month_total = charges.aggregate(Sum("recovered"))["recovered__sum"] or 0
-        timeseries[month_dates] += month_total  # Update timeseries
+        funding_total = charges.aggregate(Sum("recovered"))["recovered__sum"] or 0
+        timeseries[month_dates] += funding_total  # Update timeseries
 
-    return timeseries
+        # record total for the month
+        monthly_totals.append(float(monthly_total) if monthly_total else 0.0)
+
+    return timeseries, monthly_totals
