@@ -133,3 +133,82 @@ def test_get_budget_status():
     assert funding4 in funding_expired_budget_left
     assert funding1 not in funding_expired_budget_left
     assert funding3 not in funding_expired_budget_left
+
+
+@pytest.mark.django_db
+def test_days_used_within_days_left(user, project):
+    """Test if days used within days left."""
+    from main.models import Funding, TimeEntry
+    from main.utils import get_projects_with_days_used_exceeding_days_left
+
+    date = datetime(2025, 7, 10)
+    current_month_start = datetime(date.year, date.month, 1)
+
+    # Create time entry in the last month
+    start_time = datetime(2025, 6, 1, 11, 0)
+    end_time = start_time + timedelta(hours=14)
+
+    TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    # Create funding for the project
+    Funding.objects.create(
+        project=project,
+        budget=1000,
+        source="Test Source",
+        daily_rate=400,
+        expiry_date=current_month_start + timedelta(days=30),  # Not expired
+    )
+
+    result = get_projects_with_days_used_exceeding_days_left(date=date)
+
+    # Check if the project is not in the result
+    assert len(result) == 0, (
+        "Project should not be in the result as days used is within days left"
+    )
+    assert project.days_left == (2.5, 125.0)
+
+
+@pytest.mark.django_db
+def test_days_used_exceeding_days_left(user, project):
+    """Test if days used exceeds days left."""
+    from main.models import Funding, TimeEntry
+    from main.utils import get_projects_with_days_used_exceeding_days_left
+
+    date = datetime(2025, 7, 10)
+    current_month_start = datetime(date.year, date.month, 1)
+
+    # Create time entry in the last month
+    start_time = datetime(2025, 6, 1, 11, 0)
+    end_time = start_time + timedelta(hours=50)
+
+    TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    # Create funding for the project
+    Funding.objects.create(
+        project=project,
+        budget=1000,
+        source="Test Source",
+        daily_rate=400,
+        expiry_date=current_month_start + timedelta(days=30),  # Not expired
+    )
+
+    result = get_projects_with_days_used_exceeding_days_left(date=date)
+
+    # Check if the project is in the result
+    assert len(result) == 1, (
+        "Project should be in the result as days used exceeds days left"
+    )
+    project_result, days_used, days_left = result[0]
+    assert project_result == project
+    assert round(days_used, 1) == 7.1
+    assert round(days_left, 1) == 2.5
