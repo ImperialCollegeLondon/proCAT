@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.db.models.query import QuerySet
 
 from . import models
-from .models import Funding, TimeEntry
+from .models import Funding, Project, TimeEntry
 
 ANALYSIS_CODES = (
     {
@@ -144,3 +144,46 @@ def get_month_dates_for_previous_year() -> list[tuple[date, date]]:
 
     dates.reverse()
     return dates
+
+
+def get_projects_with_days_used_exceeding_days_left(
+    date: datetime | None = None,
+) -> list[tuple[Project, float, float]]:
+    """Get projects whose days used in the last month exceed the days left."""
+    if date is None:
+        date = datetime.today()
+
+    projects_with_days_used_exceeding_days_left = []
+
+    last_month_start, _, current_month_start, _ = get_current_and_last_month(date)
+
+    projects = Project.objects.filter(status="Active")
+
+    for project in projects:
+        if project.days_left is None:
+            continue
+
+        days_left, _ = project.days_left
+
+        time_entries = project.timeentry_set.filter(
+            start_time__gte=last_month_start,
+            end_time__lt=current_month_start,
+            monthly_charge__isnull=True,  # include entries that are not yet charged
+        )
+
+        if not time_entries.exists():
+            continue
+
+        total_hours = sum(
+            (entry.end_time - entry.start_time).total_seconds() / 3600
+            for entry in time_entries
+        )
+
+        days_used = round(total_hours / 7, 1)  # Assuming 7 hrs/workday
+
+        if days_used > days_left:
+            projects_with_days_used_exceeding_days_left.append(
+                (project, days_used, days_left)
+            )
+
+    return projects_with_days_used_exceeding_days_left

@@ -1,6 +1,6 @@
 """Models module for main app."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
@@ -244,7 +244,7 @@ class Project(models.Model):
         return None
 
     @property
-    def days_left(self) -> tuple[int, float] | None:
+    def days_left(self) -> tuple[float, float] | None:
         """Provide the days worth of effort left.
 
         Returns:
@@ -256,14 +256,15 @@ class Project(models.Model):
         if self.total_effort:
             left = sum([funding.effort_left for funding in self.funding_source.all()])
 
-            # subtract days logged for the month so far
+            # Subtract additional unassigned time entries from the start of last month
+            # until the current date
             end_date = datetime.today().date()
-            start_date = end_date.replace(day=1)
+            start_date = (end_date.replace(day=1) - timedelta(days=1)).replace(day=1)
             additional_days = get_actual_chargeable_days(self, start_date, end_date)[0]
             if additional_days:
                 left -= additional_days
 
-            return round(left), round(left / self.total_effort * 100, 1)
+            return round(left, 1), round(left / self.total_effort * 100, 1)
 
         return None
 

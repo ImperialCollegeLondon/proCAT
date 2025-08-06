@@ -18,6 +18,7 @@ from .utils import (
     get_budget_status,
     get_current_and_last_month,
     get_logged_hours,
+    get_projects_with_days_used_exceeding_days_left,
 )
 
 logger = logging.getLogger(__name__)
@@ -353,3 +354,63 @@ def sync_clockify_time_entries_task() -> None:
     """Scheduled task to sync time entries from Clockify API."""
     sync_clockify_time_entries()
     logger.info("Clockify time entries sync completed.")
+
+
+_template_days_used_exceeded_days_left = """
+Dear {lead},
+
+The total days used for project {project_name} has exceeded the days left
+for the project.
+
+Days used: {days_used}
+Days left: {days_left}
+
+Please review the project budget and take necessary actions.
+
+Best regards,
+ProCAT
+"""
+
+
+def notify_monthly_days_used_exceeding_days_left_logic(
+    date: datetime.datetime | None = None,
+) -> None:
+    """Logic to notify project lead and admin if total days used exceed days left.
+
+    This function checks each project to see if the days used for the
+    project exceed the days left. If they do,
+    it sends an email notification to the project lead and admin.
+    """
+    if date is None:
+        date = datetime.datetime.today()
+
+    projects = get_projects_with_days_used_exceeding_days_left(date=date)
+
+    for project, days_used, days_left in projects:
+        lead = project.lead
+        lead_name = lead.get_full_name() if lead else "Project Leader"
+        lead_email = lead.email if lead else ""
+
+        subject = f"[Monthly Days Used Exceed Days Left] {project.name}"
+        message = _template_days_used_exceeded_days_left.format(
+            lead=lead_name,
+            project_name=project.name,
+            days_used=days_used,
+            days_left=days_left,
+        )
+
+        admin_email = get_admin_email()
+
+        email_user_and_cc_admin(
+            subject=subject,
+            message=message,
+            email=lead_email,
+            admin_email=admin_email,
+        )
+
+
+# Runs every 7th day of the month at 9:30 AM
+@db_periodic_task(crontab(day=7, hour=9, minute=30))
+def notify_monthly_days_used_exceeding_days_left() -> None:
+    """Monthly task to notify project leads and admin if days used exceed days left."""
+    notify_monthly_days_used_exceeding_days_left_logic()
