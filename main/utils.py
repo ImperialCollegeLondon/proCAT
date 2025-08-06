@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.models import Group
 from django.db.models.query import QuerySet
 
 from . import models
@@ -54,9 +54,7 @@ def destroy_analysis(*args: Any) -> None:  # type: ignore [explicit-any]
 
 def create_HoRSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
     """Create HoRSE group."""
-    HoRSE_group = Group.objects.get_or_create(name="HoRSE")[0]
-    permissions = Permission.objects.all()
-    HoRSE_group.permissions.set(permissions)
+    Group.objects.get_or_create(name="HoRSE")[0]
 
 
 def destroy_HoRSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
