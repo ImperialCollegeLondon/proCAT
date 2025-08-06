@@ -26,7 +26,7 @@ dependencies = [
 dev = [
     "ruff",
     "mypy",
-    "pip-tools",
+    "uv",
     "pre-commit",
     "pytest",
     "pytest-cov",
