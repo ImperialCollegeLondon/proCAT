@@ -6,10 +6,13 @@ This test module includes tests for main views of the app ensuring that:
 """
 
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 from django.test import RequestFactory
 from django.urls import reverse
+
+from main.models import Funding, Project
 
 from .view_utils import LoginRequiredMixin, TemplateOkMixin
 
@@ -31,6 +34,57 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
     def _get_url(self):
         return reverse("main:projects")
 
+    @pytest.mark.django_db
+    def test_order_weeks_to_deadline(self, auth_client):
+        """Test the order_weeks_to_deadline method."""
+        with patch("main.tables.order_queryset_by_property") as order_mock:
+            endpoint = reverse("main:projects")
+            order_mock.return_value = Project.objects.all()
+
+            # Test ascending sort
+            auth_client.get(endpoint, {"sort": "weeks_to_deadline"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "weeks_to_deadline"
+            assert not order_mock.call_args.args[2]
+
+            # Test descending sort
+            auth_client.get(endpoint, {"sort": "-weeks_to_deadline"})
+            assert order_mock.call_args.args[2]
+
+    @pytest.mark.django_db
+    def test_order_total_effort(self, auth_client):
+        """Test the order_total_effort method."""
+        with patch("main.tables.order_queryset_by_property") as order_mock:
+            endpoint = reverse("main:projects")
+            order_mock.return_value = Project.objects.all()
+
+            # Test ascending sort
+            auth_client.get(endpoint, {"sort": "total_effort"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "total_effort"
+            assert not order_mock.call_args.args[2]
+
+            # Test descending sort
+            auth_client.get(endpoint, {"sort": "-total_effort"})
+            assert order_mock.call_args.args[2]
+
+    @pytest.mark.django_db
+    def test_order_days_left(self, auth_client):
+        """Test the order_days_left method."""
+        with patch("main.tables.order_queryset_by_property") as order_mock:
+            endpoint = reverse("main:projects")
+            order_mock.return_value = Project.objects.all()
+
+            # Test ascending sort
+            auth_client.get(endpoint, {"sort": "days_left"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "days_left"
+            assert not order_mock.call_args.args[2]
+
+            # Test descending sort
+            auth_client.get(endpoint, {"sort": "-days_left"})
+            assert order_mock.call_args.args[2]
+
 
 class TestFundingListView(LoginRequiredMixin, TemplateOkMixin):
     """Test suite for the funding view."""
@@ -39,6 +93,40 @@ class TestFundingListView(LoginRequiredMixin, TemplateOkMixin):
 
     def _get_url(self):
         return reverse("main:funding")
+
+    @pytest.mark.django_db
+    def test_order_effort(self, auth_client):
+        """Test the order_effort method."""
+        with patch("main.tables.order_queryset_by_property") as order_mock:
+            endpoint = reverse("main:funding")
+            order_mock.return_value = Funding.objects.all()
+
+            # Test ascending sort
+            auth_client.get(endpoint, {"sort": "effort"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "effort"
+            assert not order_mock.call_args.args[2]
+
+            # Test descending sort
+            auth_client.get(endpoint, {"sort": "-effort"})
+            assert order_mock.call_args.args[2]
+
+    @pytest.mark.django_db
+    def test_order_effort_left(self, auth_client):
+        """Test the order_effort_left method."""
+        with patch("main.tables.order_queryset_by_property") as order_mock:
+            endpoint = reverse("main:funding")
+            order_mock.return_value = Funding.objects.all()
+
+            # Test ascending sort
+            auth_client.get(endpoint, {"sort": "effort_left"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "effort_left"
+            assert not order_mock.call_args.args[2]
+
+            # Test descending sort
+            auth_client.get(endpoint, {"sort": "-effort_left"})
+            assert order_mock.call_args.args[2]
 
 
 class TestCapacitiesListView(LoginRequiredMixin, TemplateOkMixin):

@@ -212,3 +212,60 @@ def test_days_used_exceeding_days_left(user, project):
     assert project_result == project
     assert round(days_used, 1) == 7.1
     assert round(days_left, 1) == 2.5
+
+
+@pytest.mark.django_db
+def test_order_queryset_by_property(project, analysis_code):
+    """Test the order_queryset_by_property function."""
+    from main import models, utils
+
+    # Create some funding objects
+    models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=datetime.today().date(),
+        budget=1000.00,
+        daily_rate=100.00,
+        id=1,
+    )  # 10 days funding
+
+    models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=datetime.today().date(),
+        budget=2000.00,
+        daily_rate=100.00,
+        id=2,
+    )  # 20 days funding
+
+    models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=datetime.today().date(),
+        budget=500.00,
+        daily_rate=100.00,
+        id=3,
+    )  # 5 days funding
+
+    # Check Funding is ordered correctly by effort
+    qs = models.Funding.objects.all()
+    ordered_qs = utils.order_queryset_by_property(qs, "effort", False)
+    ordered_ids = list(ordered_qs.values_list("id", flat=True))
+    assert ordered_ids == [3, 1, 2]
+
+    # Check reverse order
+    reverse_qs = utils.order_queryset_by_property(qs, "effort", True)
+    reverse_ids = list(reverse_qs.values_list("id", flat=True))
+    assert reverse_ids == [2, 1, 3]
