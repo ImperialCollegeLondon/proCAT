@@ -227,7 +227,7 @@ class TestProject:
         # Check days_left when there are no extra time entries
         total_effort = funding_A.effort + funding_B.effort
         left = funding_A.effort_left + funding_B.effort_left
-        days_left = round(left), round(left / total_effort * 100, 1)
+        days_left = round(left, 1), round(left / total_effort * 100, 1)
         assert project.days_left == days_left
 
         # Create a time entry object for yesterday
@@ -242,7 +242,7 @@ class TestProject:
 
         # Check days_left has been updated
         left -= 0.5
-        days_left = round(left), round(left / total_effort * 100, 1)
+        days_left = round(left, 1), round(left / total_effort * 100, 1)
         assert project.days_left == days_left
 
     @pytest.mark.parametrize(
@@ -550,28 +550,24 @@ class TestCapacity:
         )
 
     @pytest.mark.parametrize(
-        ["value", "is_valid"],
+        ["value", "expectation"],
         [
-            [-0.5, False],
-            [0.0, True],
-            [0.5, True],
-            [1.0, True],
-            [1.5, False],
+            [-0.5, pytest.raises(ValidationError)],
+            [0.0, does_not_raise()],
+            [0.5, does_not_raise()],
+            [1.0, does_not_raise()],
+            [1.5, pytest.raises(ValidationError)],
         ],
     )
-    def test_value(self, user, value, is_valid):
+    def test_value(self, user, value, expectation):
         """Test that the value of capacity can only between 0 and 1."""
         from main import models
 
         capacity = models.Capacity(
             user=user, value=value, start_date=datetime.now().date()
         )
-        if is_valid:
-            # Should not raise
+        with expectation:
             capacity.full_clean()
-        else:
-            with pytest.raises(ValidationError):
-                capacity.full_clean()
 
 
 class TestTimeEntry:
