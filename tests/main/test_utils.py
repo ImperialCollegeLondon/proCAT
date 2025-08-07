@@ -30,13 +30,13 @@ def test_create_destroy_horse_group():
     assert Group.objects.filter(name="HoRSE").exists()
 
 
-def test_get_admin_email(user):
-    """Test get_admin_email function."""
+def test_get_head_email(user):
+    """Test get_head_email function."""
     from main import utils
 
     group = Group.objects.get(name="HoRSE")
     user.groups.add(group)
-    email = utils.get_admin_email()
+    email = utils.get_head_email()
     assert email == [user.email]
 
 

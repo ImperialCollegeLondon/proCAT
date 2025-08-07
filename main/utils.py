@@ -110,13 +110,13 @@ def get_current_and_last_month(
     )
 
 
-def get_admin_email() -> list[str]:
+def get_head_email() -> list[str]:
     """Get the emails of the HoRSE group users."""
     User = get_user_model()
-    admin_email = User.objects.filter(groups__name="HoRSE").values_list(
+    head_email = User.objects.filter(groups__name="HoRSE").values_list(
         "email", flat=True
     )
-    return list(admin_email) if admin_email else []
+    return list(head_email)
 
 
 def get_budget_status(

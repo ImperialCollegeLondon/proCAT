@@ -10,12 +10,12 @@ from huey.contrib.djhuey import db_periodic_task, task
 
 from .Clockify.api_interface import ClockifyAPI
 from .models import Project, TimeEntry, User
-from .notify import email_attachment, email_user, email_user_and_cc_admin
+from .notify import email_attachment, email_user, email_user_and_cc_head
 from .report import create_charges_report_for_attachment
 from .utils import (
-    get_admin_email,
     get_budget_status,
     get_current_and_last_month,
+    get_head_email,
     get_logged_hours,
     get_projects_with_days_used_exceeding_days_left,
 )
@@ -198,7 +198,7 @@ def notify_funding_status_logic(
     if funds_ran_out_not_expired.exists():
         for funding in funds_ran_out_not_expired:
             subject = f"[Funding Update] {funding.project.name}"
-            admin_email = get_admin_email()
+            head_email = get_head_email()
             lead = funding.project.lead
             lead_name = lead.get_full_name() if lead is not None else "Project Leader"
             lead_email = lead.email if lead is not None else ""
@@ -208,17 +208,17 @@ def notify_funding_status_logic(
                 project_name=funding.project.name,
                 activity=activity,
             )
-            email_user_and_cc_admin(
+            email_user_and_cc_head(
                 subject=subject,
                 message=message,
                 email=lead_email,
-                admin_email=admin_email,
+                head_email=head_email,
             )
 
     if funding_expired_budget_left.exists():
         for funding in funding_expired_budget_left:
             subject = f"[Funding Expired] {funding.project.name}"
-            admin_email = get_admin_email()
+            head_email = get_head_email()
             lead = funding.project.lead
             lead_name = lead.get_full_name() if lead is not None else "Project Leader"
             lead_email = lead.email if lead is not None else ""
@@ -227,11 +227,11 @@ def notify_funding_status_logic(
                 project_name=funding.project.name,
                 budget=funding.budget,
             )
-            email_user_and_cc_admin(
+            email_user_and_cc_head(
                 subject=subject,
                 message=message,
                 email=lead_email,
-                admin_email=admin_email,
+                head_email=head_email,
             )
 
 
@@ -255,13 +255,13 @@ ProCAT
 def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -> None:
     """Logic to email the HoRSE the charges report for the last month."""
     subject = f"Charges report for {month_name}/{year}"
-    admin_email = get_admin_email()
+    head_email = get_head_email()
     message = _template_charges_report.format(month=month_name, year=year)
     csv_attachment = create_charges_report_for_attachment(month, year)
 
     email_attachment(
         subject,
-        admin_email,
+        head_email,
         message,
         f"charges_report_{month}-{year}.csv",
         csv_attachment,
@@ -371,11 +371,11 @@ ProCAT
 def notify_monthly_days_used_exceeding_days_left_logic(
     date: datetime.datetime | None = None,
 ) -> None:
-    """Logic to notify project lead and admin if total days used exceed days left.
+    """Logic to notify project lead and HoRSE if total days used exceed days left.
 
     This function checks each project to see if the days used for the
     project exceed the days left. If they do,
-    it sends an email notification to the project lead and admin.
+    it sends an email notification to the project lead and HoRSE.
     """
     if date is None:
         date = datetime.datetime.today()
@@ -395,18 +395,18 @@ def notify_monthly_days_used_exceeding_days_left_logic(
             days_left=days_left,
         )
 
-        admin_email = get_admin_email()
+        head_email = get_head_email()
 
-        email_user_and_cc_admin(
+        email_user_and_cc_head(
             subject=subject,
             message=message,
             email=lead_email,
-            admin_email=admin_email,
+            head_email=head_email,
         )
 
 
 # Runs every 7th day of the month at 9:30 AM
 @db_periodic_task(crontab(day=7, hour=9, minute=30))
 def notify_monthly_days_used_exceeding_days_left() -> None:
-    """Monthly task to notify project leads and admin if days used exceed days left."""
+    """Monthly task to notify project leads and HoRSE if days used exceed days left."""
     notify_monthly_days_used_exceeding_days_left_logic()

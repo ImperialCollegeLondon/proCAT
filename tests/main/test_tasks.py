@@ -209,12 +209,12 @@ def test_funding_expired_but_has_budget(funding, project):
         f"Best regards,\nProCAT\n"
     )
 
-    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+    with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
         notify_funding_status_logic()
         mock_email_func.assert_called_once_with(
             subject=expected_subject,
             email=funding.project.lead.email,
-            admin_email=[],
+            head_email=[],
             message=expected_message,
         )
 
@@ -240,12 +240,12 @@ def test_funding_ran_out_not_expired(funding, project):
         f"Best regards,\nProCAT\n"
     )
 
-    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+    with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
         notify_funding_status_logic()
         mock_email_func.assert_called_once_with(
             subject=expected_subject,
             email=funding.project.lead.email,
-            admin_email=[],
+            head_email=[],
             message=expected_message,
         )
 
@@ -256,16 +256,16 @@ def test_email_monthly_charges_report():
     from main import models, report
 
     month, month_name, year = 6, "June", 2025
-    admin_user = models.User.objects.create(
-        first_name="admin",
+    head_user = models.User.objects.create(
+        first_name="head",
         last_name="user",
-        email="admin.user@mail.com",
+        email="head.user@mail.com",
         password="1234",
-        username="admin_user",
+        username="head_user",
         is_superuser=True,
     )
     group = Group.objects.get(name="HoRSE")
-    admin_user.groups.add(group)
+    head_user.groups.add(group)
 
     # Create attachment with empty charges row
     expected_subject = f"Charges report for {month_name}/{year}"
@@ -282,7 +282,7 @@ def test_email_monthly_charges_report():
         email_monthly_charges_report_logic(month, year, month_name)
         mock_email_attachment.assert_called_with(
             expected_subject,
-            [admin_user.email],
+            [head_user.email],
             expected_message,
             expected_fname,
             expected_attachment,
@@ -432,7 +432,7 @@ def test_monthly_days_used_not_exceeding_days_left(user, project, funding):
         end_time=end_time,
     )
 
-    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+    with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
         notify_monthly_days_used_exceeding_days_left_logic(date=datetime(2025, 7, 10))
         mock_email_func.assert_not_called()
 
@@ -456,7 +456,7 @@ def test_monthly_days_used_exceeding_days_left(user, project, funding):
         end_time=end_time,
     )
 
-    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+    with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
         notify_monthly_days_used_exceeding_days_left_logic(date=datetime(2025, 7, 10))
 
         mock_email_func.assert_called_once_with(
@@ -472,5 +472,5 @@ def test_monthly_days_used_exceeding_days_left(user, project, funding):
                 "Best regards,\nProCAT\n"
             ),
             email=project.lead.email if project.lead else user.email,
-            admin_email=[],
+            head_email=[],
         )
