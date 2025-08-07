@@ -7,6 +7,7 @@ from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.db.models import Case, When
 from django.db.models.query import QuerySet
 
 from . import models
@@ -191,3 +192,40 @@ def get_projects_with_days_used_exceeding_days_left(
             )
 
     return projects_with_days_used_exceeding_days_left
+
+
+def order_queryset_by_property(  # type: ignore[explicit-any]
+    queryset: QuerySet[Any], property: str, is_descending: bool
+) -> QuerySet[Any]:
+    """Orders a queryset according to a specified Model property.
+
+    Creates a Django conditional expression to assign the position
+    of the model in a queryset according to its model ID (using a
+    custom ordering). The conditional expression is then provided to
+    the QuerySet.order_by() function. This can be used to update the
+    ordering of a queryset column in a Table.
+
+    Args:
+        queryset: a model queryset for ordering
+        property: the name of the model property with which to order
+            the queryset
+        is_descending: bool to indicate whether the property should
+            be sorted by descending (or ascending) order
+
+    Returns:
+        The queryset ordered according to the property.
+    """
+    model_ids = list(queryset.values_list("id", flat=True))
+    values = [getattr(obj, property) for obj in queryset]
+    sorted_indexes = sorted(
+        range(len(values)), key=lambda i: values[i], reverse=is_descending
+    )
+    # Create conditional expression using custom ordering
+    preserved_ordering = Case(
+        *[
+            When(id=model_ids[id], then=position)
+            for position, id in enumerate(sorted_indexes)
+        ]
+    )
+    queryset = queryset.order_by(preserved_ordering)
+    return queryset
