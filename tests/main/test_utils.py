@@ -35,6 +35,9 @@ def test_get_head_email(user):
     from main import utils
 
     group = Group.objects.get(name="HoRSE")
+    email = utils.get_head_email()
+    assert email == []
+
     user.groups.add(group)
     email = utils.get_head_email()
     assert email == [user.email]
