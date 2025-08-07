@@ -37,7 +37,7 @@ jobs:
         run: pytest
 
       - name: Upload coverage reports to Codecov
-        if: ${{ (github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.user.login != 'pre-commit-ci[bot]') && github.event_name != 'workflow_call' }}
+        if: ${{ (github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.user.login != 'pre-commit-ci[bot]') && github.event_name != 'release' }}
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
