@@ -1,4 +1,4 @@
-"""Function to send notifications to user and admin."""
+"""Function to send notifications to user and HoRSE."""
 
 from django.core.mail import EmailMessage, send_mail
 
@@ -14,14 +14,14 @@ def email_user(subject: str, email: str, message: str) -> None:
     )
 
 
-def email_user_and_cc_admin(
+def email_user_and_cc_head(
     subject: str,
     email: str,
-    admin_email: list[str] | str,
+    head_email: list[str] | str,
     message: str,
 ) -> None:
-    """Send email notification to the project lead and CC admin."""
-    cc_list = [admin_email] if isinstance(admin_email, str) else admin_email
+    """Send email notification to the project lead and CC HoRSE."""
+    cc_list = [head_email] if isinstance(head_email, str) else head_email
     email_message = EmailMessage(
         subject=subject,
         body=message,
