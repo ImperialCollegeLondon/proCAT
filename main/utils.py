@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.db.models import Case, When
 from django.db.models.query import QuerySet
 
@@ -50,6 +51,16 @@ def destroy_analysis(*args: Any) -> None:  # type: ignore [explicit-any]
     """Delete default analysis codes."""
     codes = [ac["code"] for ac in ANALYSIS_CODES]
     models.AnalysisCode.objects.filter(code__in=codes).delete()
+
+
+def create_HoRSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
+    """Create HoRSE group."""
+    Group.objects.get_or_create(name="HoRSE")[0]
+
+
+def destroy_HoRSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
+    """Delete HoRSE group."""
+    Group.objects.filter(name="HoRSE").delete()
 
 
 def get_logged_hours(
@@ -99,20 +110,13 @@ def get_current_and_last_month(
     )
 
 
-def get_admin_email() -> list[str]:
-    """Get the email of the first superuser."""
+def get_head_email() -> list[str]:
+    """Get the emails of the HoRSE group users."""
     User = get_user_model()
-    admin_email = (
-        User.objects.filter(is_superuser=True).values_list("email", flat=True).first()
+    head_email = User.objects.filter(groups__name="HoRSE").values_list(
+        "email", flat=True
     )
-    return [admin_email] if admin_email else []
-
-
-def get_admin_name() -> str | None:
-    """Get the name of the first superuser."""
-    User = get_user_model()
-    admin_name = User.objects.filter(is_superuser=True).first()
-    return admin_name.get_full_name() if admin_name else None
+    return list(head_email)
 
 
 def get_budget_status(

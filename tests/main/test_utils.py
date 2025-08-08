@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 
 import pytest
+from django.contrib.auth.models import Group
 
 
 @pytest.mark.django_db
@@ -15,6 +16,31 @@ def test_create_destroy_analysis_codes():
     assert len(models.AnalysisCode.objects.all()) == 0
     utils.create_analysis()
     assert len(models.AnalysisCode.objects.all()) == len(utils.ANALYSIS_CODES)
+
+
+@pytest.mark.django_db
+def test_create_destroy_horse_group():
+    """Roundtrip check of creation and destruction of the HoRSE group."""
+    from main import utils
+
+    assert Group.objects.filter(name="HoRSE").exists()
+    utils.destroy_HoRSE_group()
+    assert not Group.objects.filter(name="HoRSE").exists()
+    utils.create_HoRSE_group()
+    assert Group.objects.filter(name="HoRSE").exists()
+
+
+def test_get_head_email(user):
+    """Test get_head_email function."""
+    from main import utils
+
+    group = Group.objects.get(name="HoRSE")
+    email = utils.get_head_email()
+    assert email == []
+
+    user.groups.add(group)
+    email = utils.get_head_email()
+    assert email == [user.email]
 
 
 @pytest.mark.django_db
