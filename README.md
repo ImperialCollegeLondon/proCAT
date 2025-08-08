@@ -7,7 +7,7 @@ A Django web app for hosting the Project Charging and Analytics Tool (ProCAT).
 
 This Django project uses:
 
-- [`pip-tools`][pip-tools] for packaging and dependency management.
+- [`UV`][uv] for packaging and dependency management.
 - [`pre-commit`][pre-commit] for various linting, formatting and static type checking.
   - Pre-commit hooks are automatically kept updated with [pre-commit.ci][pre-commit.ci].
 - [`pytest`][pytest] and [GitHub Actions][GitHub Actions].
@@ -16,30 +16,17 @@ This Django project uses:
 
 To get started:
 
-1. Activate a git repository (required for `pre-commit` and the package versioning with
-`setuptools-scm`):
-
-   ```bash
-   git init
-   ```
-
 1. Create and activate a [virtual environment]:
 
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate # with Powershell on Windows: `.venv\Scripts\Activate.ps1`
+   uv venv
+   source .venv/bin/activate
    ```
 
-1. Install development requirements:
+1. Install dependencies:
 
    ```bash
-   pip install -r dev-requirements.txt
-   ```
-
-1. (Optionally) install tools for building documentation:
-
-   ```bash
-   pip install -r doc-requirements.txt
+   uv pip install -r requirements.txt dev-requirements.txt
    ```
 
 1. Install the git hooks:
@@ -92,24 +79,16 @@ The app will be available at <http://127.0.0.1:8000/>
 
 ## Updating Dependencies
 
-To add or remove dependencies:
+uv manages project dependencies and environments, with support for lockfiles, workspaces, and more,
+similar to `rye` or `poetry`:
 
-1. Edit the `dependencies` variables in the `pyproject.toml` file (aim to keep
-development tools separate from the project requirements).
-1. Update the requirements files:
-   - `pip-compile` for `requirements.txt` - the project requirements.
-   - `pip-compile --extra dev -o dev-requirements.txt` for the development requirements.
-   - `pip-compile --extra doc -o doc-requirements.txt` for
-the documentation tools.
-1. Sync the files with your installation (install packages):
-   - `pip-sync *requirements.txt`
+1. run `uv add EXAMPLE`
 
-To upgrade pinned versions, use the `--upgrade` flag with `pip-compile`.
+where EXAMPLE would be the package name.
 
 Versions can be restricted from updating within the `pyproject.toml` using standard
-python package version specifiers, i.e. `"black<23"` or `"pip-tools!=6.12.2"`
 
-[pip-tools]: https://pip-tools.readthedocs.io/en/stable/
+[uv]: https://docs.astral.sh/uv/
 [pre-commit]: https://pre-commit.com/
 [pytest]: https://pytest.org/
 [GitHub Actions]: https://github.com/features/actions
