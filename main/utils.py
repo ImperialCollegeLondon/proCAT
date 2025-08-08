@@ -187,3 +187,23 @@ def get_projects_with_days_used_exceeding_days_left(
             )
 
     return projects_with_days_used_exceeding_days_left
+
+
+def get_calendar_year_dates() -> tuple[datetime, datetime]:
+    """Get the start and end dates for the current calendar year."""
+    today = datetime.now()
+    start = today.replace(day=1, month=1)
+    end = today.replace(day=31, month=12)
+    return start, end
+
+
+def get_financial_year_dates() -> tuple[datetime, datetime]:
+    """Get the start and end dates for the current financial year."""
+    today = datetime.now()
+    if today.month >= 8:
+        start = today.replace(day=1, month=8)
+        end = today.replace(day=31, month=7, year=today.year + 1)
+    else:
+        start = today.replace(day=1, month=8, year=today.year - 1)
+        end = today.replace(day=31, month=7, year=today.year)
+    return start, end
