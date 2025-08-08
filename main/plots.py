@@ -5,7 +5,8 @@ from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
-from bokeh.models import CheckboxGroup, ColumnDataSource, CustomJS, HoverTool
+from bokeh.models import ColumnDataSource, CustomJS, HoverTool
+from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 
 from . import timeseries
