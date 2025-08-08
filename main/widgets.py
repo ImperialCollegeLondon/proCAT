@@ -62,6 +62,7 @@ def get_plot_date_pickers(
         max_date=max_date,
     )
 
+    # JS code dictates what happens when a new date is selected on the pickers
     callback = CustomJS(
         args=dict(
             start_picker=start_picker, end_picker=end_picker, x_range=plot.x_range
@@ -70,7 +71,7 @@ def get_plot_date_pickers(
             const end = Date.parse(end_picker.value);
             x_range.start = start
             x_range.end = end""",
-    )
+    )  # x_range in the plot is updated with dates parsed from the date pickers
 
     start_picker.js_on_change("value", callback)
     end_picker.js_on_change("value", callback)
@@ -100,6 +101,7 @@ def get_xrange_button(
         A Bokeh button that can be used to update the x_range shown in a plot.
     """
     button = Button(label=label)
+    # JS code dictates what happens when the button is clicked
     button.js_on_click(
         CustomJS(
             args=dict(
@@ -113,6 +115,6 @@ def get_xrange_button(
             x_range.end = end;
             start_picker.value = new Date(start).toISOString().split('T')[0];
             end_picker.value = new Date(end).toISOString().split('T')[0];""",
-        )
+        )  # x_range in plot and dates displayed in pickers are updated
     )
     return button
