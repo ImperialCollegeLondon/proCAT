@@ -15,7 +15,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-        python-version: ['3.13']
+        python-version: ["3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -24,11 +24,14 @@ jobs:
         with:
           python-version: ${{matrix.python-version}}
           cache: pip
+
+      - name: Install uv
+        run: pip install uv
+
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r dev-requirements.txt
-          pip install -e .
+          uv pip install --system -r dev-requirements.txt
+          uv pip install --system -e .
 
       - name: Run mypy
         run: mypy .
@@ -44,7 +47,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Install doc dependencies
-        run: pip install -r doc-requirements.txt
+        run: uv pip install --system -r doc-requirements.txt
 
       - name: Check that documentation builds cleanly with MkDocs
         if: matrix.os == 'ubuntu-latest'
