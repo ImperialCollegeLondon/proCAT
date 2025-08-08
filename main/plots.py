@@ -5,7 +5,7 @@ from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import CheckboxGroup, ColumnDataSource, CustomJS, HoverTool
 from bokeh.plotting import figure
 
 from . import timeseries
@@ -113,6 +113,21 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> f
     ]
     plot = create_timeseries_plot(
         title="Project effort and team capacity over time", traces=traces
+    )
+    PROJECTS = ["proCAT 1", "proCAT 2", "proCAT 3", "proCAT 4"]
+    checkbox_group = CheckboxGroup(
+        labels=PROJECTS,
+        active=list(range(len(PROJECTS))),
+        width=1000,
+    )
+    checkbox_group.js_on_change(
+        "active",
+        CustomJS(
+            args=dict(checkbox_group=checkbox_group, plot=plot),
+            code="""
+                 console.log('checkbox_group: active=' + this.active, this.toString())
+                 """,
+        ),
     )
     return plot
 
