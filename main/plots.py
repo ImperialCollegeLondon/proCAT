@@ -5,7 +5,8 @@ from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import ColumnDataSource, HoverTool, Range1d
+from bokeh.models.layouts import Row
 from bokeh.plotting import figure
 
 from . import timeseries
@@ -48,6 +49,7 @@ def create_bar_plot(title: str, months: list[str], values: list[float]) -> figur
 def create_timeseries_plot(  # type: ignore[explicit-any]
     title: str,
     traces: list[dict[str, Any]],
+    x_range: tuple[datetime, datetime] | None = None,
 ) -> figure:
     """Creates a generic timeseries plot.
 
@@ -55,6 +57,8 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         title: plot title
         traces: a list of dictionaries with keys for the 'timeseries' data, 'label' and
             'colour'
+        x_range: (optional) tuple of datetimes to use as the x_range for the displayed
+            plot
 
     Returns:
         Bokeh figure containing timeseries data.
@@ -62,6 +66,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     # Create ColumnDataSource from trace data
     df = pd.DataFrame({trace["label"]: trace["timeseries"] for trace in traces})
     df.reset_index(inplace=True)
+    df["index"] = pd.to_datetime(df["index"]).dt.date
     source = ColumnDataSource(df)
 
     plot = figure(
@@ -71,7 +76,10 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         background_fill_color="#efefef",
         x_axis_type="datetime",  # type: ignore[call-arg]
         tools="save,xpan,xwheel_zoom,reset",
+        # x_range=,
     )
+    if x_range:
+        plot.x_range = Range1d(x_range[0], x_range[1])
     plot.yaxis.axis_label = "Value"
     plot.xaxis.axis_label = "Date"
     for trace in traces:
@@ -87,7 +95,11 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     return plot
 
 
-def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> figure:
+def create_capacity_planning_plot(
+    start_date: datetime,
+    end_date: datetime,
+    x_range: tuple[datetime, datetime] | None = None,
+) -> figure:
     """Generates all the time series data and creates the capacity planning plot.
 
     Includes all business days between the selected start and end date, inclusive of
@@ -97,6 +109,8 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> f
     Args:
         start_date: datetime object representing the start of the plotting period
         end_date: datetime object representing the end of the plotting period
+        x_range: (optional) tuple of datetimes to use as the x_range for the displayed
+            plot
 
     Returns:
         Bokeh figure containing timeseries data.
@@ -112,7 +126,9 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> f
         {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
     ]
     plot = create_timeseries_plot(
-        title="Project effort and team capacity over time", traces=traces
+        title="Project effort and team capacity over time",
+        traces=traces,
+        x_range=x_range,
     )
     return plot
 
@@ -170,7 +186,7 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
 
 
 def html_components_from_plot(
-    plot: figure, prefix: str | None = None
+    plot: figure | Row, prefix: str | None = None
 ) -> dict[str, str]:
     """Generate HTML components from a Bokeh plot that can be added to the context.
 
