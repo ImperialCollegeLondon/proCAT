@@ -1,10 +1,8 @@
 """Views for the main app."""
 
-from datetime import datetime, timedelta
 from typing import Any
 
 import bokeh
-from bokeh.layouts import column, row
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import Form, ModelForm
 from django.http import HttpRequest, HttpResponse
@@ -20,7 +18,7 @@ from django.views.generic import (
 from django_filters.views import FilterView
 from django_tables2 import RequestConfig, SingleTableMixin
 
-from . import forms, models, plots, report, tables, utils, widgets
+from . import forms, models, plots, report, tables
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -138,45 +136,7 @@ class CapacityPlanningView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add HTML components and Bokeh version to the context."""
         context = super().get_context_data(**kwargs)
-
-        start, end = datetime.now(), datetime.now() + timedelta(days=365)
-        min_date, max_date = start - timedelta(365 * 5), start + timedelta(365 * 5)
-
-        # Get the plot to display (it is created with all data, but only the dates
-        # in the x_range provided are shown)
-        plot = plots.create_capacity_planning_plot(
-            start_date=min_date, end_date=max_date, x_range=(start, end)
-        )
-
-        # Get widgets to control the dates shown in the plot
-        start_picker, end_picker = widgets.get_plot_date_pickers(
-            min_date=min_date.date(),
-            max_date=max_date.date(),
-            default_start=start.date(),
-            default_end=end.date(),
-            plot=plot,
-        )
-
-        calendar_button = widgets.get_xrange_button(
-            label="Current calendar year",
-            dates=utils.get_calendar_year_dates(),
-            plot=plot,
-            start_picker=start_picker,
-            end_picker=end_picker,
-        )
-
-        financial_button = widgets.get_xrange_button(
-            label="Current financial year",
-            dates=utils.get_financial_year_dates(),
-            plot=plot,
-            start_picker=start_picker,
-            end_picker=end_picker,
-        )
-
-        # Create layout to display widgets aligned as a column next to the plot
-        layout = row(
-            column(start_picker, end_picker, calendar_button, financial_button), plot
-        )
+        layout = plots.create_capacity_planning_layout()
         context.update(plots.html_components_from_plot(layout))
         context["bokeh_version"] = bokeh.__version__
         return context
