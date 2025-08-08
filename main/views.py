@@ -143,7 +143,7 @@ class CapacityPlanningView(LoginRequiredMixin, TemplateView):
         min_date, max_date = start - timedelta(365 * 5), start + timedelta(365 * 5)
 
         # Get the plot to display (it is created with all data, but only the dates
-        # in the default range are shown)
+        # in the x_range provided are shown)
         plot = plots.create_capacity_planning_plot(
             start_date=min_date, end_date=max_date, x_range=(start, end)
         )
