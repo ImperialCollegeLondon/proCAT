@@ -203,6 +203,11 @@ class Project(models.Model):
         if self.end_date <= self.start_date:
             raise ValidationError("The end date must be after the start date.")
 
+        if self.status == "Active" and not self.funding_source.exists():
+            raise ValidationError(
+                "Active projects must have at least 1 funding source."
+            )
+
     @property
     def weeks_to_deadline(self) -> tuple[int, float] | None:
         """Provide the number of weeks left until project deadline.
@@ -212,7 +217,7 @@ class Project(models.Model):
         Returns:
             The number of weeks left or None if the project is not Active.
         """
-        if self.status == "Active" and self.end_date and self.start_date:
+        if self.status != "Draft" and self.end_date and self.start_date:
             left = (self.end_date - datetime.now().date()).days / 7
             total = (self.end_date - self.start_date).days / 7
             return int(left), round(left / total * 100, 1)
