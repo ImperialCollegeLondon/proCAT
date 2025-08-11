@@ -282,9 +282,15 @@ def email_monthly_charges_report() -> None:
 def sync_clockify_time_entries(
     days_back: int = 30,
     end_date: datetime.datetime = timezone.now(),
-    pageSize: int = 200,
+    page_size: int = 200,
 ) -> None:
-    """Task to sync time entries from Clockify API to TimeEntry model."""
+    """Task to sync time entries from Clockify API to TimeEntry model.
+
+    Args:
+        days_back (int): Number of days to look back for time entries.
+        end_date (datetime.datetime): The end date for the time entries to fetch.
+        page_size (int): Number of entries to fetch per API call.
+    """
     if not settings.CLOCKIFY_API_KEY or not settings.CLOCKIFY_WORKSPACE_ID:
         logger.warning("Clockify API key not found in environment variables")
         return
@@ -297,7 +303,7 @@ def sync_clockify_time_entries(
         payload = {
             "dateRangeStart": start_date.strftime("%Y-%m-%dT00:00:00.000Z"),
             "dateRangeEnd": end_date.strftime("%Y-%m-%dT23:59:59.000Z"),
-            "detailedFilter": {"page": 1, "pageSize": pageSize},
+            "detailedFilter": {"page": 1, "pageSize": page_size},
             "projects": {"contains": "CONTAINS", "ids": [project.clockify_id]},
         }
 
