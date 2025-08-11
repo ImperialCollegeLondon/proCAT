@@ -22,4 +22,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("auth/", include("django.contrib.auth.urls")),
     path("", include("main.urls")),
+    path("oidc/", include("mozilla_django_oidc.urls")),
 ]
