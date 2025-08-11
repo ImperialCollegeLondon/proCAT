@@ -81,7 +81,6 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         background_fill_color="#efefef",
         x_axis_type="datetime",  # type: ignore[call-arg]
         tools="save,xpan,xwheel_zoom,reset",
-        # x_range=,
     )
     if x_range:
         plot.x_range = Range1d(x_range[0], x_range[1])
@@ -148,7 +147,8 @@ def create_capacity_planning_layout() -> Row:
         A Row object (the Row containing a Column or widgets and the plot).
     """
     start, end = datetime.now(), datetime.now() + timedelta(days=365)
-    min_date, max_date = start - timedelta(365 * 5), start + timedelta(365 * 5)
+    # Min and max dates are previous an
+    min_date, max_date = start - timedelta(days=1095), start + timedelta(days=1095)
 
     # Get the plot to display (it is created with all data, but only the dates
     # in the x_range provided are shown)
