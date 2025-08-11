@@ -484,7 +484,7 @@ class TestFunding:
         effort_left = float(
             (funding.budget - monthly_charge.amount) / funding.daily_rate
         )
-        assert funding.effort_left == effort_left
+        assert funding.effort_left == round(effort_left, 1)
 
     @pytest.mark.django_db
     def test_monthly_pro_rata_charge_is_none(self, user, department, analysis_code):
