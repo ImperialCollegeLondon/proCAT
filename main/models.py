@@ -510,7 +510,7 @@ class Funding(models.Model):
         Returns:
             The number of days worth of effort left.
         """
-        return float(self.funding_left / self.daily_rate)
+        return round(float(self.funding_left / self.daily_rate), 1)
 
     @property
     def monthly_pro_rata_charge(self) -> float | None:
