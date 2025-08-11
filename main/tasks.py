@@ -279,14 +279,16 @@ def email_monthly_charges_report() -> None:
     )
 
 
-def sync_clockify_time_entries() -> None:
+def sync_clockify_time_entries(
+    days_back: int = 30,
+    end_date: datetime.datetime = timezone.now(),
+    pageSize: int = 200,
+) -> None:
     """Task to sync time entries from Clockify API to TimeEntry model."""
     if not settings.CLOCKIFY_API_KEY or not settings.CLOCKIFY_WORKSPACE_ID:
         logger.warning("Clockify API key not found in environment variables")
         return
-    days_back = 30
     api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
-    end_date = timezone.now()
     start_date = end_date - datetime.timedelta(days=days_back)
 
     projects = Project.objects.filter(status="Active").exclude(clockify_id="")
@@ -295,7 +297,7 @@ def sync_clockify_time_entries() -> None:
         payload = {
             "dateRangeStart": start_date.strftime("%Y-%m-%dT00:00:00.000Z"),
             "dateRangeEnd": end_date.strftime("%Y-%m-%dT23:59:59.000Z"),
-            "detailedFilter": {"page": 1, "pageSize": 200},
+            "detailedFilter": {"page": 1, "pageSize": pageSize},
             "projects": {"contains": "CONTAINS", "ids": [project.clockify_id]},
         }
 
