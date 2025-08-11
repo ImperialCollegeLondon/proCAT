@@ -127,16 +127,22 @@ INSTALLED_APPS += [
     "django_tables2",
     "django_filters",
     "huey.contrib.djhuey",
+    "mozilla_django_oidc",
 ]
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+MIDDLEWARE += [
+    "mozilla_django_oidc.middleware.SessionRefresh",
+]
+
+AUTHENTICATION_BACKENDS = ("mozilla_django_oidc.auth.OIDCAuthenticationBackend",)
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 AUTH_USER_MODEL = "main.User"
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
-
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
 
 LOGIN_URL = "/auth/login/"
@@ -157,3 +163,12 @@ EFFORT_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for effort left (percent)
 WEEKS_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for weeks left (percent)
 CLOCKIFY_API_KEY = os.environ.get("CLOCKIFY_API_KEY")
 CLOCKIFY_WORKSPACE_ID = os.environ.get("CLOCKIFY_WORKSPACE_ID")
+
+# Azure OIDC settings
+OIDC_RP_CLIENT_ID = os.environ["OIDC_RP_CLIENT_ID"]
+OIDC_RP_CLIENT_SECRET = os.environ["OIDC_RP_CLIENT_SECRET"]
+OIDC_OP_AUTHORIZATION_ENDPOINT = os.environ["OIDC_OP_AUTHORIZATION_ENDPOINT"]
+OIDC_OP_TOKEN_ENDPOINT = os.environ["OIDC_OP_TOKEN_ENDPOINT"]
+OIDC_OP_USER_ENDPOINT = os.environ["OIDC_OP_USER_ENDPOINT"]
+OIDC_RP_IDP_SIGN_KEY = os.environ["OIDC_RP_IDP_SIGN_KEY"]
+OIDC_OP_JWKS_ENDPOINT = os.environ["OIDC_OP_JWKS_ENDPOINT"]
