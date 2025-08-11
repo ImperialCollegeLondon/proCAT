@@ -270,7 +270,7 @@ def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -
 
 
 # Runs on the 10th day of every month at 10:00 AM
-@db_periodic_task(crontab(day=10, hour=10))
+@db_periodic_task(crontab(day=10, hour=10, minute=0))
 def email_monthly_charges_report() -> None:
     """Email the HoRSE the charges report for the last month."""
     last_month_start, last_month_name, _, _ = get_current_and_last_month()
