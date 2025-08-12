@@ -154,7 +154,7 @@ regex==2024.11.6
     # via djlint
 requests==2.32.4
     # via procat (pyproject.toml)
-ruff==0.12.5
+ruff==0.12.8
     # via procat (pyproject.toml)
 six==1.17.0
     # via
