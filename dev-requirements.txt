@@ -66,7 +66,7 @@ filelock==3.18.0
     # via virtualenv
 huey==2.5.3
     # via procat (pyproject.toml)
-identify==2.6.12
+identify==2.6.13
     # via pre-commit
 idna==3.10
     # via requests
