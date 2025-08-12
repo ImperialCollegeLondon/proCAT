@@ -46,7 +46,7 @@ django-tables2==2.7.5
     # via procat (pyproject.toml)
 ghp-import==2.1.0
     # via mkdocs
-griffe==1.7.3
+griffe==1.11.1
     # via mkdocstrings-python
 huey==2.5.3
     # via procat (pyproject.toml)
