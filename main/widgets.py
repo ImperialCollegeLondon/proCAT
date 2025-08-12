@@ -55,6 +55,48 @@ def add_timeseries_callback_to_date_pickers(
     end_picker.js_on_change("value", callback)
 
 
+def add_bar_callback_to_date_pickers(
+    start_picker: DatePicker,
+    end_picker: DatePicker,
+    plot: figure,
+    chart_months: list[str],
+) -> None:
+    """Add the JS callback to start and end date pickers to update a plot x_range.
+
+    Args:
+        start_picker: The start date picker to add the callback to
+        end_picker: The end date picker to add the callback to
+        plot: The plot modified by the date pickers
+        chart_months: list of months for x-axis in bar chart
+    """
+    # JS code dictates what happens when a new date is selected on the pickers
+    callback = CustomJS(
+        args=dict(
+            start_picker=start_picker,
+            end_picker=end_picker,
+            plot=plot,
+            months=chart_months,
+        ),
+        code="""
+const start_year = new Date(start_picker.value).getFullYear();
+const start_month = new Date(start_picker.value).toLocaleString(
+'default', { month: 'short' });
+const end_year = new Date(end_picker.value).getFullYear();
+const end_month = new Date(end_picker.value).toLocaleString(
+'default', {month: 'short' });
+
+const start_index = months.indexOf(`${start_month} ${start_year}`);
+const end_index   = months.indexOf(`${end_month} ${end_year}`);
+const selected_months = months.slice(start_index, end_index + 1);
+
+plot.x_range.factors = selected_months;
+""",
+    )  # x_range in the plot is updated with dates parsed from the date pickers
+
+    start_picker.js_on_change("value", callback)
+    end_picker.js_on_change("value", callback)
+
+
 def get_plot_date_pickers(
     min_date: date,
     max_date: date,
