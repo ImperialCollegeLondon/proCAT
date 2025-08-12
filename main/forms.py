@@ -18,7 +18,7 @@ class CustomUserCreationForm(UserCreationForm):  # type: ignore [type-arg]
         """Meta class for the form."""
 
         model = get_user_model()
-        fields = ("username",)
+        fields = ("username", "email")
 
 
 class CostRecoveryForm(forms.Form):

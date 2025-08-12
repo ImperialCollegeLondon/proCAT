@@ -270,7 +270,7 @@ def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -
 
 
 # Runs on the 10th day of every month at 10:00 AM
-@db_periodic_task(crontab(day=10, hour=10))
+@db_periodic_task(crontab(day=10, hour=10, minute=0))
 def email_monthly_charges_report() -> None:
     """Email the HoRSE the charges report for the last month."""
     last_month_start, last_month_name, _, _ = get_current_and_last_month()
@@ -279,14 +279,22 @@ def email_monthly_charges_report() -> None:
     )
 
 
-def sync_clockify_time_entries() -> None:
-    """Task to sync time entries from Clockify API to TimeEntry model."""
+def sync_clockify_time_entries(
+    days_back: int = 30,
+    end_date: datetime.datetime = timezone.now(),
+    page_size: int = 200,
+) -> None:
+    """Task to sync time entries from Clockify API to TimeEntry model.
+
+    Args:
+        days_back (int): Number of days to look back for time entries.
+        end_date (datetime.datetime): The end date for the time entries to fetch.
+        page_size (int): Number of entries to fetch per API call.
+    """
     if not settings.CLOCKIFY_API_KEY or not settings.CLOCKIFY_WORKSPACE_ID:
         logger.warning("Clockify API key not found in environment variables")
         return
-    days_back = 30
     api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
-    end_date = timezone.now()
     start_date = end_date - datetime.timedelta(days=days_back)
 
     projects = Project.objects.filter(status="Active").exclude(clockify_id="")
@@ -295,7 +303,7 @@ def sync_clockify_time_entries() -> None:
         payload = {
             "dateRangeStart": start_date.strftime("%Y-%m-%dT00:00:00.000Z"),
             "dateRangeEnd": end_date.strftime("%Y-%m-%dT23:59:59.000Z"),
-            "detailedFilter": {"page": 1, "pageSize": 200},
+            "detailedFilter": {"page": 1, "pageSize": page_size},
             "projects": {"contains": "CONTAINS", "ids": [project.clockify_id]},
         }
 
