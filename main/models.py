@@ -215,7 +215,7 @@ class Project(models.Model):
         Only relevant for active projects.
 
         Returns:
-            The number of weeks left or None if the project is not Active.
+            The number of weeks left or None if the project is in Draft.
         """
         if self.status != "Draft" and self.end_date and self.start_date:
             left = (self.end_date - datetime.now().date()).days / 7
