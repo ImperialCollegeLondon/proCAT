@@ -181,3 +181,39 @@ def get_cost_recovery_timeseries(
         monthly_totals.append(float(monthly_total) if monthly_total else 0.0)
 
     return timeseries, monthly_totals
+
+
+def get_project_effort_timeseries(
+    start_date: datetime, end_date: datetime, project: str
+) -> pd.Series[float]:
+    """Get effort timeseries data for a specific project.
+
+    Args:
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
+        project: name of the project to filter by
+
+    Returns:
+        Pandas series of project-specific effort with date range as index.
+    """
+    dates = pd.bdate_range(
+        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+    )
+
+    # filter Projects to ensure dates exist and overlap with timeseries dates
+    projects = list(
+        models.Project.objects.filter(
+            start_date__lt=end_date.date(),
+            end_date__gte=start_date.date(),
+            start_date__isnull=False,
+            end_date__isnull=False,
+            name=project,
+        )
+    )
+
+    # initialize timeseries
+    timeseries = pd.Series(0.0, index=dates)
+    for project in projects:
+        timeseries = update_timeseries(timeseries, project, "effort_per_day")
+
+    return timeseries

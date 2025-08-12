@@ -5,7 +5,7 @@ from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource, CustomJS, HoverTool
+from bokeh.models import Button, ColumnDataSource, CustomJS, HoverTool
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 
@@ -88,7 +88,9 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     return plot
 
 
-def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> figure:
+def create_capacity_planning_plot(
+    start_date: datetime, end_date: datetime
+) -> tuple[figure, CheckboxGroup, Button]:
     """Generates all the time series data and creates the capacity planning plot.
 
     Includes all business days between the selected start and end date, inclusive of
@@ -100,37 +102,121 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> f
         end_date: datetime object representing the end of the plotting period
 
     Returns:
-        Bokeh figure containing timeseries data.
+        Tuple containing Bokeh figure with timeseries data, CheckboxGroup widget,
+        and Button.
+
     """
-    effort_timeseries = timeseries.get_effort_timeseries(start_date, end_date)
+    # Get effort for each project
+    PROJECTS = ["proCAT 1", "proCAT 2", "proCAT 3", "proCAT 4"]
+    project_colours = ["firebrick", "orange", "green", "blue"]
+
+    # Total effort and capacity across all projects
+    total_effort_timeseries = timeseries.get_effort_timeseries(start_date, end_date)
     capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
+
     traces = [
         {
-            "timeseries": effort_timeseries,
-            "colour": "firebrick",
-            "label": "Project effort",
+            "timeseries": total_effort_timeseries,
+            "colour": "black",
+            "label": "Total effort",
         },
         {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
     ]
+
+    # Add effort for each project
+    for i, project in enumerate(PROJECTS):
+        project_effort_timeseries = timeseries.get_project_effort_timeseries(
+            start_date, end_date, project
+        )
+        traces.append(
+            {
+                "timeseries": project_effort_timeseries,
+                "colour": project_colours[i],
+                "label": project,
+            }
+        )
+
     plot = create_timeseries_plot(
         title="Project effort and team capacity over time", traces=traces
     )
-    PROJECTS = ["proCAT 1", "proCAT 2", "proCAT 3", "proCAT 4"]
+
+    plot.yaxis.axis_label = "Effort (hours)"
+
+    checkbox_labels = ["Capacity", "Total effort", *PROJECTS]
+
     checkbox_group = CheckboxGroup(
-        labels=PROJECTS,
-        active=list(range(len(PROJECTS))),
+        labels=checkbox_labels,
+        active=[0, 1],  # Default to show capacity and total effort only
         width=1000,
     )
-    checkbox_group.js_on_change(
-        "active",
-        CustomJS(
-            args=dict(checkbox_group=checkbox_group, plot=plot),
-            code="""
-                 console.log('checkbox_group: active=' + this.active, this.toString())
-                 """,
-        ),
+
+    # Button to clear all filters and reset plot to default state
+    reset_button = Button(label="Clear filters", width=100)
+
+    callback_code = CustomJS(
+        args=dict(plot=plot),
+        code="""
+            // Get all line renderers from the plot
+            const line_renderers = plot.renderers.filter(r => r.glyph &&
+            r.glyph.type === 'Line');
+
+            // Hide all lines
+            line_renderers.forEach(r => {r.visible = false});
+
+            // Check if any projects are selected
+            // Skip first two indices (Capacity and Total effort)
+            const project_indices = cb_obj.active.filter(index => index > 1);
+            const has_projects_selected = project_indices.length > 0;
+
+            if (has_projects_selected) {
+                // Show only the selected projects
+                project_indices.forEach(index => {
+                    if (index < line_renderers.length) {
+                        line_renderers[index].visible = true;
+                    }
+                });
+            } else {
+                // If no projects are selected, show only Capacity and Total effort
+                cb_obj.active.forEach(index => {
+                    if (index < 2 && index < line_renderers.length) {
+                        line_renderers[index].visible = true;
+                    }
+                });
+            }
+
+            // Plot update
+            plot.change.emit();
+        """,
     )
-    return plot
+
+    reset_callback_code = CustomJS(
+        args=dict(plot=plot, checkbox_group=checkbox_group),
+        code="""
+            // Reset all checkboxes to default state
+            checkbox_group.active = [0, 1]; // Show only capacity and total effort
+
+            // Get all line renderers from the plot
+            const line_renderers = plot.renderers.filter(r => r.glyph &&
+            r.glyph.type === 'Line');
+
+            // Hide all lines
+            line_renderers.forEach(r => {r.visible = false});
+
+            // Show only the default lines (capacity and total effort)
+            [0, 1].forEach(index => {
+                if (index < line_renderers.length) {
+                    line_renderers[index].visible = true;
+                }
+            });
+
+            // Plot update
+            checkbox_group.change.emit();
+            plot.change.emit();
+        """,
+    )
+    checkbox_group.js_on_change("active", callback_code)
+    reset_button.js_on_click(reset_callback_code)
+    return plot, checkbox_group, reset_button
 
 
 def create_cost_recovery_plots() -> tuple[figure, figure]:
