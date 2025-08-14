@@ -162,7 +162,7 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> R
     project_checkbox_group = CheckboxGroup(
         labels=project_labels,
         active=[0, 1],  # Default to show capacity and total effort only
-        width=180,  # width of the checkbox group
+        width=180,  # width of the checkbox group fr projects
     )
 
     # CheckboxGroup for user selection
@@ -170,7 +170,7 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> R
     user_checkbox_group = CheckboxGroup(
         labels=user_labels,
         active=[0, 1],  # Default to show capacity and total effort only
-        width=180,  # width of the checkbox group
+        width=180,  # width of the checkbox group for users
     )
 
     # Button to clear all filters and reset plot to default state

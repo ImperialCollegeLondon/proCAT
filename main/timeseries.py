@@ -236,7 +236,7 @@ def get_user_effort_timeseries(
         pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
     )
 
-    # filter capacity
+    # filter capacity for users
     capacities = list(
         models.Capacity.objects.filter(
             start_date__lt=end_date.date(),
