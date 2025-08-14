@@ -217,3 +217,37 @@ def get_project_effort_timeseries(
         timeseries = update_timeseries(timeseries, project, "effort_per_day")
 
     return timeseries
+
+
+def get_user_effort_timeseries(
+    start_date: datetime, end_date: datetime, user: str
+) -> pd.Series[float]:
+    """Get effort timeseries data for a specific user.
+
+    Args:
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
+        user: username of the user to filter by
+
+    Returns:
+        Pandas series of user-specific effort with date range as index.
+    """
+    dates = pd.bdate_range(
+        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+    )
+
+    # filter capacity
+    capacities = list(
+        models.Capacity.objects.filter(
+            start_date__lt=end_date.date(),
+            start_date__isnull=False,
+            user__username=user,
+        )
+    )
+
+    # initialize timeseries
+    timeseries = pd.Series(0.0, index=dates)
+    for capacity in capacities:
+        timeseries = update_timeseries(timeseries, capacity, "value")
+
+    return timeseries

@@ -101,13 +101,14 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> R
         end_date: datetime object representing the end of the plotting period
 
     Returns:
-        Tuple containing Bokeh figure with timeseries data, CheckboxGroup widget,
-        and Button.
+        Bokeh Row layout with timeseries data plot and CheckboxGroup widgets.
 
     """
-    # Get effort for each project
+    # Get effort for each project and user
     PROJECTS = ["proCAT 1", "proCAT 2", "proCAT 3", "proCAT 4"]
+    USERS = ["User 1", "User 2", "User 3", "User 4", "User 5"]
     project_colours = ["firebrick", "orange", "green", "blue"]
+    user_colours = ["purple", "brown", "pink", "cyan", "magenta"]
 
     # Total effort and capacity across all projects
     total_effort_timeseries = timeseries.get_effort_timeseries(start_date, end_date)
@@ -135,34 +136,62 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> R
             }
         )
 
+    # Add effort for each user
+    for i, user in enumerate(USERS):
+        user_effort_timeseries = timeseries.get_user_effort_timeseries(
+            start_date, end_date, user
+        )
+        traces.append(
+            {
+                "timeseries": user_effort_timeseries,
+                "colour": user_colours[i],
+                "label": user,
+            }
+        )
+
     plot = create_timeseries_plot(
         title="Project effort and team capacity over time", traces=traces
     )
 
     plot.yaxis.axis_label = "Effort (hours)"
 
-    plot.width = 800  # Reduce the width to fit the checkbox section
+    plot.width = 650  # Reduce the width to fit the checkbox section
 
-    checkbox_labels = ["Capacity", "Total effort", *PROJECTS]
-
-    checkbox_group = CheckboxGroup(
-        labels=checkbox_labels,
+    # CheckboxGroup for project selection
+    project_labels = ["Capacity", "Total effort", *PROJECTS]
+    project_checkbox_group = CheckboxGroup(
+        labels=project_labels,
         active=[0, 1],  # Default to show capacity and total effort only
-        width=200,  # width of the checkbox group
+        width=180,  # width of the checkbox group
+    )
+
+    # CheckboxGroup for user selection
+    user_labels = ["Capacity", "Total effort", *USERS]
+    user_checkbox_group = CheckboxGroup(
+        labels=user_labels,
+        active=[0, 1],  # Default to show capacity and total effort only
+        width=180,  # width of the checkbox group
     )
 
     # Button to clear all filters and reset plot to default state
-    reset_button = Button(label="Clear filters", width=100)
+    reset_project_button = Button(label="Reset Projects", width=100)
+    reset_user_button = Button(label="Reset Users", width=100)
 
-    callback_code = CustomJS(
+    # Project callback
+    project_callback_code = CustomJS(
         args=dict(plot=plot),
         code="""
             // Get all line renderers from the plot
             const line_renderers = plot.renderers.filter(r => r.glyph &&
             r.glyph.type === 'Line');
 
+            // Projects traces are from 0 to projects_labels.length - 1
+            const project_count = cb_obj.labels.length;
+
             // Hide all lines
-            line_renderers.forEach(r => {r.visible = false});
+            for (let i = 0; i < project_count && i < line_renderers.length; i++) {
+                line_renderers[i].visible = false;
+            }
 
             // Check if any projects are selected
             // Skip first two indices (Capacity and Total effort)
@@ -190,8 +219,38 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> R
         """,
     )
 
-    reset_callback_code = CustomJS(
-        args=dict(plot=plot, checkbox_group=checkbox_group),
+    # User callback
+    user_callback_code = CustomJS(
+        args=dict(plot=plot, project_checkbox=project_checkbox_group),
+        code="""
+            // Get all line renderers from the plot
+            const line_renderers = plot.renderers.filter(r => r.glyph &&
+            r.glyph.type === 'Line');
+
+            // User start index
+            const project_count = project_checkbox.labels.length;
+            const user_start_index = project_count;
+
+            // Hide all lines
+            for (let i = user_start_index; i < line_renderers.length; i++) {
+                line_renderers[i].visible = false;
+            }
+
+            // show selected users
+            cb_obj.active.forEach(user_index => {
+                const actual_index = user_index + user_start_index;
+                if (actual_index < line_renderers.length) {
+                    line_renderers[actual_index].visible = true;
+                }
+            });
+
+            // Plot update
+            plot.change.emit();
+        """,
+    )
+
+    project_reset_callback_code = CustomJS(
+        args=dict(plot=plot, checkbox_group=project_checkbox_group),
         code="""
             // Reset all checkboxes to default state
             checkbox_group.active = [0, 1]; // Show only capacity and total effort
@@ -201,7 +260,9 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> R
             r.glyph.type === 'Line');
 
             // Hide all lines
-            line_renderers.forEach(r => {r.visible = false});
+            for (let i = 0; i < project_count && i < line_renderers.length; i++) {
+                line_renderers[i].visible = false;
+            }
 
             // Show only the default lines (capacity and total effort)
             [0, 1].forEach(index => {
@@ -215,12 +276,48 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> R
             plot.change.emit();
         """,
     )
-    checkbox_group.js_on_change("active", callback_code)
-    reset_button.js_on_click(reset_callback_code)
 
-    grouping = column(checkbox_group, reset_button, width=200)
+    user_reset_callback_code = CustomJS(
+        args=dict(
+            plot=plot,
+            user_checkbox_group=user_checkbox_group,
+            project_checkbox_group=project_checkbox_group,
+        ),
+        code="""
+            // Reset all checkboxes to default state
+            user_checkbox_group.active = [0, 1]; // Show only capacity and total effort
 
-    layout = row(plot, grouping)
+            // Get all line renderers from the plot
+            const line_renderers = plot.renderers.filter(r => r.glyph &&
+            r.glyph.type === 'Line');
+            const project_count = project_checkbox_group.labels.length;
+
+            // Hide all lines
+            for (let i = project_count; i < line_renderers.length; i++) {
+                line_renderers[i].visible = false;
+            }
+
+            // Plot update
+            user_checkbox_group.change.emit();
+            plot.change.emit();
+        """,
+    )
+
+    project_checkbox_group.js_on_change("active", project_callback_code)
+    user_checkbox_group.js_on_change("active", user_callback_code)
+    reset_project_button.js_on_click(project_reset_callback_code)
+    reset_user_button.js_on_click(user_reset_callback_code)
+
+    project_grouping = column(
+        project_checkbox_group, reset_project_button, width=180, spacing=10
+    )
+    user_grouping = column(
+        user_checkbox_group, reset_user_button, width=180, spacing=10
+    )
+
+    grouping = row(project_grouping, user_grouping, spacing=15)
+
+    layout = row(plot, grouping, spacing=20)
 
     return layout
 
