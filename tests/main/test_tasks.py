@@ -298,13 +298,15 @@ class TestSyncClockifyTimeEntries:
     @patch("main.tasks.ClockifyAPI")
     @patch("main.tasks.timezone.now")
     def test_sync_creates_new_entry(
-        self, mock_now, mock_clockify_api, mock_settings, user, project
+        self, mock_now, mock_clockify_api, mock_settings, user, funding
     ):
         """Test that a new time entry from the API is created in the database."""
         mock_now.return_value = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        project = funding.project
         project.clockify_id = "proj_1"
+        project.status = "Active"
         project.save()
 
         mock_api_instance = mock_clockify_api.return_value
@@ -343,12 +345,14 @@ class TestSyncClockifyTimeEntries:
     @patch("main.tasks.settings")
     @patch("main.tasks.ClockifyAPI")
     def test_api_call_exception(
-        self, mock_clockify_api, mock_settings, project, caplog
+        self, mock_clockify_api, mock_settings, funding, caplog
     ):
         """Test that an error is logged if the API call fails."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        project = funding.project
         project.clockify_id = "proj_1"
+        project.status = "Active"
         project.save()
 
         mock_api_instance = mock_clockify_api.return_value
@@ -363,12 +367,14 @@ class TestSyncClockifyTimeEntries:
     @patch("main.tasks.settings")
     @patch("main.tasks.ClockifyAPI")
     def test_skips_incomplete_entry(
-        self, mock_clockify_api, mock_settings, user, project, caplog
+        self, mock_clockify_api, mock_settings, user, funding, caplog
     ):
         """Test that entries with missing data are skipped."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        project = funding.project
         project.clockify_id = "proj_1"
+        project.status = "Active"
         project.save()
 
         mock_api_instance = mock_clockify_api.return_value
@@ -384,12 +390,14 @@ class TestSyncClockifyTimeEntries:
     @patch("main.tasks.settings")
     @patch("main.tasks.ClockifyAPI")
     def test_skips_entry_if_user_not_found(
-        self, mock_clockify_api, mock_settings, project, caplog
+        self, mock_clockify_api, mock_settings, funding, caplog
     ):
         """Test that entries are skipped if the user does not exist in the database."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        project = funding.project
         project.clockify_id = "proj_1"
+        project.status = "Active"
         project.save()
 
         mock_api_instance = mock_clockify_api.return_value
@@ -420,6 +428,8 @@ def test_monthly_days_used_not_exceeding_days_left(user, project, funding):
 
     funding.project = project
     funding.save()
+    project.status = "Active"
+    project.save()
 
     # Create a time entry within the allowed days
     start_time = datetime(2025, 6, 1, 11, 0)
@@ -444,6 +454,8 @@ def test_monthly_days_used_exceeding_days_left(user, project, funding):
 
     funding.project = project
     funding.save()
+    project.status = "Active"
+    project.save()
 
     # Create a time entry that exceeds the days left
     start_time = datetime(2025, 6, 1, 11, 0)
