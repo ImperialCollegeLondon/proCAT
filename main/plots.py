@@ -6,8 +6,8 @@ from typing import Any
 import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import Row, column, row
-from bokeh.models import Button, ColumnDataSource, CustomJS, HoverTool
-from bokeh.models.widgets import CheckboxGroup
+from bokeh.models import ColumnDataSource, CustomJS, HoverTool
+from bokeh.models.widgets import Button, CheckboxGroup
 from bokeh.plotting import figure
 
 from . import timeseries
@@ -277,9 +277,7 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
     return timeseries_plot, bar_plot
 
 
-def html_components_from_plot(
-    plot: figure, prefix: str | None = None
-) -> dict[str, str]:
+def html_components_from_plot(plot: Row, prefix: str | None = None) -> dict[str, str]:
     """Generate HTML components from a Bokeh plot that can be added to the context.
 
     Args:
