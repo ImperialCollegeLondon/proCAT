@@ -227,6 +227,8 @@ def test_days_used_exceeding_days_left(user, project):
         daily_rate=400,
         expiry_date=current_month_start + timedelta(days=30),  # Not expired
     )
+    project.status = "Active"
+    project.save()
 
     result = get_projects_with_days_used_exceeding_days_left(date=date)
 
