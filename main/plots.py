@@ -5,6 +5,7 @@ from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
+from bokeh.layouts import Row, column, row
 from bokeh.models import Button, ColumnDataSource, CustomJS, HoverTool
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
@@ -88,9 +89,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     return plot
 
 
-def create_capacity_planning_plot(
-    start_date: datetime, end_date: datetime
-) -> tuple[figure, CheckboxGroup, Button]:
+def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> Row:
     """Generates all the time series data and creates the capacity planning plot.
 
     Includes all business days between the selected start and end date, inclusive of
@@ -115,12 +114,12 @@ def create_capacity_planning_plot(
     capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
 
     traces = [
+        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
         {
             "timeseries": total_effort_timeseries,
             "colour": "black",
             "label": "Total effort",
         },
-        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
     ]
 
     # Add effort for each project
@@ -142,12 +141,14 @@ def create_capacity_planning_plot(
 
     plot.yaxis.axis_label = "Effort (hours)"
 
+    plot.width = 800  # Reduce the width to fit the checkbox section
+
     checkbox_labels = ["Capacity", "Total effort", *PROJECTS]
 
     checkbox_group = CheckboxGroup(
         labels=checkbox_labels,
         active=[0, 1],  # Default to show capacity and total effort only
-        width=1000,
+        width=200,  # width of the checkbox group
     )
 
     # Button to clear all filters and reset plot to default state
@@ -165,7 +166,7 @@ def create_capacity_planning_plot(
 
             // Check if any projects are selected
             // Skip first two indices (Capacity and Total effort)
-            const project_indices = cb_obj.active.filter(index => index > 1);
+            const project_indices = cb_obj.active.filter(index => index >= 2);
             const has_projects_selected = project_indices.length > 0;
 
             if (has_projects_selected) {
@@ -216,7 +217,12 @@ def create_capacity_planning_plot(
     )
     checkbox_group.js_on_change("active", callback_code)
     reset_button.js_on_click(reset_callback_code)
-    return plot, checkbox_group, reset_button
+
+    grouping = column(checkbox_group, reset_button, width=200)
+
+    layout = row(plot, grouping)
+
+    return layout
 
 
 def create_cost_recovery_plots() -> tuple[figure, figure]:
