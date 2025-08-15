@@ -242,7 +242,7 @@ def get_calendar_year_dates() -> tuple[datetime, datetime]:
 def get_financial_year_dates() -> tuple[datetime, datetime]:
     """Get the start and end dates for the current financial year."""
     today = datetime.now()
-    if today.month >= 8:
+    if today.month > 8:
         start = today.replace(day=1, month=8)
         end = today.replace(day=31, month=7, year=today.year + 1)
     else:
