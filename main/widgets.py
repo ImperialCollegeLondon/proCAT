@@ -50,7 +50,6 @@ def add_timeseries_callback_to_date_pickers(
             x_range.start = start
             x_range.end = end""",
     )  # x_range in the plot is updated with dates parsed from the date pickers
-
     start_picker.js_on_change("value", callback)
     end_picker.js_on_change("value", callback)
 
@@ -114,28 +113,16 @@ def add_callback_to_button(
             args=dict(
                 start=dates[0],
                 end=dates[1],
+                # Picker values are set using date in isoformat
+                start_isoformat=dates[0].isoformat().split("T")[0],
+                end_isoformat=dates[1].isoformat().split("T")[0],
                 x_range=plot.x_range,
                 start_picker=start_picker,
                 end_picker=end_picker,
             ),
             code="""x_range.start = start;
             x_range.end = end;
-            start_picker.value = new Date(start).toISOString().split('T')[0];
-            end_picker.value = new Date(end).toISOString().split('T')[0];""",
+            start_picker.value = start_isoformat;
+            end_picker.value = end_isoformat;""",
         )  # x_range in plot and dates displayed in pickers are updated
     )
-
-
-def get_button(
-    label: str,
-) -> Button:
-    """Get button widget.
-
-    Args:
-        label: Label to display on the button
-
-    Returns:
-        A Bokeh button that can be used to update the x_range shown in a plot.
-    """
-    button = Button(label=label)
-    return button

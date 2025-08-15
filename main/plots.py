@@ -8,6 +8,7 @@ from bokeh.embed import components
 from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource, HoverTool, Range1d
 from bokeh.models.layouts import Row
+from bokeh.models.widgets import Button
 from bokeh.plotting import figure
 
 from . import timeseries, widgets
@@ -144,10 +145,10 @@ def create_capacity_planning_layout() -> Row:
     data displayed in the plot.
 
     Returns:
-        A Row object (the Row containing a Column or widgets and the plot).
+        A Row object (the Row containing a Column of widgets and the plot).
     """
     start, end = datetime.now(), datetime.now() + timedelta(days=365)
-    # Min and max dates are previous an
+    # Min and max dates are three years before and ahead of current date
     min_date, max_date = start - timedelta(days=1095), start + timedelta(days=1095)
 
     # Get the plot to display (it is created with all data, but only the dates
@@ -166,7 +167,7 @@ def create_capacity_planning_layout() -> Row:
     widgets.add_timeseries_callback_to_date_pickers(start_picker, end_picker, plot)
 
     # Create buttons to set plot dates to some defaults
-    calendar_button = widgets.get_button(
+    calendar_button = Button(
         label="Current calendar year",
     )
     widgets.add_callback_to_button(
@@ -177,7 +178,7 @@ def create_capacity_planning_layout() -> Row:
         end_picker=end_picker,
     )
 
-    financial_button = widgets.get_button(
+    financial_button = Button(
         label="Current financial year",
     )
     widgets.add_callback_to_button(
