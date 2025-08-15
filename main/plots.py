@@ -1,15 +1,22 @@
 """Plots for displaying database data."""
 
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.layouts import column, row
+from bokeh.models import ColumnDataSource, HoverTool, Range1d
+from bokeh.models.layouts import Row
+from bokeh.models.widgets import Button
 from bokeh.plotting import figure
 
-from . import timeseries
-from .utils import get_month_dates_for_previous_year
+from . import timeseries, widgets
+from .utils import (
+    get_calendar_year_dates,
+    get_financial_year_dates,
+    get_month_dates_for_previous_year,
+)
 
 
 def create_bar_plot(title: str, months: list[str], values: list[float]) -> figure:
@@ -48,6 +55,7 @@ def create_bar_plot(title: str, months: list[str], values: list[float]) -> figur
 def create_timeseries_plot(  # type: ignore[explicit-any]
     title: str,
     traces: list[dict[str, Any]],
+    x_range: tuple[datetime, datetime] | None = None,
 ) -> figure:
     """Creates a generic timeseries plot.
 
@@ -55,6 +63,8 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         title: plot title
         traces: a list of dictionaries with keys for the 'timeseries' data, 'label' and
             'colour'
+        x_range: (optional) tuple of datetimes to use as the x_range for the displayed
+            plot
 
     Returns:
         Bokeh figure containing timeseries data.
@@ -62,6 +72,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     # Create ColumnDataSource from trace data
     df = pd.DataFrame({trace["label"]: trace["timeseries"] for trace in traces})
     df.reset_index(inplace=True)
+    df["index"] = pd.to_datetime(df["index"]).dt.date
     source = ColumnDataSource(df)
 
     plot = figure(
@@ -72,6 +83,8 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         x_axis_type="datetime",  # type: ignore[call-arg]
         tools="save,xpan,xwheel_zoom,reset",
     )
+    if x_range:
+        plot.x_range = Range1d(x_range[0], x_range[1])
     plot.yaxis.axis_label = "Value"
     plot.xaxis.axis_label = "Date"
     for trace in traces:
@@ -87,7 +100,11 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     return plot
 
 
-def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> figure:
+def create_capacity_planning_plot(
+    start_date: datetime,
+    end_date: datetime,
+    x_range: tuple[datetime, datetime] | None = None,
+) -> figure:
     """Generates all the time series data and creates the capacity planning plot.
 
     Includes all business days between the selected start and end date, inclusive of
@@ -97,6 +114,8 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> f
     Args:
         start_date: datetime object representing the start of the plotting period
         end_date: datetime object representing the end of the plotting period
+        x_range: (optional) tuple of datetimes to use as the x_range for the displayed
+            plot
 
     Returns:
         Bokeh figure containing timeseries data.
@@ -112,9 +131,69 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> f
         {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
     ]
     plot = create_timeseries_plot(
-        title="Project effort and team capacity over time", traces=traces
+        title="Project effort and team capacity over time",
+        traces=traces,
+        x_range=x_range,
     )
     return plot
+
+
+def create_capacity_planning_layout() -> Row:
+    """Create the capacity planning plot in layout with widgets.
+
+    Creates the capacity planning plot plus the associated widgets used to control the
+    data displayed in the plot.
+
+    Returns:
+        A Row object (the Row containing a Column of widgets and the plot).
+    """
+    start, end = datetime.now(), datetime.now() + timedelta(days=365)
+    # Min and max dates are three years before and ahead of current date
+    min_date, max_date = start - timedelta(days=1095), start + timedelta(days=1095)
+
+    # Get the plot to display (it is created with all data, but only the dates
+    # in the x_range provided are shown)
+    plot = create_capacity_planning_plot(
+        start_date=min_date, end_date=max_date, x_range=(start, end)
+    )
+
+    # Create date picker widgets to control the dates shown in the plot
+    start_picker, end_picker = widgets.get_plot_date_pickers(
+        min_date=min_date.date(),
+        max_date=max_date.date(),
+        default_start=start.date(),
+        default_end=end.date(),
+    )
+    widgets.add_timeseries_callback_to_date_pickers(start_picker, end_picker, plot)
+
+    # Create buttons to set plot dates to some defaults
+    calendar_button = Button(
+        label="Current calendar year",
+    )
+    widgets.add_callback_to_button(
+        button=calendar_button,
+        dates=get_calendar_year_dates(),
+        plot=plot,
+        start_picker=start_picker,
+        end_picker=end_picker,
+    )
+
+    financial_button = Button(
+        label="Current financial year",
+    )
+    widgets.add_callback_to_button(
+        button=financial_button,
+        dates=get_financial_year_dates(),
+        plot=plot,
+        start_picker=start_picker,
+        end_picker=end_picker,
+    )
+
+    # Create layout to display widgets aligned as a column next to the plot
+    plot_layout = row(
+        column(start_picker, end_picker, calendar_button, financial_button), plot
+    )
+    return plot_layout
 
 
 def create_cost_recovery_plots() -> tuple[figure, figure]:
@@ -170,7 +249,7 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
 
 
 def html_components_from_plot(
-    plot: figure, prefix: str | None = None
+    plot: figure | Row, prefix: str | None = None
 ) -> dict[str, str]:
     """Generate HTML components from a Bokeh plot that can be added to the context.
 

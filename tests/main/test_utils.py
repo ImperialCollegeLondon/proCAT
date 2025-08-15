@@ -297,3 +297,34 @@ def test_order_queryset_by_property(project, analysis_code):
     reverse_qs = utils.order_queryset_by_property(qs, "effort", True)
     reverse_ids = list(reverse_qs.values_list("id", flat=True))
     assert reverse_ids == [2, 1, 3]
+
+
+def test_get_calendar_year_dates():
+    """Test the get_calendar_year_dates function."""
+    from main.utils import get_calendar_year_dates
+
+    today = datetime.now()
+    assert get_calendar_year_dates()[0].date() == datetime(today.year, 1, 1).date()
+    assert get_calendar_year_dates()[1].date() == datetime(today.year, 12, 31).date()
+
+
+def test_get_financial_year_dates():
+    """Test the get_financial_year_dates function."""
+    from main.utils import get_financial_year_dates
+
+    today = datetime.now()
+
+    if today.month >= 8:
+        assert get_financial_year_dates()[0].date() == datetime(today.year, 8, 1).date()
+        assert (
+            get_financial_year_dates()[1].date()
+            == datetime(today.year + 1, 7, 31).date()
+        )
+    else:
+        assert (
+            get_financial_year_dates()[0].date()
+            == datetime(today.year - 1, 8, 1).date()
+        )
+        assert (
+            get_financial_year_dates()[1].date() == datetime(today.year, 7, 31).date()
+        )
