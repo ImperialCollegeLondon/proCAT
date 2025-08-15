@@ -273,9 +273,8 @@ def create_cost_recovery_layout() -> Row:
     Creates the cost recovery timeseries plot and bar plot for monthly charges, plus the
     associated widgets used to control the data displayed in the plots.
 
-    # TODO: update Returns statement
     Returns:
-        A Row object (the Row containing a Column or widgets and the plot).
+        A Row object (the Row containing a Column of widgets and a Column of plots).
     """
     dates = get_month_dates_for_previous_years()
 
@@ -314,9 +313,45 @@ def create_cost_recovery_layout() -> Row:
         chart_months=chart_months,
     )
 
+    # Create button to set plots to calendar year
+    calendar_button = widgets.get_button(
+        label="Current calendar year",
+    )
+    widgets.add_callback_to_button(
+        button=calendar_button,
+        dates=get_calendar_year_dates(),
+        plot=timeseries_plot,
+        start_picker=start_picker,
+        end_picker=end_picker,
+    )
+    widgets.add_bar_callback_to_button(
+        button=calendar_button,
+        dates=get_calendar_year_dates(),
+        plot=bar_plot,
+        chart_months=chart_months,
+    )
+
+    # Create button to set plots to financial year
+    financial_button = widgets.get_button(
+        label="Current financial year",
+    )
+    widgets.add_callback_to_button(
+        button=financial_button,
+        dates=get_financial_year_dates(),
+        plot=timeseries_plot,
+        start_picker=start_picker,
+        end_picker=end_picker,
+    )
+    widgets.add_bar_callback_to_button(
+        button=financial_button,
+        dates=get_financial_year_dates(),
+        plot=bar_plot,
+        chart_months=chart_months,
+    )
+
     # Create layout to display widgets aligned as a column next to the plot
     plot_layout = row(
-        column(start_picker, end_picker),
+        column(start_picker, end_picker, calendar_button, financial_button),
         column(timeseries_plot, bar_plot),
     )
     return plot_layout
