@@ -7,7 +7,7 @@ import django_tables2 as tables
 from django.db.models import QuerySet
 from django.utils.safestring import mark_safe
 
-from .models import Capacity, Funding, Project
+from .models import Capacity, Funding, MonthlyCharge, Project
 from .utils import order_queryset_by_property
 
 
@@ -158,3 +158,18 @@ class CapacityTable(tables.Table):
     def render_value(self, value: Decimal) -> str:
         """Render the value as a percentage."""
         return f"{value * 100:.0f}%"
+
+
+class MonthlyChargeTable(tables.Table):
+    """Table for the Monthly Charge listing."""
+
+    date = tables.DateColumn()
+    amount = tables.Column()
+    description = tables.Column()
+
+    class Meta:
+        """Meta class for the table."""
+
+        model = MonthlyCharge
+        fields = ("date", "amount", "description")
+        attrs: ClassVar[dict[str, str]] = {"class": "table table-striped"}

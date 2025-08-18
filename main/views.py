@@ -125,7 +125,17 @@ class FundingDetailView(CustomBaseDetailView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add funding name to the context, so it is easy to retrieve."""
         context = super().get_context_data(**kwargs)
-        context["funding_name"] = str(self.get_object())
+        funding = self.get_object()
+        context["funding_name"] = str(funding)
+
+        # Monthly charges table for this funding
+        charges_qs = models.MonthlyCharge.objects.filter(funding=funding).order_by(
+            "-date"
+        )
+        charges_table = tables.MonthlyChargeTable(charges_qs)
+        RequestConfig(self.request).configure(charges_table)
+        context["monthly_charges_table"] = charges_table
+
         return context
 
 
