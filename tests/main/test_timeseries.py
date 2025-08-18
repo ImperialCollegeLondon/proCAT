@@ -172,7 +172,7 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     report.create_actual_monthly_charges(project, start_last_month, end_last_month)
 
     # Create cost recovery timeseries
-    dates = utils.get_month_dates_for_previous_year()
+    dates = utils.get_month_dates_for_previous_years()
     ts, charge_totals = timeseries.get_cost_recovery_timeseries(dates)
 
     # Get expected value
@@ -262,7 +262,7 @@ def test_get_cost_recovery_timeseries_equal_to_num_people(
     report.create_actual_monthly_charges(project, start_last_month, end_last_month)
 
     # Create cost recovery timeseries
-    dates = utils.get_month_dates_for_previous_year()
+    dates = utils.get_month_dates_for_previous_years()
     ts = timeseries.get_cost_recovery_timeseries(dates)[0]
 
     # Expected value for 2 individuals working full-time on projects would be 2.0

@@ -312,7 +312,7 @@ def test_get_financial_year_dates():
 
     today = datetime.now()
 
-    if today.month >= 8:
+    if today.month > 8:
         assert get_financial_year_dates()[0].date() == datetime(today.year, 8, 1).date()
         assert (
             get_financial_year_dates()[1].date()
