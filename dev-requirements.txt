@@ -66,7 +66,7 @@ filelock==3.18.0
     # via virtualenv
 huey==2.5.3
     # via procat (pyproject.toml)
-identify==2.6.12
+identify==2.6.13
     # via pre-commit
 idna==3.10
     # via requests
@@ -154,7 +154,7 @@ regex==2024.11.6
     # via djlint
 requests==2.32.4
     # via procat (pyproject.toml)
-ruff==0.12.5
+ruff==0.12.8
     # via procat (pyproject.toml)
 six==1.17.0
     # via
