@@ -1,6 +1,6 @@
 """Test suite for the plot widgets."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -49,6 +49,62 @@ def test_add_timeseries_callback_to_date_pickers():
 
 
 @pytest.mark.django_db
+def test_add_bar_callback_to_date_pickers():
+    """Test the add_bar_callback_to_date_pickers function."""
+    from main import plots, utils, widgets
+
+    dates = utils.get_month_dates_for_previous_years()
+    min_date = datetime.combine(dates[0][0], time.min)
+    max_date = datetime.combine(dates[-1][1], time.min)
+    start = datetime.combine(dates[-12][0], time.min)
+    chart_months = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
+
+    start_picker, end_picker = widgets.get_plot_date_pickers(
+        min_date.date(), max_date.date(), start.date(), max_date.date()
+    )
+
+    _, bar_plot = plots.create_cost_recovery_plots(
+        dates, min_date, max_date, (start, max_date), chart_months
+    )
+
+    expected_callback = CustomJS(
+        args=dict(
+            start_picker=start_picker,
+            end_picker=end_picker,
+            plot=bar_plot,
+            months=chart_months,
+        ),
+        code="""if (window.skip_bar_picker_callback) return;
+
+        function getIndex(picker_value) {
+            const date = new Date(picker_value);
+            const month = date.toLocaleString('default', { month: 'short' });
+            const year = date.getFullYear();
+            const formatted_month = `${month} ${year}`;
+            return months.indexOf(formatted_month);
+        }
+
+        const start_index = getIndex(start_picker.value);
+        const end_index = getIndex(end_picker.value);
+        const selected_months = months.slice(start_index, end_index + 1);
+
+        plot.x_range.factors = selected_months;""",
+    )
+
+    # Check js_on_change called with the expected arguments
+    with patch.object(DatePicker, "js_on_change") as js_mock:
+        widgets.add_bar_callback_to_date_pickers(
+            start_picker, end_picker, bar_plot, chart_months
+        )
+        assert js_mock.call_count == 2
+
+        called_args = js_mock.call_args.args
+        assert called_args[0] == "change"
+        assert called_args[1].args == expected_callback.args
+        assert called_args[1].code == expected_callback.code
+
+
+@pytest.mark.django_db
 def test_add_callback_to_button():
     """Test the add_callback_to_button function."""
     from main import plots, utils, widgets
@@ -89,6 +145,51 @@ def test_add_callback_to_button():
     with patch.object(Button, "js_on_click") as js_mock:
         widgets.add_callback_to_button(
             button, calendar_dates, plot, start_picker, end_picker
+        )
+        js_mock.assert_called_once()
+
+        called_arg = js_mock.call_args.args[0]
+        assert called_arg.args == expected_callback.args
+        assert called_arg.code == expected_callback.code
+
+
+@pytest.mark.django_db
+def test_add_bar_callback_to_button():
+    """Test the add_bar_callback_to_button function."""
+    from main import plots, utils, widgets
+
+    dates = utils.get_month_dates_for_previous_years()
+    min_date = datetime.combine(dates[0][0], time.min)
+    max_date = datetime.combine(dates[-1][1], time.min)
+    start = datetime.combine(dates[-12][0], time.min)
+    chart_months = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
+
+    _, bar_plot = plots.create_cost_recovery_plots(
+        dates, min_date, max_date, (start, max_date), chart_months
+    )
+    button = Button(label="button")
+
+    calendar_dates = utils.get_calendar_year_dates()
+    end_month = f"{calendar_dates[1].strftime('%b')} {calendar_dates[1].year}"
+    idxs = (
+        chart_months.index(
+            f"{calendar_dates[0].strftime('%b')} {calendar_dates[0].year}"
+        ),
+        chart_months.index(end_month) if end_month in chart_months else None,
+    )
+    expected_callback = CustomJS(
+        args=dict(
+            indexed_months=chart_months[idxs[0] : idxs[1]],
+            plot=bar_plot,
+        ),
+        code="""window.skip_bar_picker_callback = true;
+            plot.x_range.factors = indexed_months;""",
+    )
+
+    # Check js_on_click called with the expected arguments
+    with patch.object(Button, "js_on_click") as js_mock:
+        widgets.add_bar_callback_to_button(
+            button, calendar_dates, bar_plot, chart_months
         )
         js_mock.assert_called_once()
 
