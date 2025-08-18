@@ -6,9 +6,9 @@ from typing import Any
 import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import ColumnDataSource, HoverTool, Range1d
 from bokeh.models.layouts import Row
-from bokeh.models.widgets import Button, Range1d
+from bokeh.models.widgets import Button
 from bokeh.plotting import figure
 
 from . import timeseries, widgets
@@ -309,7 +309,7 @@ def create_cost_recovery_layout() -> Row:
     )
 
     # Create button to set plots to calendar year
-    calendar_button = widgets.get_button(
+    calendar_button = Button(
         label="Current calendar year",
     )
     widgets.add_callback_to_button(
@@ -327,7 +327,7 @@ def create_cost_recovery_layout() -> Row:
     )
 
     # Create button to set plots to financial year
-    financial_button = widgets.get_button(
+    financial_button = Button(
         label="Current financial year",
     )
     widgets.add_callback_to_button(
