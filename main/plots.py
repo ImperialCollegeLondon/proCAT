@@ -245,20 +245,14 @@ def create_cost_recovery_plots(
         {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
     ]
     timeseries_plot = create_timeseries_plot(
-        title=(
-            f"Team capacity and project charging from {start_date.strftime('%B')} "
-            f"{start_date.year} to {end_date.strftime('%B')} {end_date.year}"
-        ),
+        title=("Team capacity and project charging over time"),
         traces=traces,
         x_range=x_range,
     )
 
     # Create bar plot for monthly charges
     bar_plot = create_bar_plot(
-        title=(
-            f"Monthly charges from {start_date.strftime('%B')} {start_date.year} to "
-            f"{end_date.strftime('%B')} {end_date.year}"
-        ),
+        title=("Total monthly charges"),
         months=chart_months,
         values=monthly_totals,
         x_range=(chart_months[-12:]),
