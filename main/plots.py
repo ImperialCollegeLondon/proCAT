@@ -93,9 +93,9 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             source=source,
             line_width=2,
             color=trace["colour"],
-            # legend_label=trace["label"],
+            legend_label=trace["label"],
         )
-    # plot.legend.click_policy = "hide"  # hides traces when clicked in legend
+    plot.legend.click_policy = "hide"  # hides traces when clicked in legend
     return plot
 
 
@@ -170,8 +170,6 @@ def create_capacity_planning_plot(
         traces=traces,
         x_range=x_range,
     )
-
-    plot.yaxis.axis_label = "Effort (hours)"
 
     plot.width = 900  # width of the plot
 
