@@ -216,7 +216,7 @@ def create_cost_recovery_plots(
 
     Args:
         dates: list of tuples (from oldest to most recent) containing dates for all
-            months of the last 5 years; each tuple contains two dates for the first
+            months of the last 3 years; each tuple contains two dates for the first
             and last date of the month
         start_date: datetime object representing the start of the timeseries plotting
             period
@@ -281,7 +281,7 @@ def create_cost_recovery_layout() -> Row:
     # Get x-axis values for bar plot
     chart_months = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
 
-    # Plots are initialised with data for last 5 years but only the last year is shown
+    # Plots are initialised with data for last 3 years but only the last year is shown
     # by default
     timeseries_plot, bar_plot = create_cost_recovery_plots(
         dates=dates,
