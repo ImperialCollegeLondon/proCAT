@@ -163,10 +163,6 @@ class CapacityTable(tables.Table):
 class MonthlyChargeTable(tables.Table):
     """Table for the Monthly Charge listing."""
 
-    date = tables.DateColumn()
-    amount = tables.Column()
-    description = tables.Column()
-
     class Meta:
         """Meta class for the table."""
 
