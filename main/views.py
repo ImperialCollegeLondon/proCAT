@@ -1,6 +1,5 @@
 """Views for the main app."""
 
-from datetime import datetime, timedelta
 from typing import Any
 
 import bokeh
@@ -147,10 +146,8 @@ class CapacityPlanningView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add HTML components and Bokeh version to the context."""
         context = super().get_context_data(**kwargs)
-        plot = plots.create_capacity_planning_plot(
-            datetime.now(), datetime.now() + timedelta(365)
-        )
-        context.update(plots.html_components_from_plot(plot))
+        layout = plots.create_capacity_planning_layout()
+        context.update(plots.html_components_from_plot(layout))
         context["bokeh_version"] = bokeh.__version__
         return context
 
