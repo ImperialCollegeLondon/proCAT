@@ -10,7 +10,7 @@ from bokeh.models import ColumnDataSource, CustomJS, HoverTool, Range1d
 from bokeh.models.widgets import Button, Div, MultiChoice
 from bokeh.plotting import figure
 
-from . import timeseries, widgets
+from . import models, timeseries, widgets
 from .utils import (
     get_calendar_year_dates,
     get_financial_year_dates,
@@ -103,6 +103,8 @@ def create_capacity_planning_plot(
     start_date: datetime,
     end_date: datetime,
     x_range: tuple[datetime, datetime] | None = None,
+    selected_projects: list[str] | None = None,
+    selected_users: list[str] | None = None,
 ) -> figure:
     """Generates all the time series data and creates the capacity planning plot.
 
@@ -115,55 +117,63 @@ def create_capacity_planning_plot(
         end_date: datetime object representing the end of the plotting period
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot
+        selected_projects: (optional) list of selected project name(s)
+        selected_users: (optional) list of selected user name(s)
 
     Returns:
-        Bokeh Row layout with timeseries data plot and CheckboxGroup widgets.
+        Bokeh figure layout with timeseries data plot and MultiChoice widgets.
 
     """
-    # Get effort for each project and user
-    PROJECTS = ["proCAT 1", "proCAT 2", "proCAT 3", "proCAT 4"]
-    USERS = ["User 1", "User 2", "User 3", "User 4", "User 5"]
-    project_colours = ["firebrick", "orange", "green", "blue"]
-    user_colours = ["purple", "brown", "pink", "cyan", "magenta"]
+    # collect project names and users'm names
+    all_projects = list(
+        models.Project.objects.values_list("name", flat=True).distinct()
+    )
+    all_users = list(models.User.objects.values_list("username", flat=True).distinct())
 
-    # Total effort and capacity across all projects
-    total_effort_timeseries = timeseries.get_effort_timeseries(start_date, end_date)
-    capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
+    if not selected_projects:
+        use_projects = all_projects
+    else:
+        use_projects = selected_projects
+
+    if not selected_users:
+        use_users = all_users
+    else:
+        use_users = selected_users
+
+    # Total effort for selected project(s)
+    total_effort_timeseries = None
+    for proj in use_projects:
+        project_effort_timeseries = timeseries.get_project_effort_timeseries(
+            start_date, end_date, proj
+        )
+        if total_effort_timeseries is None:
+            total_effort_timeseries = project_effort_timeseries
+        else:
+            total_effort_timeseries += project_effort_timeseries
+
+    # total capacity for selected user(s)
+    total_capacity_timeseries = None
+    for usr in use_users:
+        user_capacity_timeseries = timeseries.get_user_capacity_timeseries(
+            start_date, end_date, usr
+        )
+        if total_capacity_timeseries is None:
+            total_capacity_timeseries = user_capacity_timeseries
+        else:
+            total_capacity_timeseries += user_capacity_timeseries
 
     traces = [
-        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
+        {
+            "timeseries": total_capacity_timeseries,
+            "colour": "navy",
+            "label": "Total Capacity",
+        },
         {
             "timeseries": total_effort_timeseries,
-            "colour": "black",
+            "colour": "firebrick",
             "label": "Total effort",
         },
     ]
-
-    # Add effort for each project
-    for i, project in enumerate(PROJECTS):
-        project_effort_timeseries = timeseries.get_project_effort_timeseries(
-            start_date, end_date, project
-        )
-        traces.append(
-            {
-                "timeseries": project_effort_timeseries,
-                "colour": project_colours[i],
-                "label": project,
-            }
-        )
-
-    # Add effort for each user
-    for i, user in enumerate(USERS):
-        user_effort_timeseries = timeseries.get_user_effort_timeseries(
-            start_date, end_date, user
-        )
-        traces.append(
-            {
-                "timeseries": user_effort_timeseries,
-                "colour": user_colours[i],
-                "label": user,
-            }
-        )
 
     plot = create_timeseries_plot(
         title="Project effort and team capacity over time",
@@ -189,10 +199,20 @@ def create_capacity_planning_layout() -> Row:
     # Min and max dates are three years before and ahead of current date
     min_date, max_date = start - timedelta(days=1095), start + timedelta(days=1095)
 
+    # List for projects and users for multi-choice selection
+    all_projects = list(
+        models.Project.objects.values_list("name", flat=True).distinct()
+    )
+    all_users = list(models.User.objects.values_list("username", flat=True).distinct())
+
     # Get the plot to display (it is created with all data, but only the dates
-    # in the x_range provided are shown)
+    # in the x_range provided are shown) with all projects and users selected
     plot = create_capacity_planning_plot(
-        start_date=min_date, end_date=max_date, x_range=(start, end)
+        start_date=min_date,
+        end_date=max_date,
+        x_range=(start, end),
+        selected_projects=[],  # empty implies all projects selected
+        selected_users=[],  # empty implies all users selected
     )
 
     # Create date picker widgets to control the dates shown in the plot
@@ -227,31 +247,21 @@ def create_capacity_planning_layout() -> Row:
         end_picker=end_picker,
     )
 
-    # List for projects and users for multi-choice selection
-    PROJECTS = ["proCAT 1", "proCAT 2", "proCAT 3", "proCAT 4"]
-    USERS = ["User 1", "User 2", "User 3", "User 4", "User 5"]
-
     # Project(s) for selection
-    project_options = ["Capacity", "Total effort", *PROJECTS]
-    project_title = Div(text="<h3>Projects</h3>", width=180)
+    project_options = all_projects
+    project_title = Div(text="<h3>Select Projects</h3>", width=180)
     project_multichoice = MultiChoice(
         options=[(opt, opt) for opt in project_options],
-        value=[
-            "Capacity",
-            "Total effort",
-        ],  # Default to show capacity and total effort only
+        value=[],  # empty default implies all projects efforts selected
         width=180,  # width of the multichoice fr projects
     )
 
     # User(s) selection
-    user_options = ["Capacity", "Total effort", *USERS]
-    user_title = Div(text="<h3>Users</h3>", width=180)
+    user_options = all_users
+    user_title = Div(text="<h3>Select Users</h3>", width=180)
     user_multichoice = MultiChoice(
         options=[(opt, opt) for opt in user_options],
-        value=[
-            "Capacity",
-            "Total effort",
-        ],  # Default to show capacity and total effort only
+        value=[],  # empty default implies all users capacity selected
         width=180,  # width of the multichoice for users
     )
 
@@ -259,130 +269,42 @@ def create_capacity_planning_layout() -> Row:
     reset_project_button = Button(label="Reset Projects", width=100)
     reset_user_button = Button(label="Reset Users", width=100)
 
-    # Project callback
-    project_callback_code = CustomJS(
-        args=dict(plot=plot),
+    # combined callback
+    callback_code = CustomJS(
+        args=dict(
+            plot=plot,
+            project_multichoice=project_multichoice,
+            user_multichoice=user_multichoice,
+            start_picker=start_picker,
+            end_picker=end_picker,
+            min_date=min_date,
+            max_date=max_date,
+        ),
         code="""
-            // Get all line renderers from the plot
-            const line_renderers = plot.renderers.filter(r => r.glyph &&
-            r.glyph.type === 'Line');
-
-            // Projects traces are from 0 to projects_labels.length - 1
-            const project_count = cb_obj.labels.length;
-
-            // Hide all lines
-            for (let i = 0; i < project_count && i < line_renderers.length; i++) {
-                line_renderers[i].visible = false;
-            }
-
-            // Check if any projects are selected
-            // Skip first two indices (Capacity and Total effort)
-            const project_indices = cb_obj.active.filter(index => index >= 2);
-            const has_projects_selected = project_indices.length > 0;
-
-            if (has_projects_selected) {
-                // Show only the selected projects
-                project_indices.forEach(index => {
-                    if (index < line_renderers.length) {
-                        line_renderers[index].visible = true;
-                    }
-                });
-            } else {
-                // If no projects are selected, show only Capacity and Total effort
-                cb_obj.active.forEach(index => {
-                    if (index < 2 && index < line_renderers.length) {
-                        line_renderers[index].visible = true;
-                    }
-                });
-            }
-
-            // Plot update
-            plot.change.emit();
-        """,
-    )
-
-    # User callback
-    user_callback_code = CustomJS(
-        args=dict(plot=plot),
-        code="""
-            // Get all line renderers from the plot
-            const line_renderers = plot.renderers.filter(r => r.glyph &&
-            r.glyph.type === 'Line');
-
-            // User start index
-            const project_count = project_multichoice.labels.length;
-            const user_start_index = project_count;
-
-            // Hide all lines
-            for (let i = user_start_index; i < line_renderers.length; i++) {
-                line_renderers[i].visible = false;
-            }
-
-            // show selected users
-            cb_obj.active.forEach(user_index => {
-                const actual_index = user_index + user_start_index;
-                if (actual_index < line_renderers.length) {
-                    line_renderers[actual_index].visible = true;
-                }
-            });
-
-            // Plot update
+            console.log("Selected projects:", project_multichoice.value);
+            console.log("Selected users:", user_multichoice.value);
             plot.change.emit();
         """,
     )
 
     project_reset_callback_code = CustomJS(
-        args=dict(project_multichoice=project_multichoice, plot=plot),
+        args=dict(project_multichoice=project_multichoice),
         code="""
-            // Reset all checkboxes to default state
-            project_multichoice.active = [0, 1]; // Show only capacity and total effort
-
-            // Get all line renderers from the plot
-            const line_renderers = plot.renderers.filter(r => r.glyph &&
-            r.glyph.type === 'Line');
-
-            // Hide all lines
-            for (let i = 0; i < project_count && i < line_renderers.length; i++) {
-                line_renderers[i].visible = false;
-            }
-
-            // Show only the default lines (capacity and total effort)
-            [0, 1].forEach(index => {
-                if (index < line_renderers.length) {
-                    line_renderers[index].visible = true;
-                }
-            });
-
-            // Plot update
+            project_multichoice.value = [];  // Reset to empty implying all projects
             project_multichoice.change.emit();
-            plot.change.emit();
         """,
     )
 
     user_reset_callback_code = CustomJS(
-        args=dict(user_multichoice=user_multichoice, plot=plot),
+        args=dict(user_multichoice=user_multichoice),
         code="""
-            // Reset all checkboxes to default state
-            user_multichoice.active = [0, 1]; // Show only capacity and total effort
-
-            // Get all line renderers from the plot
-            const line_renderers = plot.renderers.filter(r => r.glyph &&
-            r.glyph.type === 'Line');
-            const project_count = project_multichoice.labels.length;
-
-            // Hide all lines
-            for (let i = project_count; i < line_renderers.length; i++) {
-                line_renderers[i].visible = false;
-            }
-
-            // Plot update
+            user_multichoice.value = [];  // Reset to empty implying all users
             user_multichoice.change.emit();
-            plot.change.emit();
         """,
     )
 
-    project_multichoice.js_on_change("value", project_callback_code)
-    user_multichoice.js_on_change("value", user_callback_code)
+    project_multichoice.js_on_change("value", callback_code)
+    user_multichoice.js_on_change("value", callback_code)
     reset_project_button.js_on_click(project_reset_callback_code)
     reset_user_button.js_on_click(user_reset_callback_code)
 

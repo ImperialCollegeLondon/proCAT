@@ -219,10 +219,10 @@ def get_project_effort_timeseries(
     return timeseries
 
 
-def get_user_effort_timeseries(
+def get_user_capacity_timeseries(
     start_date: datetime, end_date: datetime, user: str
 ) -> pd.Series[float]:
-    """Get effort timeseries data for a specific user.
+    """Get capacity timeseries data for aspecific user.
 
     Args:
         start_date: datetime object representing the start of the plotting period
@@ -247,7 +247,7 @@ def get_user_effort_timeseries(
 
     # initialize timeseries
     timeseries = pd.Series(0.0, index=dates)
-    for capacity in capacities:
-        timeseries = update_timeseries(timeseries, capacity, "value")
+    for cap in capacities:
+        timeseries = update_timeseries(timeseries, cap, "value")
 
     return timeseries
