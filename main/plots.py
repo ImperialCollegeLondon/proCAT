@@ -6,8 +6,8 @@ from typing import Any
 import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import Row, column, row
-from bokeh.models import ColumnDataSource, CustomJS, HoverTool
-from bokeh.models.widgets import Button, CheckboxGroup
+from bokeh.models import ColumnDataSource, CustomJS, Div, HoverTool
+from bokeh.models.widgets import Button, MultiChoice
 from bokeh.plotting import figure
 
 from . import timeseries
@@ -159,17 +159,25 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> R
 
     # CheckboxGroup for project selection
     project_labels = ["Capacity", "Total effort", *PROJECTS]
-    project_checkbox_group = CheckboxGroup(
-        labels=project_labels,
-        active=[0, 1],  # Default to show capacity and total effort only
+    project_title = Div(text="<h3>Projects</h3>", width=180)
+    project_checkbox_group = MultiChoice(
+        options=project_labels,
+        value=[
+            "Capacity",
+            "Total effort",
+        ],  # Default to show capacity and total effort only
         width=180,  # width of the checkbox group fr projects
     )
 
     # CheckboxGroup for user selection
     user_labels = ["Capacity", "Total effort", *USERS]
-    user_checkbox_group = CheckboxGroup(
-        labels=user_labels,
-        active=[0, 1],  # Default to show capacity and total effort only
+    user_title = Div(text="<h3>Users</h3>", width=180)
+    user_checkbox_group = MultiChoice(
+        options=user_labels,
+        value=[
+            "Capacity",
+            "Total effort",
+        ],  # Default to show capacity and total effort only
         width=180,  # width of the checkbox group for users
     )
 
@@ -303,21 +311,23 @@ def create_capacity_planning_plot(start_date: datetime, end_date: datetime) -> R
         """,
     )
 
-    project_checkbox_group.js_on_change("active", project_callback_code)
-    user_checkbox_group.js_on_change("active", user_callback_code)
+    project_checkbox_group.js_on_change("value", project_callback_code)
+    user_checkbox_group.js_on_change("value", user_callback_code)
     reset_project_button.js_on_click(project_reset_callback_code)
     reset_user_button.js_on_click(user_reset_callback_code)
 
-    project_grouping = column(
-        project_checkbox_group, reset_project_button, width=180, spacing=10
-    )
-    user_grouping = column(
-        user_checkbox_group, reset_user_button, width=180, spacing=10
+    grouping = column(
+        project_title,
+        project_checkbox_group,
+        reset_project_button,
+        user_title,
+        user_checkbox_group,
+        reset_user_button,
+        width=180,
+        spacing=10,
     )
 
-    grouping = row(project_grouping, user_grouping, spacing=15)
-
-    layout = row(plot, grouping, spacing=20)
+    layout = row(grouping, plot, spacing=20)
 
     return layout
 
