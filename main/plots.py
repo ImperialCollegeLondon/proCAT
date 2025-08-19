@@ -237,7 +237,7 @@ def create_capacity_planning_layout() -> Row:
     project_options = ["Capacity", "Total effort", *PROJECTS]
     project_title = Div(text="<h3>Projects</h3>", width=180)
     project_multichoice = MultiChoice(
-        options=project_options,
+        options=[(opt, opt) for opt in project_options],
         value=[
             "Capacity",
             "Total effort",
@@ -249,7 +249,7 @@ def create_capacity_planning_layout() -> Row:
     user_options = ["Capacity", "Total effort", *USERS]
     user_title = Div(text="<h3>Users</h3>", width=180)
     user_multichoice = MultiChoice(
-        options=user_options,
+        options=[(opt, opt) for opt in user_options],
         value=[
             "Capacity",
             "Total effort",
