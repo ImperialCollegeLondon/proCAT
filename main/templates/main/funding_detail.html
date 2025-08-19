@@ -11,11 +11,7 @@
     </div>
   </div>
   <!-- Monthly charges table -->
-  {% if monthly_charges_table %}
-    <div class="row mb-4">
-      <div class="col">{% render_table monthly_charges_table %}</div>
-    </div>
-  {% else %}
-    <p>No charges found for this funding.</p>
-  {% endif %}
+  <div class="row mb-4">
+    <div class="col">{% render_table monthly_charges_table %}</div>
+  </div>
 {% endblock content %}
