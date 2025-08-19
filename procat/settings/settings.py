@@ -137,7 +137,7 @@ MIDDLEWARE += [
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "mozilla_django_oidc.auth.OIDCAuthenticationBackend",
+    "main.oidc.ICLOIDCAuthenticationBackend",
 ]
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -175,3 +175,4 @@ OIDC_OP_TOKEN_ENDPOINT = os.environ.get("OIDC_OP_TOKEN_ENDPOINT")
 OIDC_OP_USER_ENDPOINT = os.environ.get("OIDC_OP_USER_ENDPOINT")
 OIDC_OP_JWKS_ENDPOINT = os.environ.get("OIDC_OP_JWKS_ENDPOINT")
 OIDC_RP_SCOPES = os.environ.get("OIDC_RP_SCOPES")
+OIDC_RP_SIGN_ALGO = os.environ.get("OIDC_RP_SIGN_ALGO", "RS256")
