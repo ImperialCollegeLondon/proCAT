@@ -213,8 +213,8 @@ def get_project_effort_timeseries(
 
     # initialize timeseries
     timeseries = pd.Series(0.0, index=dates)
-    for project in projects:
-        timeseries = update_timeseries(timeseries, project, "effort_per_day")
+    for proj in projects:
+        timeseries = update_timeseries(timeseries, proj, "effort_per_day")
 
     return timeseries
 
