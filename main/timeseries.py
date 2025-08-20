@@ -243,6 +243,14 @@ def get_user_capacity_timeseries(
             start_date__isnull=False,
             user__username=user,
         )
+        .annotate(
+            end_date=Window(
+                expression=Lead("start_date"),  # get start date of next capacity
+                order_by=F("start_date").asc(),  # orders by ascending start date
+                partition_by="user__username",
+            )
+        )
+        .annotate(end_date=Coalesce("end_date", end_date.date()))
     )
 
     # initialize timeseries

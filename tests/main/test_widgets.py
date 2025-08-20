@@ -9,12 +9,32 @@ from bokeh.models.widgets import Button, DatePicker
 
 
 @pytest.mark.django_db
-def test_add_timeseries_callback_to_date_pickers():
+@patch("main.models.Project.objects")
+@patch("main.models.User.objects")
+@patch("main.timeseries.get_project_effort_timeseries")
+@patch("main.timeseries.get_user_capacity_timeseries")
+def test_add_timeseries_callback_to_date_pickers(
+    mock_get_user_capacity_timeseries,
+    mock_get_project_effort_timeseries,
+    mock_user_objects,
+    mock_project_objects,
+):
     """Test the add_timeseries_callback_to_date_pickers function."""
+    import pandas as pd
+
     from main import plots, widgets
 
     min_date, max_date = datetime.now(), datetime.now() + timedelta(365)
     display_dates = (min_date + timedelta(100), min_date + timedelta(200))
+
+    # mock db queries
+    mock_project_objects.values_list.retturn_value.distinct.return_value = ["Project A"]
+    mock_user_objects.values_list.return_value.distinct.return_value = ["user1"]
+
+    # mock timeseries
+    dates = pd.date_range(start=min_date, end=max_date, inclusive="left")
+    mock_get_project_effort_timeseries.return_value = pd.Series(0.0, index=dates)
+    mock_get_user_capacity_timeseries.return_value = pd.Series(0.0, index=dates)
 
     plot = plots.create_capacity_planning_plot(
         min_date, max_date, x_range=display_dates
@@ -49,14 +69,35 @@ def test_add_timeseries_callback_to_date_pickers():
 
 
 @pytest.mark.django_db
-def test_add_callback_to_button():
+@patch("main.models.Project.objects")
+@patch("main.models.User.objects")
+@patch("main.timeseries.get_project_effort_timeseries")
+@patch("main.timeseries.get_user_capacity_timeseries")
+def test_add_callback_to_button(
+    mock_get_user_capacity_timeseries,
+    mock_get_project_effort_timeseries,
+    mock_user_objects,
+    mock_project_objects,
+):
     """Test the add_callback_to_button function."""
+    import pandas as pd
+
     from main import plots, utils, widgets
 
     button = Button(label="button")
 
     min_date, max_date = datetime.now(), datetime.now() + timedelta(365)
     display_dates = (min_date + timedelta(100), min_date + timedelta(200))
+
+    # mock db queries
+    mock_project_objects.values_list.retturn_value.distinct.return_value = ["Project A"]
+    mock_user_objects.values_list.return_value.distinct.return_value = ["user1"]
+
+    # mock timeseries
+    dates = pd.date_range(start=min_date, end=max_date, inclusive="left")
+    mock_get_project_effort_timeseries.return_value = pd.Series(0.0, index=dates)
+    mock_get_user_capacity_timeseries.return_value = pd.Series(0.0, index=dates)
+
     start_picker, end_picker = widgets.get_plot_date_pickers(
         min_date.date(),
         max_date.date(),
