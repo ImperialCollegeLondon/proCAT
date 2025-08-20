@@ -3,7 +3,7 @@
 from datetime import date, datetime
 
 from bokeh.models import CustomJS
-from bokeh.models.widgets import Button, DatePicker
+from bokeh.models.widgets import Button, DatePicker, MultiChoice
 from bokeh.plotting import figure
 
 
@@ -126,3 +126,32 @@ def add_callback_to_button(
             end_picker.value = end_isoformat;""",
         )  # x_range in plot and dates displayed in pickers are updated
     )
+
+
+def get_combined_callback_code(
+    plot: figure,
+    project_multichoice: MultiChoice,
+    user_multichoice: MultiChoice,
+    start_picker: DatePicker,
+    end_picker: DatePicker,
+    min_date: date,
+    max_date: date,
+) -> CustomJS:
+    """Get the combined code to update plot with the projects and users."""
+    callback_code = CustomJS(
+        args=dict(
+            plot=plot,
+            project_multichoice=project_multichoice,
+            user_multichoice=user_multichoice,
+            start_picker=start_picker,
+            end_picker=end_picker,
+            min_date=min_date,
+            max_date=max_date,
+        ),
+        code="""
+            console.log("Selected projects:", project_multichoice.value);
+            console.log("Selected users:", user_multichoice.value);
+            plot.change.emit();
+        """,
+    )
+    return callback_code

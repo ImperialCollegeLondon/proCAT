@@ -265,21 +265,14 @@ def create_capacity_planning_layout() -> Row:
     reset_user_button = Button(label="Reset Users", width=100)
 
     # combined callback
-    callback_code = CustomJS(
-        args=dict(
-            plot=plot,
-            project_multichoice=project_multichoice,
-            user_multichoice=user_multichoice,
-            start_picker=start_picker,
-            end_picker=end_picker,
-            min_date=min_date,
-            max_date=max_date,
-        ),
-        code="""
-            console.log("Selected projects:", project_multichoice.value);
-            console.log("Selected users:", user_multichoice.value);
-            plot.change.emit();
-        """,
+    callback_code = widgets.get_combined_callback_code(
+        plot=plot,
+        project_multichoice=project_multichoice,
+        user_multichoice=user_multichoice,
+        start_picker=start_picker,
+        end_picker=end_picker,
+        min_date=min_date.date(),
+        max_date=max_date.date(),
     )
 
     project_reset_callback_code = CustomJS(
