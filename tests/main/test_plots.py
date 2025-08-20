@@ -7,7 +7,7 @@ import pytest
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
 @pytest.mark.parametrize(
-    "selected_projects, selected_users",
+    "use_projects, use_users",
     [
         (None, None),  # No selection
         (["Project A"], None),  # Only projects selected
@@ -15,7 +15,7 @@ import pytest
         (["Project A"], ["user1"]),  # Both projects and users selected
     ],
 )
-def test_create_capacity_planning_plot(selected_projects, selected_users):
+def test_create_capacity_planning_plot(use_projects, use_users):
     """Test function to create the capacity planning plot."""
     from bokeh.plotting import figure
 
@@ -24,8 +24,8 @@ def test_create_capacity_planning_plot(selected_projects, selected_users):
     plot = plots.create_capacity_planning_plot(
         datetime.now(),
         datetime.now() + timedelta(365),
-        selected_projects=selected_projects,
-        selected_users=selected_users,
+        use_projects=use_projects,
+        use_users=use_users,
     )
     assert isinstance(plot, figure)
 

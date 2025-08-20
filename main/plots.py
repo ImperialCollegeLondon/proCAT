@@ -117,30 +117,25 @@ def create_capacity_planning_plot(
         end_date: datetime object representing the end of the plotting period
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot
-        use_projects: (optional) list of selected project name(s)
-        use_users: (optional) list of selected user name(s)
+        use_projects: (optional) list of project name(s) to use in the plot
+        use_users: (optional) list of user name(s) to use in the plot
 
     Returns:
         Bokeh figure layout with timeseries data plot and MultiChoice widgets.
 
     """
     # collect project names and users'm names
-    all_projects = list(
-        models.Project.objects.values_list("name", flat=True).distinct()
-    )
-    all_users = list(models.User.objects.values_list("username", flat=True).distinct())
+    if not use_projects:
+        use_projects = list(
+            models.Project.objects.values_list("name", flat=True).distinct()
+        )
 
-    if not selected_projects:
-        use_projects = all_projects
-    else:
-        use_projects = selected_projects
+    if not use_users:
+        use_users = list(
+            models.User.objects.values_list("username", flat=True).distinct()
+        )
 
-    if not selected_users:
-        use_users = all_users
-    else:
-        use_users = selected_users
-
-    # Total effort for selected project(s)
+    # Total effort for use project(s)
     total_effort_timeseries = None
     for proj in use_projects:
         project_effort_timeseries = timeseries.get_project_effort_timeseries(
@@ -211,8 +206,8 @@ def create_capacity_planning_layout() -> Row:
         start_date=min_date,
         end_date=max_date,
         x_range=(start, end),
-        selected_projects=[],  # empty implies all projects selected
-        selected_users=[],  # empty implies all users selected
+        use_projects=[],  # empty implies all projects selected
+        use_users=[],  # empty implies all users selected
     )
 
     # Create date picker widgets to control the dates shown in the plot
