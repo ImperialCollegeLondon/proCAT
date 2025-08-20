@@ -103,8 +103,8 @@ def create_capacity_planning_plot(
     start_date: datetime,
     end_date: datetime,
     x_range: tuple[datetime, datetime] | None = None,
-    selected_projects: list[str] | None = None,
-    selected_users: list[str] | None = None,
+    use_projects: list[str] | None = None,
+    use_users: list[str] | None = None,
 ) -> figure:
     """Generates all the time series data and creates the capacity planning plot.
 
@@ -117,8 +117,8 @@ def create_capacity_planning_plot(
         end_date: datetime object representing the end of the plotting period
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot
-        selected_projects: (optional) list of selected project name(s)
-        selected_users: (optional) list of selected user name(s)
+        use_projects: (optional) list of selected project name(s)
+        use_users: (optional) list of selected user name(s)
 
     Returns:
         Bokeh figure layout with timeseries data plot and MultiChoice widgets.
