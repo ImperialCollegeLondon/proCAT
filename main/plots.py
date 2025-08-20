@@ -97,6 +97,18 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             legend_label=trace["label"],
         )
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
+    hover = HoverTool(
+        tooltips=[
+            ("Date", "@date{%F}"),
+            (
+                "Value",
+                "@{" + trace["label"] + "}{0.00}",
+            ),
+        ],
+        formatters={"@date": "datetime"},
+    )
+    plot.add_tools(hover)
+
     return plot
 
 
@@ -244,7 +256,6 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
         months=chart_months,
         values=monthly_totals,
     )
-
     return timeseries_plot, bar_plot
 
 
