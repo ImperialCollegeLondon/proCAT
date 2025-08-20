@@ -128,7 +128,7 @@ def add_callback_to_button(
     )
 
 
-def get_combined_callback_code(
+def get_combined_callback(
     plot: figure,
     project_multichoice: MultiChoice,
     user_multichoice: MultiChoice,
@@ -138,7 +138,7 @@ def get_combined_callback_code(
     max_date: date,
 ) -> CustomJS:
     """Get the combined code to update plot with the projects and users."""
-    callback_code = CustomJS(
+    return CustomJS(
         args=dict(
             plot=plot,
             project_multichoice=project_multichoice,
@@ -154,4 +154,14 @@ def get_combined_callback_code(
             plot.change.emit();
         """,
     )
-    return callback_code
+
+
+def get_reset_callback(multichoice_arg: MultiChoice) -> CustomJS:
+    """Get the JS code to reset the multichoice widget."""
+    return CustomJS(
+        args=dict(multichoice=multichoice_arg),
+        code="""
+        multichoice_arg.value = [];  // Reset to empty implying all values are selected
+        multichoice_arg.change.emit();
+        """,
+    )

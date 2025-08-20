@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import Row, column, row
-from bokeh.models import ColumnDataSource, CustomJS, HoverTool, Range1d
+from bokeh.models import ColumnDataSource, HoverTool, Range1d
 from bokeh.models.widgets import Button, Div, MultiChoice
 from bokeh.plotting import figure
 
@@ -265,7 +265,7 @@ def create_capacity_planning_layout() -> Row:
     reset_user_button = Button(label="Reset Users", width=100)
 
     # combined callback
-    callback_code = widgets.get_combined_callback_code(
+    callback = widgets.get_combined_callback(
         plot=plot,
         project_multichoice=project_multichoice,
         user_multichoice=user_multichoice,
@@ -275,26 +275,16 @@ def create_capacity_planning_layout() -> Row:
         max_date=max_date.date(),
     )
 
-    project_reset_callback_code = CustomJS(
-        args=dict(project_multichoice=project_multichoice),
-        code="""
-            project_multichoice.value = [];  // Reset to empty implying all projects
-            project_multichoice.change.emit();
-        """,
+    project_reset_callback = widgets.get_reset_callback(
+        multichoice_arg=project_multichoice
     )
 
-    user_reset_callback_code = CustomJS(
-        args=dict(user_multichoice=user_multichoice),
-        code="""
-            user_multichoice.value = [];  // Reset to empty implying all users
-            user_multichoice.change.emit();
-        """,
-    )
+    user_reset_callback = widgets.get_reset_callback(multichoice_arg=user_multichoice)
 
-    project_multichoice.js_on_change("value", callback_code)
-    user_multichoice.js_on_change("value", callback_code)
-    reset_project_button.js_on_click(project_reset_callback_code)
-    reset_user_button.js_on_click(user_reset_callback_code)
+    project_multichoice.js_on_change("value", callback)
+    user_multichoice.js_on_change("value", callback)
+    reset_project_button.js_on_click(project_reset_callback)
+    reset_user_button.js_on_click(user_reset_callback)
 
     grouping = column(
         start_picker,
