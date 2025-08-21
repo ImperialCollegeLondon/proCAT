@@ -134,7 +134,7 @@ def create_capacity_planning_plot(
     all_users = list(models.User.objects.values_list("username", flat=True).distinct())
 
     # a data dictionary
-    data_dict = {
+    data_dict: dict[str, object] = {
         "index": dates,
     }
 
