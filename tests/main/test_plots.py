@@ -36,7 +36,7 @@ def test_create_capacity_planning_plot(use_projects, use_users):
 
     legend_items = [item.label.value for item in plot.legend.items]
     assert len(legend_items) == 2  # always only 2 traces
-    assert "Total effort" in legend_items
+    assert "Total Effort" in legend_items
     assert "Total Capacity" in legend_items
 
 

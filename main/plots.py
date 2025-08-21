@@ -124,59 +124,105 @@ def create_capacity_planning_plot(
         Bokeh figure layout with timeseries data plot and MultiChoice widgets.
 
     """
-    # collect project names and users'm names
-    if not use_projects:
-        use_projects = list(
-            models.Project.objects.values_list("name", flat=True).distinct()
-        )
+    # dates for the whole time range
+    dates = pd.date_range(start=start_date, end=end_date, inclusive="left")
 
-    if not use_users:
-        use_users = list(
-            models.User.objects.values_list("username", flat=True).distinct()
-        )
+    # collect all projects and users
+    all_projects = list(
+        models.Project.objects.values_list("name", flat=True).distinct()
+    )
+    all_users = list(models.User.objects.values_list("username", flat=True).distinct())
 
-    # Total effort for use project(s)
-    total_effort_timeseries = None
-    for proj in use_projects:
-        project_effort_timeseries = timeseries.get_project_effort_timeseries(
-            start_date, end_date, proj
-        )
-        if total_effort_timeseries is None:
-            total_effort_timeseries = project_effort_timeseries
-        else:
-            total_effort_timeseries += project_effort_timeseries
+    # a data dictionary
+    data_dict = {
+        "index": dates,
+    }
 
-    # total capacity for selected user(s)
-    total_capacity_timeseries = None
-    for usr in use_users:
-        user_capacity_timeseries = timeseries.get_user_capacity_timeseries(
-            start_date, end_date, usr
-        )
-        if total_capacity_timeseries is None:
-            total_capacity_timeseries = user_capacity_timeseries
-        else:
-            total_capacity_timeseries += user_capacity_timeseries
+    # include individual project effort and calculate total effort
+    total_effort_timeseries = pd.Series(0.0, index=dates, name="Total Effort")
+    for proj in all_projects:
+        try:
+            project_effort_timeseries = timeseries.get_project_effort_timeseries(
+                start_date, end_date, proj
+            )
+            project_effort_timeseries = project_effort_timeseries.reindex(
+                dates, fill_value=0.0
+            )
 
-    traces = [
-        {
-            "timeseries": total_capacity_timeseries,
-            "colour": "navy",
-            "label": "Total Capacity",
-        },
-        {
-            "timeseries": total_effort_timeseries,
-            "colour": "firebrick",
-            "label": "Total effort",
-        },
-    ]
+            # add as column for JS aggregation
+            data_dict[f"effort_{proj}"] = project_effort_timeseries.values
 
-    plot = create_timeseries_plot(
+            # add to total if proj is in use_projects or all if use_projects is None
+            if not use_projects or proj in use_projects:
+                total_effort_timeseries += project_effort_timeseries
+        except Exception:
+            # when proj has no data
+            data_dict[f"effort_{proj}"] = [0.0] * len(dates)
+
+    # include individual user capacity and calculate total capacity
+    total_capacity_timeseries = pd.Series(0.0, index=dates, name="Total Capacity")
+    for usr in all_users:
+        try:
+            user_capacity_timeseries = timeseries.get_user_capacity_timeseries(
+                start_date, end_date, usr
+            )
+            user_capacity_timeseries = user_capacity_timeseries.reindex(
+                dates, fill_value=0.0
+            )
+
+            # add as column for JS aggregation
+            data_dict[f"capacity_{usr}"] = user_capacity_timeseries.values
+
+            # add to total if this usr is in use_users or all if use_users is None
+            if not use_users or usr in use_users:
+                total_capacity_timeseries += user_capacity_timeseries
+        except Exception:
+            # when usr has no data
+            data_dict[f"capacity_{usr}"] = [0.0] * len(dates)
+
+    # add aggregated totals
+    data_dict["Total effort"] = total_effort_timeseries.values
+    data_dict["Total Capacity"] = total_capacity_timeseries.values
+
+    # create a ColumnDataSource with all data in the data dictionary
+    source = ColumnDataSource(data=data_dict)
+
+    # create plot
+    plot = figure(
         title="Project effort and team capacity over time",
-        traces=traces,
-        x_range=x_range,
+        width=1000,
+        height=500,
+        background_fill_color="#efefef",
+        x_axis_type="datetime",  # type: ignore[call-arg]
+        tools="save,xpan,xwheel_zoom,reset",
     )
 
-    plot.width = 900  # width of the plot
+    if x_range:
+        plot.x_range = Range1d(x_range[0], x_range[1])
+
+    plot.yaxis.axis_label = "Value"
+    plot.xaxis.axis_label = "Date"
+
+    # plot aggregated traces
+    plot.line(
+        "index",
+        "Total Capacity",
+        source=source,
+        line_width=2,
+        color="navy",
+        legend_label="Total Capacity",
+    )
+
+    plot.line(
+        "index",
+        "Total effort",
+        source=source,
+        line_width=2,
+        color="firebrick",
+        legend_label="Total Effort",
+    )
+
+    plot.legend.click_policy = "hide"  # hides traces when clicked in legend
 
     return plot
 
@@ -265,7 +311,7 @@ def create_capacity_planning_layout() -> Row:
     reset_user_button = Button(label="Reset Users", width=100)
 
     # combined callback
-    callback = widgets.get_combined_callback(
+    widgets.get_combined_callback(
         plot=plot,
         project_multichoice=project_multichoice,
         user_multichoice=user_multichoice,
@@ -275,16 +321,20 @@ def create_capacity_planning_layout() -> Row:
         max_date=max_date.date(),
     )
 
-    project_reset_callback = widgets.get_reset_callback(
-        multichoice_arg=project_multichoice
+    # Reset callbacks
+    reset_project_callback = widgets.get_reset_project_callback(
+        project_multichoice=project_multichoice,
+        user_multichoice=user_multichoice,
+        plot=plot,
     )
+    reset_project_button.js_on_click(reset_project_callback)
 
-    user_reset_callback = widgets.get_reset_callback(multichoice_arg=user_multichoice)
-
-    project_multichoice.js_on_change("value", callback)
-    user_multichoice.js_on_change("value", callback)
-    reset_project_button.js_on_click(project_reset_callback)
-    reset_user_button.js_on_click(user_reset_callback)
+    reset_user_callback = widgets.get_reset_user_callback(
+        project_multichoice=project_multichoice,
+        user_multichoice=user_multichoice,
+        plot=plot,
+    )
+    reset_user_button.js_on_click(reset_user_callback)
 
     grouping = column(
         start_picker,
