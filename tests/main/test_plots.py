@@ -6,14 +6,26 @@ import pytest
 
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
-def test_create_capacity_planning_plot():
+@pytest.mark.parametrize(
+    "use_projects, use_users",
+    [
+        (None, None),  # No selection
+        (["Project A"], None),  # Only projects selected
+        (None, ["user1"]),  # Only users selected
+        (["Project A"], ["user1"]),  # Both projects and users selected
+    ],
+)
+def test_create_capacity_planning_plot(use_projects, use_users):
     """Test function to create the capacity planning plot."""
     from bokeh.plotting import figure
 
     from main import plots
 
     plot = plots.create_capacity_planning_plot(
-        datetime.now(), datetime.now() + timedelta(365)
+        datetime.now(),
+        datetime.now() + timedelta(365),
+        use_projects=use_projects,
+        use_users=use_users,
     )
     assert isinstance(plot, figure)
 
@@ -23,8 +35,9 @@ def test_create_capacity_planning_plot():
     assert plot.xaxis.axis_label == "Date"
 
     legend_items = [item.label.value for item in plot.legend.items]
-    assert "Project effort" in legend_items
-    assert "Capacity" in legend_items
+    assert len(legend_items) == 2  # always only 2 traces
+    assert "Total Effort" in legend_items
+    assert "Total Capacity" in legend_items
 
 
 def test_create_cost_recovery_plot(project, funding):
