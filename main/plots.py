@@ -318,6 +318,7 @@ def create_cost_recovery_layout() -> Row:
         plot=timeseries_plot,
         start_picker=start_picker,
         end_picker=end_picker,
+        include_future_dates=False,
     )
     widgets.add_bar_callback_to_button(
         button=calendar_button,
@@ -336,6 +337,7 @@ def create_cost_recovery_layout() -> Row:
         plot=timeseries_plot,
         start_picker=start_picker,
         end_picker=end_picker,
+        include_future_dates=False,
     )
     widgets.add_bar_callback_to_button(
         button=financial_button,

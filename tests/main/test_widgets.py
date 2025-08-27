@@ -74,7 +74,10 @@ def test_add_bar_callback_to_date_pickers():
             plot=bar_plot,
             months=chart_months,
         ),
-        code="""if (window.skip_bar_picker_callback) return;
+        code="""if (window.skip_bar_picker_callback) {
+            window.skip_bar_picker_callback = false;
+            return;
+        }
 
         function getIndex(picker_value) {
             const date = new Date(picker_value);

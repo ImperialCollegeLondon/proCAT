@@ -1,6 +1,6 @@
 """Widgets to be used to interact with the plots."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from bokeh.models import CustomJS
 from bokeh.models.widgets import Button, DatePicker
@@ -82,7 +82,10 @@ def add_bar_callback_to_date_pickers(
             plot=plot,
             months=chart_months,
         ),
-        code="""if (window.skip_bar_picker_callback) return;
+        code="""if (window.skip_bar_picker_callback) {
+            window.skip_bar_picker_callback = false;
+            return;
+        }
 
         function getIndex(picker_value) {
             const date = new Date(picker_value);
@@ -146,8 +149,12 @@ def add_callback_to_button(
     plot: figure,
     start_picker: DatePicker,
     end_picker: DatePicker,
+    include_future_dates: bool = True,
 ) -> None:
     """Add the JS callback to a button to update a plot x_range and picker dates.
+
+    If future dates are not included (e.g. for cost recovery plots), the end date of
+    the x_range is the last day of the previous month.
 
     Args:
         button: The button to add the callback to
@@ -155,16 +162,23 @@ def add_callback_to_button(
         plot: The plot the button will be used to update
         start_picker: The start date picker to update
         end_picker: The end date picker to update
+        include_future_dates: Whether to include future dates in the timeseries plot
     """
     # JS code dictates what happens when the button is clicked
+    end_date = (
+        dates[1]
+        if include_future_dates
+        else (datetime.today()).replace(day=1) - timedelta(days=1)
+    )
+
     button.js_on_click(
         CustomJS(
             args=dict(
                 start=dates[0],
-                end=dates[1],
+                end=end_date,
                 # Picker values are set using date in isoformat
                 start_isoformat=dates[0].isoformat().split("T")[0],
-                end_isoformat=dates[1].isoformat().split("T")[0],
+                end_isoformat=end_date.isoformat().split("T")[0],
                 x_range=plot.x_range,
                 start_picker=start_picker,
                 end_picker=end_picker,
