@@ -230,35 +230,37 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
     )
 
     # in %
-    avg_project_capacity_pct = pd.Series(
-        65.00, index=capacity_timeseries.index, name="Average project capacity (%)"
-    )  # 65% is a placeholder for now since typically it is around 60-70%
-    total_capacity_used_pct = (
+    avg_project_capacity_pct = (
         (total_project_effort / capacity_timeseries * 100)
+        .rolling(window=30, min_periods=1, center=True)
+        .mean()
         .fillna(0)
         .clip(lower=0, upper=100)
     )
+
+    total_capacity_used_pct = (total_project_effort / capacity_timeseries * 100).fillna(
+        0
+    )
+
     charged_capacity_used_pct = (
-        (charged_project_effort / capacity_timeseries * 100)
-        .fillna(0)
-        .clip(lower=0, upper=100)
-    )
+        charged_project_effort / capacity_timeseries * 100
+    ).fillna(0)
 
     traces = [
         {
             "timeseries": avg_project_capacity_pct,
             "colour": "gold",
-            "label": "Average project capacity %",
+            "label": "Average capacity for project work % (30-day avg)",
         },
         {
             "timeseries": total_capacity_used_pct,
             "colour": "navy",
-            "label": "Total capacity used %",
+            "label": "Fraction of capacity used for all projects %",
         },
         {
             "timeseries": charged_capacity_used_pct,
             "colour": "green",
-            "label": "Charged capacity used %",
+            "label": "Charged capacity used for charged projects %",
         },
     ]
     timeseries_plot = create_timeseries_plot(
