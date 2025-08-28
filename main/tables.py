@@ -4,18 +4,40 @@ from decimal import Decimal
 from typing import ClassVar
 
 import django_tables2 as tables
+from django.db.models import QuerySet
 from django.utils.safestring import mark_safe
 
-from .models import Capacity, Funding, Project
+from .models import Capacity, Funding, MonthlyCharge, Project
+from .utils import order_queryset_by_property
 
 
 class ProjectTable(tables.Table):
     """Table for Project listing."""
 
     name = tables.Column(linkify=("main:project_detail", {"pk": tables.A("pk")}))
-    weeks_to_deadline = tables.Column(orderable=False)
-    total_effort = tables.Column(orderable=False)
-    days_left = tables.Column(orderable=False)
+
+    def order_weeks_to_deadline(
+        self, queryset: QuerySet[Project], is_descending: bool
+    ) -> tuple[QuerySet[Project], bool]:
+        """Order the weeks to deadline column."""
+        queryset = order_queryset_by_property(
+            queryset, "weeks_to_deadline", is_descending
+        )
+        return (queryset, True)
+
+    def order_total_effort(
+        self, queryset: QuerySet[Project], is_descending: bool
+    ) -> tuple[QuerySet[Project], bool]:
+        """Order the total effort column."""
+        queryset = order_queryset_by_property(queryset, "total_effort", is_descending)
+        return (queryset, True)
+
+    def order_days_left(
+        self, queryset: QuerySet[Project], is_descending: bool
+    ) -> tuple[QuerySet[Project], bool]:
+        """Order the days left column."""
+        queryset = order_queryset_by_property(queryset, "days_left", is_descending)
+        return (queryset, True)
 
     class Meta:
         """Meta class for the table."""
@@ -83,8 +105,20 @@ class FundingTable(tables.Table):
         linkify=("main:funding_detail", {"pk": tables.A("pk")}),
         order_by=("cost_centre", "activity"),
     )
-    effort = tables.Column(orderable=False)
-    effort_left = tables.Column(orderable=False)
+
+    def order_effort(
+        self, queryset: QuerySet[Funding], is_descending: bool
+    ) -> tuple[QuerySet[Funding], bool]:
+        """Order the effort column."""
+        queryset = order_queryset_by_property(queryset, "effort", is_descending)
+        return (queryset, True)
+
+    def order_effort_left(
+        self, queryset: QuerySet[Funding], is_descending: bool
+    ) -> tuple[QuerySet[Funding], bool]:
+        """Order the effort_left column."""
+        queryset = order_queryset_by_property(queryset, "effort_left", is_descending)
+        return (queryset, True)
 
     class Meta:
         """Meta class for the table."""
@@ -124,3 +158,14 @@ class CapacityTable(tables.Table):
     def render_value(self, value: Decimal) -> str:
         """Render the value as a percentage."""
         return f"{value * 100:.0f}%"
+
+
+class MonthlyChargeTable(tables.Table):
+    """Table for the Monthly Charge listing."""
+
+    class Meta:
+        """Meta class for the table."""
+
+        model = MonthlyCharge
+        fields = ("date", "amount", "description")
+        attrs: ClassVar[dict[str, str]] = {"class": "table table-striped"}

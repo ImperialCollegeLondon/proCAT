@@ -10,14 +10,14 @@ from huey.contrib.djhuey import db_periodic_task, task
 
 from .Clockify.api_interface import ClockifyAPI
 from .models import Project, TimeEntry, User
-from .notify import email_attachment, email_user, email_user_and_cc_admin
+from .notify import email_attachment, email_user, email_user_and_cc_head
 from .report import create_charges_report_for_attachment
 from .utils import (
-    get_admin_email,
-    get_admin_name,
     get_budget_status,
     get_current_and_last_month,
+    get_head_email,
     get_logged_hours,
+    get_projects_with_days_used_exceeding_days_left,
 )
 
 logger = logging.getLogger(__name__)
@@ -198,7 +198,7 @@ def notify_funding_status_logic(
     if funds_ran_out_not_expired.exists():
         for funding in funds_ran_out_not_expired:
             subject = f"[Funding Update] {funding.project.name}"
-            admin_email = get_admin_email()
+            head_email = get_head_email()
             lead = funding.project.lead
             lead_name = lead.get_full_name() if lead is not None else "Project Leader"
             lead_email = lead.email if lead is not None else ""
@@ -208,17 +208,17 @@ def notify_funding_status_logic(
                 project_name=funding.project.name,
                 activity=activity,
             )
-            email_user_and_cc_admin(
+            email_user_and_cc_head(
                 subject=subject,
                 message=message,
                 email=lead_email,
-                admin_email=admin_email,
+                head_email=head_email,
             )
 
     if funding_expired_budget_left.exists():
         for funding in funding_expired_budget_left:
             subject = f"[Funding Expired] {funding.project.name}"
-            admin_email = get_admin_email()
+            head_email = get_head_email()
             lead = funding.project.lead
             lead_name = lead.get_full_name() if lead is not None else "Project Leader"
             lead_email = lead.email if lead is not None else ""
@@ -227,11 +227,11 @@ def notify_funding_status_logic(
                 project_name=funding.project.name,
                 budget=funding.budget,
             )
-            email_user_and_cc_admin(
+            email_user_and_cc_head(
                 subject=subject,
                 message=message,
                 email=lead_email,
-                admin_email=admin_email,
+                head_email=head_email,
             )
 
 
@@ -243,9 +243,9 @@ def notify_funding_status() -> None:
 
 
 _template_charges_report = """
-Dear {HoRSE},
+Dear Head of the RSE team,
 
-Please find attached the charges report for the last month: {month}.
+Please find attached the charges report for the last month: {month}/{year}.
 
 Best regards,
 ProCAT
@@ -254,17 +254,14 @@ ProCAT
 
 def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -> None:
     """Logic to email the HoRSE the charges report for the last month."""
-    subject = f"Charges report for {month_name}"
-    admin_email = get_admin_email()
-    admin_name = get_admin_name()
-    message = _template_charges_report.format(
-        HoRSE=admin_name, month=month_name, year=year
-    )
+    subject = f"Charges report for {month_name}/{year}"
+    head_email = get_head_email()
+    message = _template_charges_report.format(month=month_name, year=year)
     csv_attachment = create_charges_report_for_attachment(month, year)
 
     email_attachment(
         subject,
-        admin_email,
+        head_email,
         message,
         f"charges_report_{month}-{year}.csv",
         csv_attachment,
@@ -273,7 +270,7 @@ def email_monthly_charges_report_logic(month: int, year: int, month_name: str) -
 
 
 # Runs on the 10th day of every month at 10:00 AM
-@db_periodic_task(crontab(day=10, hour=10))
+@db_periodic_task(crontab(day=10, hour=10, minute=0))
 def email_monthly_charges_report() -> None:
     """Email the HoRSE the charges report for the last month."""
     last_month_start, last_month_name, _, _ = get_current_and_last_month()
@@ -282,14 +279,22 @@ def email_monthly_charges_report() -> None:
     )
 
 
-def sync_clockify_time_entries() -> None:
-    """Task to sync time entries from Clockify API to TimeEntry model."""
+def sync_clockify_time_entries(
+    days_back: int = 30,
+    end_date: datetime.datetime = timezone.now(),
+    page_size: int = 200,
+) -> None:
+    """Task to sync time entries from Clockify API to TimeEntry model.
+
+    Args:
+        days_back (int): Number of days to look back for time entries.
+        end_date (datetime.datetime): The end date for the time entries to fetch.
+        page_size (int): Number of entries to fetch per API call.
+    """
     if not settings.CLOCKIFY_API_KEY or not settings.CLOCKIFY_WORKSPACE_ID:
         logger.warning("Clockify API key not found in environment variables")
         return
-    days_back = 30
     api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
-    end_date = timezone.now()
     start_date = end_date - datetime.timedelta(days=days_back)
 
     projects = Project.objects.filter(status="Active").exclude(clockify_id="")
@@ -298,7 +303,7 @@ def sync_clockify_time_entries() -> None:
         payload = {
             "dateRangeStart": start_date.strftime("%Y-%m-%dT00:00:00.000Z"),
             "dateRangeEnd": end_date.strftime("%Y-%m-%dT23:59:59.000Z"),
-            "detailedFilter": {"page": 1, "pageSize": 200},
+            "detailedFilter": {"page": 1, "pageSize": page_size},
             "projects": {"contains": "CONTAINS", "ids": [project.clockify_id]},
         }
 
@@ -353,3 +358,63 @@ def sync_clockify_time_entries_task() -> None:
     """Scheduled task to sync time entries from Clockify API."""
     sync_clockify_time_entries()
     logger.info("Clockify time entries sync completed.")
+
+
+_template_days_used_exceeded_days_left = """
+Dear {lead},
+
+The total days used for project {project_name} has exceeded the days left
+for the project.
+
+Days used: {days_used}
+Days left: {days_left}
+
+Please review the project budget and take necessary actions.
+
+Best regards,
+ProCAT
+"""
+
+
+def notify_monthly_days_used_exceeding_days_left_logic(
+    date: datetime.datetime | None = None,
+) -> None:
+    """Logic to notify project lead and HoRSE if total days used exceed days left.
+
+    This function checks each project to see if the days used for the
+    project exceed the days left. If they do,
+    it sends an email notification to the project lead and HoRSE.
+    """
+    if date is None:
+        date = datetime.datetime.today()
+
+    projects = get_projects_with_days_used_exceeding_days_left(date=date)
+
+    for project, days_used, days_left in projects:
+        lead = project.lead
+        lead_name = lead.get_full_name() if lead else "Project Leader"
+        lead_email = lead.email if lead else ""
+
+        subject = f"[Monthly Days Used Exceed Days Left] {project.name}"
+        message = _template_days_used_exceeded_days_left.format(
+            lead=lead_name,
+            project_name=project.name,
+            days_used=days_used,
+            days_left=days_left,
+        )
+
+        head_email = get_head_email()
+
+        email_user_and_cc_head(
+            subject=subject,
+            message=message,
+            email=lead_email,
+            head_email=head_email,
+        )
+
+
+# Runs every 7th day of the month at 9:30 AM
+@db_periodic_task(crontab(day=7, hour=9, minute=30))
+def notify_monthly_days_used_exceeding_days_left() -> None:
+    """Monthly task to notify project leads and HoRSE if days used exceed days left."""
+    notify_monthly_days_used_exceeding_days_left_logic()

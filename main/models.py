@@ -203,6 +203,11 @@ class Project(models.Model):
         if self.end_date <= self.start_date:
             raise ValidationError("The end date must be after the start date.")
 
+        if self.status == "Active" and not self.funding_source.exists():
+            raise ValidationError(
+                "Active projects must have at least 1 funding source."
+            )
+
     @property
     def weeks_to_deadline(self) -> tuple[int, float] | None:
         """Provide the number of weeks left until project deadline.
@@ -210,9 +215,9 @@ class Project(models.Model):
         Only relevant for active projects.
 
         Returns:
-            The number of weeks left or None if the project is not Active.
+            The number of weeks left or None if the project is in Draft.
         """
-        if self.status == "Active" and self.end_date and self.start_date:
+        if self.status != "Draft" and self.end_date and self.start_date:
             left = (self.end_date - datetime.now().date()).days / 7
             total = (self.end_date - self.start_date).days / 7
             return int(left), round(left / total * 100, 1)
@@ -256,7 +261,8 @@ class Project(models.Model):
         if self.total_effort:
             left = sum([funding.effort_left for funding in self.funding_source.all()])
 
-            # subtract days logged for the month so far
+            # Subtract additional unassigned time entries from the start of last month
+            # until the current date
             end_date = datetime.today().date()
             start_date = (end_date.replace(day=1) - timedelta(days=1)).replace(day=1)
             additional_days = get_actual_chargeable_days(self, start_date, end_date)[0]
@@ -266,7 +272,6 @@ class Project(models.Model):
             return Decimal(str(round(left, 1))), Decimal(
                 str(round(left / self.total_effort * 100, 1))
             )
-
         return None
 
     def check_and_notify_status(self) -> None:

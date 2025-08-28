@@ -46,7 +46,7 @@ class TestProject:
         from main import models
 
         # Mandatory fields are present
-        project = models.Project(name="ProCAT", status="Active")
+        project = models.Project(name="ProCAT", status="Not Started")
         with pytest.raises(
             ValidationError,
             match="All fields are mandatory except if Project status id 'Draft'.",
@@ -59,7 +59,7 @@ class TestProject:
             lead=user,
             start_date=datetime.now().date(),
             end_date=datetime.now().date(),
-            status="Active",
+            status="Not Started",
         )
         with pytest.raises(
             ValidationError,
@@ -73,7 +73,39 @@ class TestProject:
             lead=user,
             start_date=datetime.now().date(),
             end_date=datetime.now().date() + timedelta(days=42),
-            status="Active",
+            status="Not Started",
+        )
+        project.clean()
+
+    def test_clean_when_project_active(self, user, department):
+        """Test the clean method."""
+        from main import models
+
+        # All good!
+        project = models.Project(
+            name="ProCAT",
+            lead=user,
+            department=department,
+            start_date=datetime.now().date(),
+            end_date=datetime.now().date() + timedelta(days=42),
+            status="Not Started",
+        )
+        project.clean()
+        project.save()
+
+        # No funding, no active
+        project.status = "Active"
+        with pytest.raises(
+            ValidationError,
+            match="Active projects must have at least 1 funding source.",
+        ):
+            project.clean()
+
+        # Add funding source and all works!
+        models.Funding.objects.get_or_create(
+            project=project,
+            source="Internal",
+            budget=10000.00,
         )
         project.clean()
 
@@ -81,11 +113,11 @@ class TestProject:
         ["status", "start_date", "end_date", "output"],
         [
             ["Draft", None, None, None],
-            ["Active", datetime.now().date(), None, None],
-            ["Active", None, datetime.now().date(), None],
+            ["Not Started", datetime.now().date(), None, None],
+            ["Not Started", None, datetime.now().date(), None],
             ["Draft", datetime.now().date(), datetime.now().date(), None],
             [
-                "Active",
+                "Not Started",
                 datetime.now().date(),
                 datetime.now().date() + timedelta(days=1),
                 (0, 100.0),
@@ -491,7 +523,7 @@ class TestFunding:
         effort_left = round(
             (funding.budget - monthly_charge.amount) / funding.daily_rate, 1
         )
-        assert funding.effort_left == effort_left
+        assert funding.effort_left == round(effort_left, 1)
 
     @pytest.mark.django_db
     def test_monthly_pro_rata_charge_is_none(self, user, department, analysis_code):

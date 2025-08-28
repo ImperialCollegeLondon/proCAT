@@ -6,10 +6,12 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.db.models import Case, When
 from django.db.models.query import QuerySet
 
 from . import models
-from .models import Funding, TimeEntry
+from .models import Funding, Project, TimeEntry
 
 ANALYSIS_CODES = (
     {
@@ -49,6 +51,16 @@ def destroy_analysis(*args: Any) -> None:  # type: ignore [explicit-any]
     """Delete default analysis codes."""
     codes = [ac["code"] for ac in ANALYSIS_CODES]
     models.AnalysisCode.objects.filter(code__in=codes).delete()
+
+
+def create_HoRSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
+    """Create HoRSE group."""
+    Group.objects.get_or_create(name="HoRSE")[0]
+
+
+def destroy_HoRSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
+    """Delete HoRSE group."""
+    Group.objects.filter(name="HoRSE").delete()
 
 
 def get_logged_hours(
@@ -98,20 +110,13 @@ def get_current_and_last_month(
     )
 
 
-def get_admin_email() -> list[str]:
-    """Get the email of the first superuser."""
+def get_head_email() -> list[str]:
+    """Get the emails of the HoRSE group users."""
     User = get_user_model()
-    admin_email = (
-        User.objects.filter(is_superuser=True).values_list("email", flat=True).first()
+    head_email = User.objects.filter(groups__name="HoRSE").values_list(
+        "email", flat=True
     )
-    return [admin_email] if admin_email else []
-
-
-def get_admin_name() -> str | None:
-    """Get the name of the first superuser."""
-    User = get_user_model()
-    admin_name = User.objects.filter(is_superuser=True).first()
-    return admin_name.get_full_name() if admin_name else None
+    return list(head_email)
 
 
 def get_budget_status(
@@ -144,3 +149,103 @@ def get_month_dates_for_previous_year() -> list[tuple[date, date]]:
 
     dates.reverse()
     return dates
+
+
+def get_projects_with_days_used_exceeding_days_left(
+    date: datetime | None = None,
+) -> list[tuple[Project, float, float]]:
+    """Get projects whose days used in the last month exceed the days left."""
+    if date is None:
+        date = datetime.today()
+
+    projects_with_days_used_exceeding_days_left = []
+
+    last_month_start, _, current_month_start, _ = get_current_and_last_month(date)
+
+    projects = Project.objects.filter(status="Active")
+
+    for project in projects:
+        if project.days_left is None:
+            continue
+
+        days_left, _ = project.days_left
+
+        time_entries = project.timeentry_set.filter(
+            start_time__gte=last_month_start,
+            end_time__lt=current_month_start,
+            monthly_charge__isnull=True,  # include entries that are not yet charged
+        )
+
+        if not time_entries.exists():
+            continue
+
+        total_hours = sum(
+            (entry.end_time - entry.start_time).total_seconds() / 3600
+            for entry in time_entries
+        )
+
+        days_used = round(total_hours / 7, 1)  # Assuming 7 hrs/workday
+
+        if days_used > days_left:
+            projects_with_days_used_exceeding_days_left.append(
+                (project, days_used, days_left)
+            )
+
+    return projects_with_days_used_exceeding_days_left
+
+
+def order_queryset_by_property(  # type: ignore[explicit-any]
+    queryset: QuerySet[Any], property: str, is_descending: bool
+) -> QuerySet[Any]:
+    """Orders a queryset according to a specified Model property.
+
+    Creates a Django conditional expression to assign the position
+    of the model in a queryset according to its model ID (using a
+    custom ordering). The conditional expression is then provided to
+    the QuerySet.order_by() function. This can be used to update the
+    ordering of a queryset column in a Table.
+
+    Args:
+        queryset: a model queryset for ordering
+        property: the name of the model property with which to order
+            the queryset
+        is_descending: bool to indicate whether the property should
+            be sorted by descending (or ascending) order
+
+    Returns:
+        The queryset ordered according to the property.
+    """
+    model_ids = list(queryset.values_list("id", flat=True))
+    values = [getattr(obj, property) for obj in queryset]
+    sorted_indexes = sorted(
+        range(len(values)), key=lambda i: values[i], reverse=is_descending
+    )
+    # Create conditional expression using custom ordering
+    preserved_ordering = Case(
+        *[
+            When(id=model_ids[id], then=position)
+            for position, id in enumerate(sorted_indexes)
+        ]
+    )
+    queryset = queryset.order_by(preserved_ordering)
+    return queryset
+
+
+def get_calendar_year_dates() -> tuple[datetime, datetime]:
+    """Get the start and end dates for the current calendar year."""
+    today = datetime.now()
+    start = today.replace(day=1, month=1)
+    end = today.replace(day=31, month=12)
+    return start, end
+
+
+def get_financial_year_dates() -> tuple[datetime, datetime]:
+    """Get the start and end dates for the current financial year."""
+    today = datetime.now()
+    if today.month >= 8:
+        start = today.replace(day=1, month=8)
+        end = today.replace(day=31, month=7, year=today.year + 1)
+    else:
+        start = today.replace(day=1, month=8, year=today.year - 1)
+        end = today.replace(day=31, month=7, year=today.year)
+    return start, end

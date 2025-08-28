@@ -1,5 +1,6 @@
 {% extends "main/base.html" %}
 {% load django_bootstrap5 %}
+{% load django_tables2 %}
 {% block content %}
   <h2>{{ funding_name }}</h2>
   <!-- Object details -->
@@ -8,5 +9,9 @@
       <p>&nbsp;</p>
       {% bootstrap_form form layout='horizontal' %}
     </div>
+  </div>
+  <!-- Monthly charges table -->
+  <div class="row mb-4">
+    <div class="col">{% render_table monthly_charges_table %}</div>
   </div>
 {% endblock content %}

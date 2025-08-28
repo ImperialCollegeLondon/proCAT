@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from django.contrib.auth.models import Group
 from django.utils import timezone
 
 from main.models import TimeEntry
@@ -11,6 +12,7 @@ from main.tasks import (
     email_monthly_charges_report_logic,
     notify_funding_status_logic,
     notify_left_threshold_logic,
+    notify_monthly_days_used_exceeding_days_left_logic,
     notify_monthly_time_logged_logic,
     sync_clockify_time_entries,
 )
@@ -207,12 +209,12 @@ def test_funding_expired_but_has_budget(funding, project):
         f"Best regards,\nProCAT\n"
     )
 
-    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+    with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
         notify_funding_status_logic()
         mock_email_func.assert_called_once_with(
             subject=expected_subject,
             email=funding.project.lead.email,
-            admin_email=[],
+            head_email=[],
             message=expected_message,
         )
 
@@ -238,12 +240,12 @@ def test_funding_ran_out_not_expired(funding, project):
         f"Best regards,\nProCAT\n"
     )
 
-    with patch("main.tasks.email_user_and_cc_admin") as mock_email_func:
+    with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
         notify_funding_status_logic()
         mock_email_func.assert_called_once_with(
             subject=expected_subject,
             email=funding.project.lead.email,
-            admin_email=[],
+            head_email=[],
             message=expected_message,
         )
 
@@ -254,22 +256,25 @@ def test_email_monthly_charges_report():
     from main import models, report
 
     month, month_name, year = 6, "June", 2025
-    admin_user = models.User.objects.create(
-        first_name="admin",
+    head_user = models.User.objects.create(
+        first_name="head",
         last_name="user",
-        email="admin.user@mail.com",
+        email="head.user@mail.com",
         password="1234",
-        username="admin_user",
+        username="head_user",
         is_superuser=True,
     )
+    group = Group.objects.get(name="HoRSE")
+    head_user.groups.add(group)
 
     # Create attachment with empty charges row
-    expected_subject = f"Charges report for {month_name}"
+    expected_subject = f"Charges report for {month_name}/{year}"
     expected_attachment = report.create_charges_report_for_attachment(month, year)
     expected_fname = f"charges_report_{month}-{year}.csv"
     expected_message = (
-        f"\nDear {admin_user.get_full_name()},\n\n"
-        f"Please find attached the charges report for the last month: {month_name}.\n\n"
+        f"\nDear Head of the RSE team,\n\n"
+        f"Please find attached the charges report for the last month: {month_name}/"
+        f"{year}.\n\n"
         "Best regards,\nProCAT\n"
     )
 
@@ -277,7 +282,7 @@ def test_email_monthly_charges_report():
         email_monthly_charges_report_logic(month, year, month_name)
         mock_email_attachment.assert_called_with(
             expected_subject,
-            [admin_user.email],
+            [head_user.email],
             expected_message,
             expected_fname,
             expected_attachment,
@@ -293,13 +298,15 @@ class TestSyncClockifyTimeEntries:
     @patch("main.tasks.ClockifyAPI")
     @patch("main.tasks.timezone.now")
     def test_sync_creates_new_entry(
-        self, mock_now, mock_clockify_api, mock_settings, user, project
+        self, mock_now, mock_clockify_api, mock_settings, user, funding
     ):
         """Test that a new time entry from the API is created in the database."""
         mock_now.return_value = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        project = funding.project
         project.clockify_id = "proj_1"
+        project.status = "Active"
         project.save()
 
         mock_api_instance = mock_clockify_api.return_value
@@ -338,12 +345,14 @@ class TestSyncClockifyTimeEntries:
     @patch("main.tasks.settings")
     @patch("main.tasks.ClockifyAPI")
     def test_api_call_exception(
-        self, mock_clockify_api, mock_settings, project, caplog
+        self, mock_clockify_api, mock_settings, funding, caplog
     ):
         """Test that an error is logged if the API call fails."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        project = funding.project
         project.clockify_id = "proj_1"
+        project.status = "Active"
         project.save()
 
         mock_api_instance = mock_clockify_api.return_value
@@ -358,12 +367,14 @@ class TestSyncClockifyTimeEntries:
     @patch("main.tasks.settings")
     @patch("main.tasks.ClockifyAPI")
     def test_skips_incomplete_entry(
-        self, mock_clockify_api, mock_settings, user, project, caplog
+        self, mock_clockify_api, mock_settings, user, funding, caplog
     ):
         """Test that entries with missing data are skipped."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        project = funding.project
         project.clockify_id = "proj_1"
+        project.status = "Active"
         project.save()
 
         mock_api_instance = mock_clockify_api.return_value
@@ -379,12 +390,14 @@ class TestSyncClockifyTimeEntries:
     @patch("main.tasks.settings")
     @patch("main.tasks.ClockifyAPI")
     def test_skips_entry_if_user_not_found(
-        self, mock_clockify_api, mock_settings, project, caplog
+        self, mock_clockify_api, mock_settings, funding, caplog
     ):
         """Test that entries are skipped if the user does not exist in the database."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        project = funding.project
         project.clockify_id = "proj_1"
+        project.status = "Active"
         project.save()
 
         mock_api_instance = mock_clockify_api.return_value
@@ -406,3 +419,70 @@ class TestSyncClockifyTimeEntries:
 
         assert "User non.existent.user@example.com not found" in caplog.text
         assert TimeEntry.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_monthly_days_used_not_exceeding_days_left(user, project, funding):
+    """Test that no email is sent if days used do not exceed days left."""
+    from main.models import TimeEntry
+
+    funding.project = project
+    funding.save()
+    project.status = "Active"
+    project.save()
+
+    # Create a time entry within the allowed days
+    start_time = datetime(2025, 6, 1, 11, 0)
+    end_time = start_time + timedelta(hours=14)  # So days_used is only 2.0 days
+
+    TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
+        notify_monthly_days_used_exceeding_days_left_logic(date=datetime(2025, 7, 10))
+        mock_email_func.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_monthly_days_used_exceeding_days_left(user, project, funding):
+    """Test that an email is sent when days used exceed days left."""
+    from main.models import TimeEntry
+
+    funding.project = project
+    funding.save()
+    project.status = "Active"
+    project.save()
+
+    # Create a time entry that exceeds the days left
+    start_time = datetime(2025, 6, 1, 11, 0)
+    end_time = start_time + timedelta(hours=203)  # So days_used is 29.0 days
+
+    TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
+        notify_monthly_days_used_exceeding_days_left_logic(date=datetime(2025, 7, 10))
+
+        mock_email_func.assert_called_once_with(
+            subject=f"[Monthly Days Used Exceed Days Left] {project.name}",
+            message=(
+                "\nDear test user,\n\n"
+                f"The total days used for project {project.name} has exceeded "
+                "the days left\n"
+                "for the project.\n\n"
+                "Days used: 29.0\n"
+                "Days left: 25.7\n\n"  # 10000 (budget)/389 (daily rate)
+                "Please review the project budget and take necessary actions.\n\n"
+                "Best regards,\nProCAT\n"
+            ),
+            email=project.lead.email if project.lead else user.email,
+            head_email=[],
+        )
