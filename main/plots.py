@@ -271,7 +271,7 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
         {
             "timeseries": charged_capacity_used_pct,
             "colour": "green",
-            "label": "Charged capacity used for charged projects %",
+            "label": "Fraction of capacity used for charged projects %",
         },
     ]
     timeseries_plot = create_timeseries_plot(

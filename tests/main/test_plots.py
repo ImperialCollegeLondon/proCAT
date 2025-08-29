@@ -61,7 +61,7 @@ def test_create_cost_recovery_plot(project, funding):
     ts_legend_items = [item.label.value for item in ts_plot.legend.items]
     assert "Average capacity for project work % (30-day avg)" in ts_legend_items
     assert "Fraction of capacity used for all projects %" in ts_legend_items
-    assert "Charged capacity used for charged projects %" in ts_legend_items
+    assert "Fraction of capacity used for charged projects %" in ts_legend_items
 
     # Test bar plot
     assert isinstance(bar_plot, figure)
