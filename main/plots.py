@@ -230,6 +230,10 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
         start_date=start_date, end_date=end_date
     )
 
+    number_team_members = timeseries.get_active_team_members(
+        start_date=start_date, end_date=end_date
+    )
+
     # total project effort for all projects
     total_project_effort = timeseries.get_effort_timeseries(
         start_date=start_date, end_date=end_date
@@ -241,27 +245,19 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
     )
 
     # in %
-    avg_project_capacity_pct = (
-        (total_project_effort / capacity_timeseries * 100)
-        .rolling(window=30, min_periods=1, center=True)
-        .mean()
-        .fillna(0)
-        .clip(lower=0, upper=100)
-    )
+    avg_project_capacity_pct = capacity_timeseries / number_team_members * 100
+    # at present, the sum of the capacity is being displayed for all members, it is
+    # not getting divided by the number of team members - need to fix this
 
-    total_capacity_used_pct = (total_project_effort / capacity_timeseries * 100).fillna(
-        0
-    )
+    total_capacity_used_pct = total_project_effort / number_team_members * 100
 
-    charged_capacity_used_pct = (
-        charged_project_effort / capacity_timeseries * 100
-    ).fillna(0)
+    charged_capacity_used_pct = charged_project_effort / number_team_members * 100
 
     traces = [
         {
             "timeseries": avg_project_capacity_pct,
             "colour": "gold",
-            "label": "Average capacity for project work % (30-day avg)",
+            "label": "Average capacity for project work %",
         },
         {
             "timeseries": total_capacity_used_pct,

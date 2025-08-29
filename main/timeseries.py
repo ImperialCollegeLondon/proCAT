@@ -219,3 +219,27 @@ def get_cost_recovery_timeseries(
         monthly_totals.append(float(monthly_total) if monthly_total else 0.0)
 
     return timeseries, monthly_totals
+
+
+def get_active_team_members(start_date: datetime, end_date: datetime) -> int:
+    """Get the number of active team members working on projects over time.
+
+    Args:
+        start_date: datetime object representing the start of the plotting
+            period
+        end_date: datetime object representing the end of the plotting period
+
+    Returns:
+        The number of active team members over the time period.
+    """
+    # all users who are active on projects in the date range
+    return (
+        models.User.objects.filter(
+            project__start_date__lt=end_date.date(),
+            project__end_date__gte=start_date.date(),
+            project__start_date__isnull=False,
+            project__end_date__isnull=False,
+        )
+        .distinct()
+        .count()
+    )

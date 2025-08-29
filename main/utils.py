@@ -3,6 +3,7 @@
 from collections import defaultdict
 from collections.abc import Iterable
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
 from django.contrib.auth import get_user_model
@@ -153,7 +154,7 @@ def get_month_dates_for_previous_year() -> list[tuple[date, date]]:
 
 def get_projects_with_days_used_exceeding_days_left(
     date: datetime | None = None,
-) -> list[tuple[Project, float, float]]:
+) -> list[tuple[Project, float, Decimal]]:
     """Get projects whose days used in the last month exceed the days left."""
     if date is None:
         date = datetime.today()
