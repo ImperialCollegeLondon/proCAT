@@ -78,8 +78,8 @@ def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series
 
     # initialize timeseries
     timeseries = pd.Series(0.0, index=dates)
-    for project in projects:
-        timeseries = update_timeseries(timeseries, project, "effort_per_day")
+    for proj in projects:
+        timeseries = update_timeseries(timeseries, proj, "effort_per_day")
 
     return timeseries
 
@@ -181,3 +181,81 @@ def get_cost_recovery_timeseries(
         monthly_totals.append(float(monthly_total) if monthly_total else 0.0)
 
     return timeseries, monthly_totals
+
+
+def get_project_effort_timeseries(
+    start_date: datetime, end_date: datetime, project: str
+) -> pd.Series[float]:
+    """Get effort timeseries data for a specific project.
+
+    Args:
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
+        project: name of the project to filter by
+
+    Returns:
+        Pandas series of project-specific effort with date range as index.
+    """
+    dates = pd.bdate_range(
+        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+    )
+
+    # filter Projects to ensure dates exist and overlap with timeseries dates
+    projects = list(
+        models.Project.objects.filter(
+            start_date__lt=end_date.date(),
+            end_date__gte=start_date.date(),
+            start_date__isnull=False,
+            end_date__isnull=False,
+            name=project,
+        )
+    )
+
+    # initialize timeseries
+    timeseries = pd.Series(0.0, index=dates)
+    for proj in projects:
+        timeseries = update_timeseries(timeseries, proj, "effort_per_day")
+
+    return timeseries
+
+
+def get_user_capacity_timeseries(
+    start_date: datetime, end_date: datetime, user: str
+) -> pd.Series[float]:
+    """Get capacity timeseries data for a specific user.
+
+    Args:
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
+        user: username of the user to filter by
+
+    Returns:
+        Pandas series of user-specific effort with date range as index.
+    """
+    dates = pd.bdate_range(
+        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+    )
+
+    # filter capacity for users
+    capacities = list(
+        models.Capacity.objects.filter(
+            start_date__lt=end_date.date(),
+            start_date__isnull=False,
+            user__username=user,
+        )
+        .annotate(
+            end_date=Window(
+                expression=Lead("start_date"),  # get start date of next capacity
+                order_by=F("start_date").asc(),  # orders by ascending start date
+                partition_by="user__username",
+            )
+        )
+        .annotate(end_date=Coalesce("end_date", end_date.date()))
+    )
+
+    # initialize timeseries
+    timeseries = pd.Series(0.0, index=dates)
+    for cap in capacities:
+        timeseries = update_timeseries(timeseries, cap, "value")
+
+    return timeseries

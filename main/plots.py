@@ -5,13 +5,12 @@ from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
-from bokeh.layouts import column, row
+from bokeh.layouts import Row, column, row
 from bokeh.models import ColumnDataSource, HoverTool, Range1d
-from bokeh.models.layouts import Row
-from bokeh.models.widgets import Button
+from bokeh.models.widgets import Button, Div, MultiChoice
 from bokeh.plotting import figure
 
-from . import timeseries, widgets
+from . import models, timeseries, widgets
 from .utils import (
     get_calendar_year_dates,
     get_financial_year_dates,
@@ -115,6 +114,8 @@ def create_capacity_planning_plot(
     start_date: datetime,
     end_date: datetime,
     x_range: tuple[datetime, datetime] | None = None,
+    use_projects: list[str] | None = None,
+    use_users: list[str] | None = None,
 ) -> figure:
     """Generates all the time series data and creates the capacity planning plot.
 
@@ -127,25 +128,113 @@ def create_capacity_planning_plot(
         end_date: datetime object representing the end of the plotting period
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot
+        use_projects: (optional) list of project name(s) to use in the plot
+        use_users: (optional) list of user name(s) to use in the plot
 
     Returns:
-        Bokeh figure containing timeseries data.
+        Bokeh figure layout with timeseries data plot and MultiChoice widgets.
+
     """
-    effort_timeseries = timeseries.get_effort_timeseries(start_date, end_date)
-    capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
-    traces = [
-        {
-            "timeseries": effort_timeseries,
-            "colour": "firebrick",
-            "label": "Project effort",
-        },
-        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
-    ]
-    plot = create_timeseries_plot(
-        title="Project effort and team capacity over time",
-        traces=traces,
-        x_range=x_range,
+    # dates for the whole time range
+    dates = pd.date_range(start=start_date, end=end_date, inclusive="left")
+
+    # collect all projects and users
+    all_projects = list(
+        models.Project.objects.values_list("name", flat=True).distinct()
     )
+    all_users = list(models.User.objects.values_list("username", flat=True).distinct())
+
+    # a data dictionary
+    data_dict: dict[str, object] = {
+        "index": dates,
+    }
+
+    # include individual project effort and calculate total effort
+    total_effort_timeseries = pd.Series(0.0, index=dates, name="Total Effort")
+    for proj in all_projects:
+        try:
+            project_effort_timeseries = timeseries.get_project_effort_timeseries(
+                start_date, end_date, proj
+            )
+            project_effort_timeseries = project_effort_timeseries.reindex(
+                dates, fill_value=0.0
+            )
+
+            # add as column for JS aggregation
+            data_dict[f"effort_{proj}"] = project_effort_timeseries.values
+
+            # add to total if proj is in use_projects or all if use_projects is None
+            if not use_projects or proj in use_projects:
+                total_effort_timeseries += project_effort_timeseries
+        except Exception:
+            # when proj has no data
+            data_dict[f"effort_{proj}"] = [0.0] * len(dates)
+
+    # include individual user capacity and calculate total capacity
+    total_capacity_timeseries = pd.Series(0.0, index=dates, name="Total Capacity")
+    for usr in all_users:
+        try:
+            user_capacity_timeseries = timeseries.get_user_capacity_timeseries(
+                start_date, end_date, usr
+            )
+            user_capacity_timeseries = user_capacity_timeseries.reindex(
+                dates, fill_value=0.0
+            )
+
+            # add as column for JS aggregation
+            data_dict[f"capacity_{usr}"] = user_capacity_timeseries.values
+
+            # add to total if this usr is in use_users or all if use_users is None
+            if not use_users or usr in use_users:
+                total_capacity_timeseries += user_capacity_timeseries
+        except Exception:
+            # when usr has no data
+            data_dict[f"capacity_{usr}"] = [0.0] * len(dates)
+
+    # add aggregated totals
+    data_dict["Total effort"] = total_effort_timeseries.values
+    data_dict["Total Capacity"] = total_capacity_timeseries.values
+
+    # create a ColumnDataSource with all data in the data dictionary
+    source = ColumnDataSource(data=data_dict)
+
+    # create plot
+    plot = figure(
+        title="Project effort and team capacity over time",
+        width=1000,
+        height=500,
+        background_fill_color="#efefef",
+        x_axis_type="datetime",  # type: ignore[call-arg]
+        tools="save,xpan,xwheel_zoom,reset",
+    )
+
+    if x_range:
+        plot.x_range = Range1d(x_range[0], x_range[1])
+
+    plot.yaxis.axis_label = "Value"
+    plot.xaxis.axis_label = "Date"
+
+    # plot aggregated traces
+    plot.line(
+        "index",
+        "Total Capacity",
+        source=source,
+        line_width=2,
+        color="navy",
+        legend_label="Total Capacity",
+    )
+
+    plot.line(
+        "index",
+        "Total effort",
+        source=source,
+        line_width=2,
+        color="firebrick",
+        legend_label="Total Effort",
+    )
+
+    plot.legend.click_policy = "hide"  # hides traces when clicked in legend
+
     return plot
 
 
@@ -162,10 +251,20 @@ def create_capacity_planning_layout() -> Row:
     # Min and max dates are three years before and ahead of current date
     min_date, max_date = start - timedelta(days=1095), start + timedelta(days=1095)
 
+    # List for projects and users for multi-choice selection
+    all_projects = list(
+        models.Project.objects.values_list("name", flat=True).distinct()
+    )
+    all_users = list(models.User.objects.values_list("username", flat=True).distinct())
+
     # Get the plot to display (it is created with all data, but only the dates
-    # in the x_range provided are shown)
+    # in the x_range provided are shown) with all projects and users selected
     plot = create_capacity_planning_plot(
-        start_date=min_date, end_date=max_date, x_range=(start, end)
+        start_date=min_date,
+        end_date=max_date,
+        x_range=(start, end),
+        use_projects=[],  # empty implies all projects selected
+        use_users=[],  # empty implies all users selected
     )
 
     # Create date picker widgets to control the dates shown in the plot
@@ -200,10 +299,71 @@ def create_capacity_planning_layout() -> Row:
         end_picker=end_picker,
     )
 
-    # Create layout to display widgets aligned as a column next to the plot
-    plot_layout = row(
-        column(start_picker, end_picker, calendar_button, financial_button), plot
+    # Project(s) for selection
+    project_options = all_projects
+    project_title = Div(text="<h3>Select Projects</h3>", width=180)
+    project_multichoice = MultiChoice(
+        options=[(opt, opt) for opt in project_options],
+        value=[],  # empty default implies all projects efforts selected
+        width=180,  # width of the multichoice fr projects
     )
+
+    # User(s) selection
+    user_options = all_users
+    user_title = Div(text="<h3>Select Users</h3>", width=180)
+    user_multichoice = MultiChoice(
+        options=[(opt, opt) for opt in user_options],
+        value=[],  # empty default implies all users capacity selected
+        width=180,  # width of the multichoice for users
+    )
+
+    # Button to clear all filters and reset plot to default state
+    reset_project_button = Button(label="Reset Projects", width=100)
+    reset_user_button = Button(label="Reset Users", width=100)
+
+    # combined callback
+    widgets.get_combined_callback(
+        plot=plot,
+        project_multichoice=project_multichoice,
+        user_multichoice=user_multichoice,
+        start_picker=start_picker,
+        end_picker=end_picker,
+        min_date=min_date.date(),
+        max_date=max_date.date(),
+    )
+
+    # Reset callbacks
+    reset_project_callback = widgets.get_reset_project_callback(
+        project_multichoice=project_multichoice,
+        user_multichoice=user_multichoice,
+        plot=plot,
+    )
+    reset_project_button.js_on_click(reset_project_callback)
+
+    reset_user_callback = widgets.get_reset_user_callback(
+        project_multichoice=project_multichoice,
+        user_multichoice=user_multichoice,
+        plot=plot,
+    )
+    reset_user_button.js_on_click(reset_user_callback)
+
+    grouping = column(
+        start_picker,
+        end_picker,
+        calendar_button,
+        financial_button,
+        project_title,
+        project_multichoice,
+        reset_project_button,
+        user_title,
+        user_multichoice,
+        reset_user_button,
+        width=180,
+        spacing=5,
+    )
+
+    # Create layout to display widgets aligned as a column next to the plot
+    plot_layout = row(grouping, plot, spacing=10)
     return plot_layout
 
 
