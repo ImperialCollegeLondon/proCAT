@@ -1,6 +1,7 @@
 """Tests for the utils module."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import Group
@@ -312,19 +313,11 @@ def test_get_financial_year_dates():
     """Test the get_financial_year_dates function."""
     from main.utils import get_financial_year_dates
 
-    today = datetime.now()
+    with patch("main.utils.datetime") as datetime_mock:
+        datetime_mock.now.return_value = datetime(2025, 8, 1, 10, 0, 0, 0)
+        assert get_financial_year_dates()[0].date() == date(2024, 8, 1)
+        assert get_financial_year_dates()[1].date() == date(2025, 7, 31)
 
-    if today.month >= 8:
-        assert get_financial_year_dates()[0].date() == datetime(today.year, 8, 1).date()
-        assert (
-            get_financial_year_dates()[1].date()
-            == datetime(today.year + 1, 7, 31).date()
-        )
-    else:
-        assert (
-            get_financial_year_dates()[0].date()
-            == datetime(today.year - 1, 8, 1).date()
-        )
-        assert (
-            get_financial_year_dates()[1].date() == datetime(today.year, 7, 31).date()
-        )
+        datetime_mock.now.return_value = datetime(2025, 9, 1, 10, 0, 0, 0)
+        assert get_financial_year_dates()[0].date() == date(2025, 8, 1)
+        assert get_financial_year_dates()[1].date() == date(2026, 7, 31)
