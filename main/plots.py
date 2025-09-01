@@ -94,6 +94,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         plot.x_range = Range1d(x_range[0], x_range[1])
     plot.yaxis.axis_label = "Value"
     plot.xaxis.axis_label = "Date"
+
     for trace in traces:
         plot.line(
             "index",
@@ -103,7 +104,17 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             color=trace["colour"],
             legend_label=trace["label"],
         )
+        hover = HoverTool(
+            tooltips=[
+                ("Date", "$x{%F}"),
+                ("Value", "$y{0.00}"),
+            ],
+            formatters={"$x": "datetime"},
+        )
+        plot.add_tools(hover)
+
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
+
     return plot
 
 
@@ -258,7 +269,6 @@ def create_cost_recovery_plots(
         values=monthly_totals,
         x_range=(chart_months[-12:]),
     )
-
     return timeseries_plot, bar_plot
 
 
