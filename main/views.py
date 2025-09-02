@@ -1,6 +1,5 @@
 """Views for the main app."""
 
-from datetime import datetime, timedelta
 from typing import Any
 
 import bokeh
@@ -125,7 +124,17 @@ class FundingDetailView(CustomBaseDetailView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add funding name to the context, so it is easy to retrieve."""
         context = super().get_context_data(**kwargs)
-        context["funding_name"] = str(self.get_object())
+        funding = self.get_object()
+        context["funding_name"] = str(funding)
+
+        # Monthly charges table for this funding
+        charges_qs = models.MonthlyCharge.objects.filter(funding=funding).order_by(
+            "-date"
+        )
+        charges_table = tables.MonthlyChargeTable(charges_qs)
+        RequestConfig(self.request).configure(charges_table)
+        context["monthly_charges_table"] = charges_table
+
         return context
 
 
@@ -137,10 +146,8 @@ class CapacityPlanningView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add HTML components and Bokeh version to the context."""
         context = super().get_context_data(**kwargs)
-        plot = plots.create_capacity_planning_plot(
-            datetime.now(), datetime.now() + timedelta(365)
-        )
-        context.update(plots.html_components_from_plot(plot))
+        layout = plots.create_capacity_planning_layout()
+        context.update(plots.html_components_from_plot(layout))
         context["bokeh_version"] = bokeh.__version__
         return context
 
@@ -161,8 +168,7 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add HTML components and Bokeh version to the context."""
         context = super().get_context_data(**kwargs)
-        timeseries_plot, bar_plot = plots.create_cost_recovery_plots()
-        context.update(plots.html_components_from_plot(timeseries_plot, "timeseries"))
-        context.update(plots.html_components_from_plot(bar_plot, "bar"))
+        layout = plots.create_cost_recovery_layout()
+        context.update(plots.html_components_from_plot(layout))
         context["bokeh_version"] = bokeh.__version__
         return context

@@ -185,12 +185,19 @@ class TestFundingDetailView(LoginRequiredMixin, TemplateOkMixin):
 
     def test_get(self, auth_client, funding):
         """Tests the get method and the data provided."""
+        from main import tables
+
         endpoint = reverse("main:funding_detail", kwargs={"pk": funding.pk})
 
         response = auth_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
         assert "form" in response.context
         assert response.context["funding_name"] == str(funding)
+
+        assert "monthly_charges_table" in response.context
+        assert isinstance(
+            response.context["monthly_charges_table"], tables.MonthlyChargeTable
+        )
 
         # The form should be readonly
         form = response.context["form"]
@@ -234,10 +241,8 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         endpoint = reverse("main:cost_recovery")
         response = auth_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
-        assert "<script" in response.context["timeseries_script"]
-        assert "<div" in response.context["timeseries_div"]
-        assert "<script" in response.context["bar_script"]
-        assert "<div" in response.context["bar_div"]
+        assert "<script" in response.context["script"]
+        assert "<div" in response.context["div"]
         assert response.context["bokeh_version"] == bokeh.__version__
 
     def test_form_valid(self, user):
