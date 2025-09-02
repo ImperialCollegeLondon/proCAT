@@ -78,6 +78,22 @@ To get started:
    python manage.py createsuperuser
    ```
 
+## Login, SSO and local accounts
+
+During development, local accounts are enabled but links in the front page will try to
+login you via Imperial's Single Sign On (SSO) and it will fail unless you have all the
+connection details configured - ask for details to the HoRSE.
+
+If you want to use the local accounts instead of SSO, manually go to the following URLs:
+
+- Registration: <http://localhost:8000/register/>
+- Login: <http://localhost:8000/auth/login/>
+
+If you use SSO and you already have a local account with the same email address,
+typically your own, then that account will be updated with the details from the SSO
+account. So, if you created a superuser account as above with your email and then
+connect via SSO, then your account will be the superuser account.
+
 ## Installation with Docker
 
 The app can be run within a Docker container and a `docker-compose.yml` file is provided to make this easy for development.

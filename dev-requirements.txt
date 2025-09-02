@@ -12,6 +12,8 @@ build==1.3.0
     # via pip-tools
 certifi==2025.7.14
     # via requests
+cffi==1.17.1
+    # via cryptography
 cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.4.2
@@ -21,13 +23,22 @@ click==8.2.1
     #   djlint
     #   pip-tools
 colorama==0.4.6
-    # via djlint
+    # via
+    #   build
+    #   click
+    #   djlint
+    #   pytest
+    #   tqdm
 contourpy==1.3.3
     # via bokeh
 coverage[toml]==7.9.2
     # via pytest-cov
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
+cryptography==45.0.6
+    # via
+    #   josepy
+    #   mozilla-django-oidc
 cssbeautifier==1.15.4
     # via djlint
 distlib==0.3.9
@@ -41,6 +52,7 @@ django==5.2.4
     #   django-stubs
     #   django-stubs-ext
     #   django-tables2
+    #   mozilla-django-oidc
     #   procat (pyproject.toml)
 django-bootstrap5==25.2
     # via procat (pyproject.toml)
@@ -74,6 +86,8 @@ iniconfig==2.1.0
     # via pytest
 jinja2==3.1.6
     # via bokeh
+josepy==2.1.0
+    # via mozilla-django-oidc
 jsbeautifier==1.15.4
     # via
     #   cssbeautifier
@@ -82,6 +96,8 @@ json5==0.12.0
     # via djlint
 markupsafe==3.0.2
     # via jinja2
+mozilla-django-oidc==4.0.1
+    # via procat (pyproject.toml)
 mypy==1.15.0
     # via
     #   django-stubs
@@ -123,6 +139,8 @@ pluggy==1.6.0
     #   pytest-cov
 pre-commit==4.2.0
     # via procat (pyproject.toml)
+pycparser==2.22
+    # via cffi
 pygments==2.19.2
     # via pytest
 pyproject-hooks==1.2.0
@@ -153,7 +171,9 @@ pyyaml==6.0.2
 regex==2024.11.6
     # via djlint
 requests==2.32.4
-    # via procat (pyproject.toml)
+    # via
+    #   mozilla-django-oidc
+    #   procat (pyproject.toml)
 ruff==0.12.8
     # via procat (pyproject.toml)
 six==1.17.0
@@ -179,7 +199,9 @@ typing-extensions==4.14.1
     #   django-stubs-ext
     #   mypy
 tzdata==2025.2
-    # via pandas
+    # via
+    #   django
+    #   pandas
 urllib3==2.5.0
     # via
     #   requests
