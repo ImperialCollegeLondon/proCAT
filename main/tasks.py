@@ -147,7 +147,7 @@ def notify_monthly_time_logged_logic(
 
 
 # Runs on the 3rd day of every month at 10:00 AM
-@db_periodic_task(crontab(day=3, hour=10))
+@db_periodic_task(crontab(day=3, hour=10, minute=0))
 def notify_monthly_time_logged_summary() -> None:
     """Monthly task to notify users about their time logged."""
     last_month_start, last_month_name, current_month_start, current_month_name = (
