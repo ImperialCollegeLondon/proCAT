@@ -146,7 +146,7 @@ pycparser==2.22
     # via cffi
 pygments==2.19.2
     # via mkdocs-material
-pymdown-extensions==10.16
+pymdown-extensions==10.16.1
     # via
     #   mkdocs-material
     #   mkdocstrings
