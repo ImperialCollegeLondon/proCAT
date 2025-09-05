@@ -168,8 +168,7 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add HTML components and Bokeh version to the context."""
         context = super().get_context_data(**kwargs)
-        timeseries_plot, bar_plot = plots.create_cost_recovery_plots()
-        context.update(plots.html_components_from_plot(timeseries_plot, "timeseries"))
-        context.update(plots.html_components_from_plot(bar_plot, "bar"))
+        layout = plots.create_cost_recovery_layout()
+        context.update(plots.html_components_from_plot(layout))
         context["bokeh_version"] = bokeh.__version__
         return context

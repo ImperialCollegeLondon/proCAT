@@ -1,6 +1,6 @@
 """Tests for the plots module."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 import pytest
 
@@ -32,7 +32,7 @@ def test_create_cost_recovery_plot(project, funding):
     from bokeh.models import HoverTool
     from bokeh.plotting import figure
 
-    from main import models, plots
+    from main import models, plots, utils
 
     # Create a Monthly Charge for the plot
     models.MonthlyCharge.objects.create(
@@ -41,19 +41,20 @@ def test_create_cost_recovery_plot(project, funding):
         amount=100.00,
         date=datetime.today().date() - timedelta(100),
     )
-    ts_plot, bar_plot = plots.create_cost_recovery_plots()
+
+    # Create cost recovery plots
+    dates = utils.get_month_dates_for_previous_years()
+    min_date = datetime.combine(dates[0][0], time.min)
+    max_date = datetime.combine(dates[-1][1], time.min)
+    start = datetime.combine(dates[-12][0], time.min)
+    chart_months = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
+    ts_plot, bar_plot = plots.create_cost_recovery_plots(
+        dates, min_date, max_date, (start, max_date), chart_months
+    )
 
     # Test timeseries plot
     assert isinstance(ts_plot, figure)
-
-    first_of_month = datetime.today().date().replace(day=1)
-    end_date = (first_of_month - timedelta(days=1)).replace(day=1)
-    start_date = first_of_month.replace(year=end_date.year - 1)
-
-    ts_title = (
-        f"Team capacity and project charging from {start_date.strftime('%B')} "
-        f"{start_date.year} to {end_date.strftime('%B')} {end_date.year}"
-    )
+    ts_title = "Team capacity and project charging over time"
     assert ts_plot.title.text == ts_title
     assert ts_plot.yaxis.axis_label == "Value"
     assert ts_plot.xaxis.axis_label == "Date"
@@ -66,10 +67,7 @@ def test_create_cost_recovery_plot(project, funding):
     # Test bar plot
     assert isinstance(bar_plot, figure)
 
-    bar_title = (
-        f"Monthly charges from {start_date.strftime('%B')} {start_date.year} "
-        f"to {end_date.strftime('%B')} {end_date.year}"
-    )
+    bar_title = "Total monthly charges"
     assert bar_plot.title.text == bar_title
     assert bar_plot.yaxis.axis_label == "Total charge (£)"
     assert bar_plot.xaxis.axis_label == "Month-Year"
