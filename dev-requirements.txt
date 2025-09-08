@@ -92,7 +92,7 @@ jsbeautifier==1.15.4
     # via
     #   cssbeautifier
     #   djlint
-json5==0.12.0
+json5==0.12.1
     # via djlint
 markupsafe==3.0.2
     # via jinja2
