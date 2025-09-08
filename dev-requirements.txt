@@ -74,7 +74,7 @@ editorconfig==0.17.1
     # via
     #   cssbeautifier
     #   jsbeautifier
-filelock==3.18.0
+filelock==3.19.1
     # via virtualenv
 huey==2.5.3
     # via procat (pyproject.toml)
