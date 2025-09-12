@@ -10,7 +10,7 @@ babel==2.17.0
     # via mkdocs-material
 backrefs==5.9
     # via mkdocs-material
-bokeh==3.7.3
+bokeh==3.8.0
     # via procat (pyproject.toml)
 certifi==2025.7.14
     # via requests
@@ -30,11 +30,11 @@ contourpy==1.3.3
     # via bokeh
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
-cryptography==45.0.6
+cryptography==45.0.7
     # via
     #   josepy
     #   mozilla-django-oidc
-django==5.2.4
+django==5.2.6
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -95,7 +95,7 @@ mkdocs==1.6.1
     #   mkdocs-section-index
     #   mkdocstrings
     #   procat (pyproject.toml)
-mkdocs-autorefs==1.4.2
+mkdocs-autorefs==1.4.3
     # via
     #   mkdocstrings
     #   mkdocstrings-python
@@ -119,7 +119,7 @@ mkdocstrings-python==1.16.12
     # via procat (pyproject.toml)
 mozilla-django-oidc==4.0.1
     # via procat (pyproject.toml)
-narwhals==2.0.1
+narwhals==2.3.0
     # via bokeh
 numpy==2.3.2
     # via
