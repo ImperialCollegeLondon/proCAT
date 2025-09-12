@@ -204,6 +204,7 @@ class TestProject:
         today = datetime.today().date()
         end_date = today.replace(day=1)
         start_date = (end_date - timedelta(days=1)).replace(day=1)
+        start_time = datetime.combine(start_date, datetime.min.time())
 
         project = models.Project.objects.create(
             name="ProCAT",
@@ -219,7 +220,7 @@ class TestProject:
         assert project.days_left is None
 
         # Create multiple funding objects
-        funding_A = models.Funding.objects.create(
+        funding = models.Funding.objects.create(
             project=project,
             source="External",
             cost_centre="centre",
@@ -228,43 +229,13 @@ class TestProject:
             budget=10000.00,
             daily_rate=50.00,
             expiry_date=end_date,
-        )
-        funding_B = models.Funding.objects.create(
-            project=project,
-            source="External",
-            cost_centre="centre",
-            activity="G56789",
-            analysis_code=analysis_code,
-            budget=5000.00,
-            daily_rate=250.00,
-            expiry_date=end_date,
-        )
-        funding_A.refresh_from_db()
-        funding_B.refresh_from_db()
+        )  # 200 days total
+        funding.refresh_from_db()
 
-        # create some monthly charges
-        models.MonthlyCharge.objects.create(
-            date=start_date,
-            project=project,
-            funding=funding_A,
-            amount=100.00,
-        )
-        models.MonthlyCharge.objects.create(
-            date=start_date,
-            project=project,
-            funding=funding_B,
-            amount=300.00,
-        )
+        # Check days_left when there are no time entries
+        assert project.days_left == (200, 100)
 
-        # Check days_left when there are no extra time entries
-        total_effort = funding_A.effort + funding_B.effort
-        left = funding_A.effort_left + funding_B.effort_left
-        days_left = round(left, 1), round(left / total_effort * 100, 1)
-        assert project.days_left == days_left
-
-        # Create a time entry object for yesterday
-        yesterday = today - timedelta(days=1)
-        start_time = datetime.combine(yesterday, datetime.min.time())
+        # Create some time entries
         models.TimeEntry.objects.create(
             user=user,
             project=project,
@@ -272,9 +243,16 @@ class TestProject:
             end_time=start_time + timedelta(hours=3.5),
         )  # 3.5 hours total (0.5 days)
 
+        models.TimeEntry.objects.create(
+            user=user,
+            project=project,
+            start_time=start_time,
+            end_time=start_time + timedelta(hours=14),
+        )  # 14 hours total (2 days)
+
         # Check days_left has been updated
-        left -= 0.5
-        days_left = round(left, 1), round(left / total_effort * 100, 1)
+        left = funding.effort - 2.5
+        days_left = round(left, 1), round(left / project.total_effort * 100, 1)
         assert project.days_left == days_left
 
     @pytest.mark.parametrize(
