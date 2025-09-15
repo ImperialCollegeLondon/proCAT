@@ -129,7 +129,7 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
         charging="Actual",
     )
     # Create funding objects (monthly charge will be created for each)
-    funding_A = models.Funding.objects.create(  # expires first
+    models.Funding.objects.create(  # expires first
         project=project,
         source="External",
         funding_body="Funding body",
@@ -140,7 +140,7 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
         budget=500.00,
         daily_rate=400.00,
     )  # 1.25 days worth of funds
-    funding_B = models.Funding.objects.create(
+    models.Funding.objects.create(
         project=project,
         source="External",
         funding_body="Funding body",
@@ -171,6 +171,15 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     # Create monthly charges
     report.create_actual_monthly_charges(project, start_last_month, end_last_month)
 
+    # Create an additional time entry that will be added to the timeseries but NOT
+    # the monthly charge total
+    models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=datetime.combine(start_last_month, time(hour=11)),
+        end_time=datetime.combine(start_last_month, time(hour=18)),
+    )  # 7 hours total
+
     # Create cost recovery timeseries
     dates = utils.get_month_dates_for_previous_years()
     ts, charge_totals = timeseries.get_cost_recovery_timeseries(dates)
@@ -179,12 +188,11 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     n_days = len(
         pd.bdate_range(start=start_last_month, end=end_last_month, inclusive="both")
     )
-    # £500 charged to funding A; £100 charged to funding B
-    expected_value = (500 / funding_A.daily_rate / n_days) + (
-        100 / funding_B.daily_rate / n_days
-    )
+    expected_value = 17.5 / 7 / n_days
     assert isinstance(ts, pd.Series)
     assert ts.value_counts()[expected_value] == n_days
+
+    # £500 charged to funding A; £100 charged to funding B
     assert charge_totals[-1] == 600.00
 
 

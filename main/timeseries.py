@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pandas as pd
 from django.db.models import (
+    DurationField,
     ExpressionWrapper,
     F,
-    FloatField,
     Sum,
-    Value,
     Window,
 )
 from django.db.models.functions import Coalesce, Lead
@@ -130,10 +129,9 @@ def get_cost_recovery_timeseries(
 ) -> tuple[pd.Series[float], list[float]]:
     """Get the cost recovery timeseries for the previous year.
 
-    For each month in the past year, this function aggregates all monthly charges and
-    divides this by the daily rate (dependent on funding source) and the number of
-    working days. This value is summed across all funding sources and added to the
-    timeseries.
+    For each month in the past year, this function aggregates all time entries and
+    divides this by the number of working days. This value is added to the time series.
+    The total monthly charges for the month are also recorded.
 
     Args:
         dates: list of tuples (from oldest to most recent) containing dates for all
@@ -156,28 +154,30 @@ def get_cost_recovery_timeseries(
     monthly_totals = []
 
     for month in dates:
+        # record charge total for the month
         month_dates = pd.bdate_range(start=month[0], end=month[1], inclusive="both")
         n_working_days = len(month_dates)
         monthly_charges = models.MonthlyCharge.objects.filter(date=month[0])
         monthly_total = monthly_charges.aggregate(Sum("amount"))["amount__sum"]
-
-        # group by funding
-        charges = (
-            monthly_charges.values("funding")
-            .annotate(total=Sum("amount"))  # get total Amount across monthly charges
-            .annotate(  # divide total by daily rate and working days
-                recovered=ExpressionWrapper(
-                    F("total") * Value(1.0) / F("funding__daily_rate") / n_working_days,
-                    output_field=FloatField(),
-                )
-            )
-        )
-
-        # aggregate across all funding sources (defaults to 0 if None)
-        funding_total = charges.aggregate(Sum("recovered"))["recovered__sum"] or 0
-        timeseries[month_dates] += funding_total  # Update timeseries
-
-        # record total for the month
         monthly_totals.append(float(monthly_total) if monthly_total else 0.0)
+
+        # calculate the total time entries for the month, and work out the time
+        # logged (recovered) per day across all projects
+        start_time = datetime.combine(month[0], datetime.min.time())
+        end_time = datetime.combine(month[1], datetime.min.time())
+        entries = (
+            models.TimeEntry.objects.filter(
+                start_time__gte=start_time, start_time__lt=end_time
+            )
+        ).annotate(
+            duration=ExpressionWrapper(
+                (F("end_time") - F("start_time")), output_field=DurationField()
+            ),
+        )
+        total_duration = entries.aggregate(Sum("duration"))[
+            "duration__sum"
+        ] or timedelta(0)
+        recovered_per_day = total_duration.total_seconds() / 3600 / 7 / n_working_days
+        timeseries[month_dates] += recovered_per_day  # Update timeseries
 
     return timeseries, monthly_totals
