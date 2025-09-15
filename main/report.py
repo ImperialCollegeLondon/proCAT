@@ -103,7 +103,7 @@ def create_actual_monthly_charges(
     total_days, pks = get_actual_chargeable_days(project, start_date, end_date)
 
     if total_days and project.days_left:
-        if total_days > project.days_left[0]:
+        if project.days_left[0] < 0:
             raise ValidationError(
                 "Total chargeable days exceeds the total effort left "
                 f"for project {project.name}."
