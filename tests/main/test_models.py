@@ -261,9 +261,9 @@ class TestProject:
             ["Draft", None, None, None],
             [
                 "Active",
-                datetime.now().date(),
-                datetime.now().date() + timedelta(days=7),
-                5,
+                date(2025, 7, 1),
+                date(2025, 8, 14),
+                27,
             ],
         ],
     )
