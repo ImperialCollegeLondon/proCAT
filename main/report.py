@@ -217,7 +217,9 @@ def write_to_csv(
             writer.writerow(row)
 
 
-def _get_projects_to_create_report_for(start_date: date, end_date: date) -> QuerySet:
+def _get_projects_to_create_report_for(
+    start_date: date, end_date: date
+) -> QuerySet[models.Project]:
     """Get the models for which to create the report.
 
     These are the ones that overlap with the time period to charge, that are external
