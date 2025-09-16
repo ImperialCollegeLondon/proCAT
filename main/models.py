@@ -396,7 +396,7 @@ class Funding(models.Model):
         blank=True,
         null=True,
         help_text="The activity code designated to the project, 6 alphanumeric"
-        " characters starting with P, F or G.",
+        " characters starting with P, F, G or I.",
     )
 
     analysis_code = models.ForeignKey(
@@ -461,15 +461,15 @@ class Funding(models.Model):
                 "All fields are mandatory except if source is 'Internal'."
             )
 
-        allowed_characters = ["P", "F", "G"]
+        allowed_characters = ["P", "F", "G", "I"]
         if (
             len(self.activity) != 6
             or not self.activity.isalnum()
             or self.activity[0] not in allowed_characters
         ):
             raise ValidationError(
-                "Activity code must be 6 alphanumeric characters starting with P, F or"
-                " G."
+                "Activity code must be 6 alphanumeric characters starting with P, F, "
+                "G or I."
             )
 
     @property
