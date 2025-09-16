@@ -363,11 +363,10 @@ def sync_clockify_time_entries_task() -> None:
 _template_days_used_exceeded_days_left = """
 Dear {lead},
 
-The total days used for project {project_name} has exceeded the days left
-for the project.
+The total days used for project {project_name} has exceeded the total budget.
 
-Days used: {days_used}
 Days left: {days_left}
+Total days for project: {total_effort}
 
 Please review the project budget and take necessary actions.
 
@@ -388,9 +387,9 @@ def notify_monthly_days_used_exceeding_days_left_logic(
     if date is None:
         date = datetime.datetime.today()
 
-    projects = get_projects_with_days_used_exceeding_days_left(date=date)
+    projects = get_projects_with_days_used_exceeding_days_left()
 
-    for project, days_used, days_left in projects:
+    for project, days_left, total_effort in projects:
         lead = project.lead
         lead_name = lead.get_full_name() if lead else "Project Leader"
         lead_email = lead.email if lead else ""
@@ -399,7 +398,7 @@ def notify_monthly_days_used_exceeding_days_left_logic(
         message = _template_days_used_exceeded_days_left.format(
             lead=lead_name,
             project_name=project.name,
-            days_used=days_used,
+            total_effort=total_effort,
             days_left=days_left,
         )
 
