@@ -1,4 +1,4 @@
-"""Report for including all the charges to be expensed for the month."""
+"Report for including all the charges to be expensed for the month."""
 
 import csv
 import io
@@ -242,8 +242,9 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
         end_date__gte=start_date,
         start_date__isnull=False,
         end_date__isnull=False,
+        funding_source__source="External"
     ).exclude(charging="Manual")
-
+    
     for project in projects:
         if project.charging == "Pro-rata":
             create_pro_rata_monthly_charges(project, start_date, end_date)
