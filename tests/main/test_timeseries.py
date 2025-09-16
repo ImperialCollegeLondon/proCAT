@@ -185,12 +185,12 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     ts, charge_totals = timeseries.get_cost_recovery_timeseries(dates)
 
     # Get expected value
-    n_days = len(
-        pd.bdate_range(start=start_last_month, end=end_last_month, inclusive="both")
-    )
+    n_days = round((pd.Timestamp(start_last_month).days_in_month / 365) * 220)
     expected_value = 17.5 / 7 / n_days
     assert isinstance(ts, pd.Series)
-    assert ts.value_counts()[expected_value] == n_days
+    assert ts.value_counts()[expected_value] == len(
+        pd.bdate_range(start=start_last_month, end=end_last_month, inclusive="both")
+    )
 
     # £500 charged to funding A; £100 charged to funding B
     assert charge_totals[-1] == 600.00
@@ -245,9 +245,7 @@ def test_get_cost_recovery_timeseries_equal_to_num_people(
 
     end_last_month = today.replace(day=1) - timedelta(days=1)
     start_last_month = end_last_month.replace(day=1)
-    n_working_days = len(
-        pd.bdate_range(start_last_month, end_last_month, inclusive="both")
-    )
+    n_working_days = round((pd.Timestamp(start_last_month).days_in_month / 365) * 220)
 
     # Create 2 time entries where number of hours is exactly equal to the full capacity
     # of an individual (7 * n_working_days)
@@ -274,4 +272,6 @@ def test_get_cost_recovery_timeseries_equal_to_num_people(
     ts = timeseries.get_cost_recovery_timeseries(dates)[0]
 
     # Expected value for 2 individuals working full-time on projects would be 2.0
-    assert ts.value_counts()[2.0] == n_working_days
+    assert ts.value_counts()[2.0] == len(
+        pd.bdate_range(start_last_month, end_last_month, inclusive="both")
+    )

@@ -9,7 +9,11 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Sum
 
-from procat.settings.settings import EFFORT_LEFT_THRESHOLD, WEEKS_LEFT_THRESHOLD
+from procat.settings.settings import (
+    EFFORT_LEFT_THRESHOLD,
+    WEEKS_LEFT_THRESHOLD,
+    WORKING_DAYS,
+)
 
 
 class User(AbstractUser):
@@ -330,7 +334,7 @@ class Project(models.Model):
         """
         if self.start_date and self.end_date:
             days = (self.end_date - self.start_date).days
-            return round(5 * days / 7)
+            return round((days / 365) * WORKING_DAYS)
         return None
 
     @property

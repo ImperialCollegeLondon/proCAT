@@ -14,6 +14,8 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce, Lead
 
+from procat.settings.settings import WORKING_DAYS
+
 from . import models
 
 
@@ -156,7 +158,9 @@ def get_cost_recovery_timeseries(
     for month in dates:
         # record charge total for the month
         month_dates = pd.bdate_range(start=month[0], end=month[1], inclusive="both")
-        n_working_days = len(month_dates)
+        n_working_days = round(
+            (pd.Timestamp(month[0]).days_in_month / 365) * WORKING_DAYS
+        )
         monthly_charges = models.MonthlyCharge.objects.filter(date=month[0])
         monthly_total = monthly_charges.aggregate(Sum("amount"))["amount__sum"]
         monthly_totals.append(float(monthly_total) if monthly_total else 0.0)
