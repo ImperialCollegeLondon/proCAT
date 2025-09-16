@@ -1,4 +1,4 @@
-"Report for including all the charges to be expensed for the month."""
+"""Report for including all the charges to be expensed for the month."""
 
 import csv
 import io
@@ -6,7 +6,7 @@ from _csv import Writer
 from datetime import date, datetime, timedelta
 
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
+from django.db.models import QuerySet, Sum
 from django.http import HttpResponse
 
 from . import models, utils
@@ -217,6 +217,28 @@ def write_to_csv(
             writer.writerow(row)
 
 
+def _get_projects_to_create_report_for(start_date: date, end_date: date) -> QuerySet:
+    """Get the models for which to create the report.
+
+    These are the ones that overlap with the time period to charge, that are external
+    (and hence, have funding) and that are not charged manually.
+
+    Args:
+        start_date: The start date of the period to charge.
+        end_date: The end date of the period to charge.
+
+    Returns:
+        Queryset with the projects that fulfill the conditions.
+    """
+    return models.Project.objects.filter(
+        start_date__lt=end_date,
+        end_date__gte=start_date,
+        start_date__isnull=False,
+        end_date__isnull=False,
+        funding_source__source="External",
+    ).exclude(charging="Manual")
+
+
 def create_charges_report(month: int, year: int, writer: Writer) -> None:
     """Generate the CSV report by creating Monthly Charge objects and writing to a CSV.
 
@@ -237,14 +259,8 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
     ).delete()
 
     # get all Pro-rata and Actual projects that overlap with this time period
-    projects = models.Project.objects.filter(
-        start_date__lt=end_date,
-        end_date__gte=start_date,
-        start_date__isnull=False,
-        end_date__isnull=False,
-        funding_source__source="External"
-    ).exclude(charging="Manual")
-    
+    projects = _get_projects_to_create_report_for(start_date, end_date)
+
     for project in projects:
         if project.charging == "Pro-rata":
             create_pro_rata_monthly_charges(project, start_date, end_date)
