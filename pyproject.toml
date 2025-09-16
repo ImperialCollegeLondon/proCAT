@@ -20,7 +20,8 @@ dependencies = [
     "requests",
     "bokeh",
     "pandas",
-    "mozilla-django-oidc"
+    "mozilla-django-oidc",
+    "django-admin-rangefilter"
 ]
 
 [project.optional-dependencies]
