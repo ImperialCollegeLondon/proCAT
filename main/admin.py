@@ -2,6 +2,7 @@
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (
     AnalysisCode,
@@ -74,6 +75,7 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "start_time",
         "end_time",
     )
+    list_filter = ("user", "project")
 
 
 @admin.register(MonthlyCharge)
@@ -87,3 +89,4 @@ class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "date",
         "description",
     )
+    list_filter = ("project", ("date", DateRangeQuickSelectListFilterBuilder()))
