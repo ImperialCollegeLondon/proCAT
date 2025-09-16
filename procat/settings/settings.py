@@ -128,6 +128,7 @@ INSTALLED_APPS += [
     "django_filters",
     "huey.contrib.djhuey",
     "mozilla_django_oidc",
+    "rangefilter",
 ]
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")

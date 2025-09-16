@@ -22,9 +22,7 @@ click==8.2.1
     # via mkdocs
 colorama==0.4.6
     # via
-    #   click
     #   griffe
-    #   mkdocs
     #   mkdocs-material
 contourpy==1.3.3
     # via bokeh
@@ -43,6 +41,8 @@ django==5.2.6
     #   django-tables2
     #   mozilla-django-oidc
     #   procat (pyproject.toml)
+django-admin-rangefilter==0.13.3
+    # via procat (pyproject.toml)
 django-bootstrap5==25.2
     # via procat (pyproject.toml)
 django-crispy-forms==2.4
@@ -179,9 +179,7 @@ tornado==6.5.1
 types-requests==2.32.4.20250611
     # via procat (pyproject.toml)
 tzdata==2025.2
-    # via
-    #   django
-    #   pandas
+    # via pandas
 urllib3==2.5.0
     # via
     #   requests
