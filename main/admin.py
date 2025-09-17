@@ -68,6 +68,8 @@ class ProjectAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     """Admin class for the TimeEntry model."""
 
+    filter_horizontal = ("monthly_charge",)
+
     list_display = (
         "user",
         "project",
