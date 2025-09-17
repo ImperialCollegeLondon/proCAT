@@ -20,7 +20,8 @@ dependencies = [
     "requests",
     "bokeh",
     "pandas",
-    "mozilla-django-oidc"
+    "mozilla-django-oidc",
+    "django-admin-rangefilter"
 ]
 
 [project.optional-dependencies]
@@ -64,7 +65,7 @@ module = "tests.*"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = ["django_tables2.*", "django_filters.*", "mozilla_django_oidc.*"]
+module = ["django_tables2.*", "django_filters.*", "mozilla_django_oidc.*", "rangefilter.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

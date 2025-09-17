@@ -1,6 +1,6 @@
 """Models module for main app."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
@@ -9,7 +9,11 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Sum
 
-from procat.settings.settings import EFFORT_LEFT_THRESHOLD, WEEKS_LEFT_THRESHOLD
+from procat.settings.settings import (
+    EFFORT_LEFT_THRESHOLD,
+    WEEKS_LEFT_THRESHOLD,
+    WORKING_DAYS,
+)
 
 
 class User(AbstractUser):
@@ -256,19 +260,12 @@ class Project(models.Model):
             The number of days and percentage worth of effort left, or None if there is
             no funding information.
         """
-        from .report import get_actual_chargeable_days
+        from .utils import get_logged_hours
 
         if self.total_effort:
-            left = sum([funding.effort_left for funding in self.funding_source.all()])
-
-            # Subtract additional unassigned time entries from the start of last month
-            # until the current date
-            end_date = datetime.today().date()
-            start_date = (end_date.replace(day=1) - timedelta(days=1)).replace(day=1)
-            additional_days = get_actual_chargeable_days(self, start_date, end_date)[0]
-            if additional_days:
-                left -= additional_days
-
+            time_entries = self.timeentry_set.all()
+            hours_logged = get_logged_hours(time_entries)[0]
+            left = self.total_effort - (hours_logged / 7)
             return round(left, 1), round(left / self.total_effort * 100, 1)
 
         return None
@@ -337,7 +334,7 @@ class Project(models.Model):
         """
         if self.start_date and self.end_date:
             days = (self.end_date - self.start_date).days
-            return round(5 * days / 7)
+            return round((days / 365) * WORKING_DAYS)
         return None
 
     @property

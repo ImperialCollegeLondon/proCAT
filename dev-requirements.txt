@@ -23,12 +23,7 @@ click==8.2.1
     #   djlint
     #   pip-tools
 colorama==0.4.6
-    # via
-    #   build
-    #   click
-    #   djlint
-    #   pytest
-    #   tqdm
+    # via djlint
 contourpy==1.3.3
     # via bokeh
 coverage[toml]==7.9.2
@@ -41,7 +36,7 @@ cryptography==45.0.7
     #   mozilla-django-oidc
 cssbeautifier==1.15.4
     # via djlint
-distlib==0.3.9
+distlib==0.4.0
     # via virtualenv
 django==5.2.6
     # via
@@ -54,6 +49,8 @@ django==5.2.6
     #   django-tables2
     #   mozilla-django-oidc
     #   procat (pyproject.toml)
+django-admin-rangefilter==0.13.3
+    # via procat (pyproject.toml)
 django-bootstrap5==25.2
     # via procat (pyproject.toml)
 django-crispy-forms==2.4
@@ -129,7 +126,7 @@ pathspec==0.12.1
     # via djlint
 pillow==11.3.0
     # via bokeh
-pip-tools==7.4.1
+pip-tools==7.5.0
     # via procat (pyproject.toml)
 platformdirs==4.3.8
     # via virtualenv
@@ -147,7 +144,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pytest==8.4.1
+pytest==8.4.2
     # via
     #   procat (pyproject.toml)
     #   pytest-cov
@@ -183,7 +180,7 @@ six==1.17.0
     #   python-dateutil
 sqlparse==0.5.3
     # via django
-tornado==6.5.1
+tornado==6.5.2
     # via bokeh
 tqdm==4.67.1
     # via djlint
@@ -199,9 +196,7 @@ typing-extensions==4.14.1
     #   django-stubs-ext
     #   mypy
 tzdata==2025.2
-    # via
-    #   django
-    #   pandas
+    # via pandas
 urllib3==2.5.0
     # via
     #   requests
