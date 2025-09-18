@@ -121,17 +121,17 @@ def get_head_email() -> list[str]:
 
 def get_budget_status(
     date: date | None = None,
-) -> tuple[QuerySet[Funding], QuerySet[Funding]]:
+) -> tuple[list[Funding], list[Funding]]:
     """Get the budget status of a funding."""
     if date is None:
         date = datetime.today().date()
 
-    funds_ran_out_not_expired = Funding.objects.filter(expiry_date__gt=date)
+    funds_ran_out_not_expired = list(Funding.objects.filter(expiry_date__gt=date))
     funds_ran_out_not_expired = [
         fund for fund in funds_ran_out_not_expired if fund.funding_left <= 0
     ]
 
-    funding_expired_budget_left = Funding.objects.filter(expiry_date__lt=date)
+    funding_expired_budget_left = list(Funding.objects.filter(expiry_date__lt=date))
     funding_expired_budget_left = [
         fund for fund in funding_expired_budget_left if fund.funding_left > 0
     ]
