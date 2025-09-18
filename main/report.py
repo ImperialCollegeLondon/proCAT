@@ -255,9 +255,10 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
         raise ValidationError("Report date must not be in the future.")
     end_date = (start_date + timedelta(days=31)).replace(day=1)
 
-    # delete existing Pro-rata and Actual charges so they can be re-created
+    # delete existing draft Pro-rata and Actual charges so they can be re-created
     models.MonthlyCharge.objects.filter(date=start_date).exclude(
-        project__charging="Manual",
+        project__charging="Manual"
+    ).exclude(
         status="Confirmed",
     ).delete()
 
