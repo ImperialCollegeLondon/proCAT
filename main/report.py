@@ -85,6 +85,7 @@ def create_pro_rata_monthly_charges(
             funding=funding,
             amount=funding.monthly_pro_rata_charge,
             date=start_date,
+            status="Draft",
         )
         charge.clean()
         charge.save()
@@ -118,7 +119,11 @@ def create_actual_monthly_charges(
             days_deduce = min(total_days, funding.effort_left)
             amount = round(days_deduce * float(funding.daily_rate), 2)
             charge = models.MonthlyCharge.objects.create(
-                project=project, funding=funding, amount=amount, date=start_date
+                project=project,
+                funding=funding,
+                amount=amount,
+                date=start_date,
+                status="Draft",
             )
             charge.clean()
             charge.save()
