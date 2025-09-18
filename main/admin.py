@@ -2,6 +2,7 @@
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db.models import QuerySet
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (
@@ -90,3 +91,9 @@ class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "description",
     )
     list_filter = ("project", ("date", DateRangeQuickSelectListFilterBuilder()))
+    actions = ("confirm_charge",)
+
+    @admin.action(description="Confirm monthly charges")
+    def confirm_charge(self, queryset: QuerySet[MonthlyCharge]):
+        """Update monthly charge status to 'Confirmed'."""
+        queryset.update(status="Confirmed")

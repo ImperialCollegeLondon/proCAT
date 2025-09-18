@@ -257,7 +257,8 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
 
     # delete existing Pro-rata and Actual charges so they can be re-created
     models.MonthlyCharge.objects.filter(date=start_date).exclude(
-        project__charging="Manual"
+        project__charging="Manual",
+        status="Confirmed",
     ).delete()
 
     # get all Pro-rata and Actual projects that overlap with this time period
