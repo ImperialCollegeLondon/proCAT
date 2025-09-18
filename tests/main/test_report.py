@@ -2,7 +2,7 @@
 
 from datetime import date, datetime, timedelta
 from http import HTTPStatus
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -469,7 +469,6 @@ def test_confirmed_charges_are_not_deleted(project, funding):
 
 
 @pytest.mark.django_db
-@patch("main.report_create_actual_monthly_charges")
 def test_create_charges_report_for_download(department, user, analysis_code):
     """Test the create_charges_report_for_download function."""
     from main import models, report
