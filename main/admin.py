@@ -94,6 +94,6 @@ class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     actions = ("confirm_charge",)
 
     @admin.action(description="Confirm monthly charges")
-    def confirm_charge(self, queryset: QuerySet[MonthlyCharge]):
+    def confirm_charge(self, queryset: QuerySet[MonthlyCharge]) -> None:
         """Update monthly charge status to 'Confirmed'."""
         queryset.update(status="Confirmed")
