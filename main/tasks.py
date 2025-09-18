@@ -178,7 +178,7 @@ _template_funding_expired_but_has_budget = """
 Dear {lead},
 
 The project {project_name} has expired, but there is still unspent funds of
-£{budget} available.
+£{funding_left} available (£{budget} total).
 
 Please check the funding status and take necessary actions.
 
@@ -195,7 +195,7 @@ def notify_funding_status_logic(
         date=date
     )
 
-    if funds_ran_out_not_expired.exists():
+    if len(funds_ran_out_not_expired) > 0:
         for funding in funds_ran_out_not_expired:
             subject = f"[Funding Update] {funding.project.name}"
             head_email = get_head_email()
@@ -215,7 +215,7 @@ def notify_funding_status_logic(
                 head_email=head_email,
             )
 
-    if funding_expired_budget_left.exists():
+    if len(funding_expired_budget_left) > 0:
         for funding in funding_expired_budget_left:
             subject = f"[Funding Expired] {funding.project.name}"
             head_email = get_head_email()
@@ -225,6 +225,7 @@ def notify_funding_status_logic(
             message = _template_funding_expired_but_has_budget.format(
                 lead=lead_name,
                 project_name=funding.project.name,
+                funding_left=funding.funding_left,
                 budget=funding.budget,
             )
             email_user_and_cc_head(
