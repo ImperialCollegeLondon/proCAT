@@ -126,12 +126,15 @@ def get_budget_status(
     if date is None:
         date = datetime.today().date()
 
-    funds_ran_out_not_expired = Funding.objects.filter(
-        expiry_date__gt=date, budget__lt=0
-    )
-    funding_expired_budget_left = Funding.objects.filter(
-        expiry_date__lt=date, budget__gt=0
-    )
+    funds_ran_out_not_expired = Funding.objects.filter(expiry_date__gt=date)
+    funds_ran_out_not_expired = [
+        fund for fund in funds_ran_out_not_expired if fund.funding_left <= 0
+    ]
+
+    funding_expired_budget_left = Funding.objects.filter(expiry_date__lt=date)
+    funding_expired_budget_left = [
+        fund for fund in funding_expired_budget_left if fund.funding_left > 0
+    ]
     return funds_ran_out_not_expired, funding_expired_budget_left
 
 
