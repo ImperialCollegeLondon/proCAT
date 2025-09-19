@@ -3,6 +3,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import QuerySet
+from django.http import HttpRequest
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (
@@ -91,11 +92,14 @@ class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "amount",
         "date",
         "description",
+        "status",
     )
     list_filter = ("project", ("date", DateRangeQuickSelectListFilterBuilder()))
     actions = ("confirm_charge",)
 
     @admin.action(description="Confirm monthly charges")
-    def confirm_charge(self, queryset: QuerySet[MonthlyCharge]) -> None:
+    def confirm_charge(
+        self, request: HttpRequest, queryset: QuerySet[MonthlyCharge]
+    ) -> None:
         """Update monthly charge status to 'Confirmed'."""
         queryset.update(status="Confirmed")
