@@ -96,7 +96,7 @@ urllib3==2.5.0
     # via
     #   requests
     #   types-requests
-whitenoise==6.9.0
+whitenoise==6.11.0
     # via procat (pyproject.toml)
 xyzservices==2025.4.0
     # via bokeh
