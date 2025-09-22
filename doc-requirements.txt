@@ -69,7 +69,7 @@ jinja2==3.1.6
     #   mkdocstrings
 josepy==2.1.0
     # via mozilla-django-oidc
-markdown==3.8.2
+markdown==3.9
     # via
     #   mkdocs
     #   mkdocs-autorefs
