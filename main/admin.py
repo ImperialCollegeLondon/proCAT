@@ -2,6 +2,9 @@
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db.models import QuerySet
+from django.http import HttpRequest
+from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (
     AnalysisCode,
@@ -68,12 +71,15 @@ class ProjectAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     """Admin class for the TimeEntry model."""
 
+    filter_horizontal = ("monthly_charge",)
+
     list_display = (
         "user",
         "project",
         "start_time",
         "end_time",
     )
+    list_filter = ("user", "project")
 
 
 @admin.register(MonthlyCharge)
@@ -86,4 +92,14 @@ class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "amount",
         "date",
         "description",
+        "status",
     )
+    list_filter = ("project", ("date", DateRangeQuickSelectListFilterBuilder()))
+    actions = ("confirm_charge",)
+
+    @admin.action(description="Confirm monthly charges")
+    def confirm_charge(
+        self, request: HttpRequest, queryset: QuerySet[MonthlyCharge]
+    ) -> None:
+        """Update monthly charge status to 'Confirmed'."""
+        queryset.update(status="Confirmed")

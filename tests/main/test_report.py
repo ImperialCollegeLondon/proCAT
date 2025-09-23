@@ -438,6 +438,37 @@ def test_invalid_date_create_charges_report():
 
 
 @pytest.mark.django_db
+def test_confirmed_charges_are_not_deleted(project, funding):
+    """Test that confirmed charges are not deleted when the report is created."""
+    from main import models, report
+
+    date = datetime.today().date().replace(day=1)
+    confirmed_charge = models.MonthlyCharge.objects.create(
+        date=date,
+        project=project,
+        funding=funding,
+        amount=10.00,
+        status="Confirmed",
+    )
+    draft_charge = models.MonthlyCharge.objects.create(
+        date=date, project=project, funding=funding, amount=20.00, status="Draft"
+    )
+
+    # Check both charges in queryset
+    charges = models.MonthlyCharge.objects.all()
+    assert confirmed_charge in charges
+    assert draft_charge in charges
+
+    writer = Mock()
+    report.create_charges_report(date.month, date.year, writer)
+
+    # Check only confirmed charge in queryset
+    charges = models.MonthlyCharge.objects.all()
+    assert confirmed_charge in charges
+    assert draft_charge not in charges
+
+
+@pytest.mark.django_db
 def test_create_charges_report_for_download(department, user, analysis_code):
     """Test the create_charges_report_for_download function."""
     from main import models, report
@@ -584,3 +615,54 @@ def test_create_charges_report_for_attachment(department, user, analysis_code):
 
     # Check the charge row in the CSV is as expected
     assert expected_charge_row in csv_string
+
+
+@pytest.mark.django_db
+def test_get_projects_to_create_report_for(department, user, analysis_code):
+    """Test the _get_projects_to_create_report_for function."""
+    from main import models, report
+
+    start_date = date(2025, 6, 1)
+    end_date = date(2025, 7, 1)
+
+    # Create time entry for monthly charge
+    project = models.Project.objects.create(
+        name="ProCAT",
+        department=department,
+        lead=user,
+        start_date=start_date,
+        end_date=end_date,
+        status="Active",
+        charging="Actual",
+    )
+    funding = models.Funding.objects.create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=end_date,
+        budget=10000.00,
+        daily_rate=100.00,
+    )
+    models.TimeEntry.objects.create(
+        user=user,
+        project=project,
+        start_time=datetime(2025, 6, 2, 9, 0),
+        end_time=datetime(2025, 6, 2, 12, 30),
+    )
+    # There should be 1
+    assert len(report._get_projects_to_create_report_for(start_date, end_date)) == 1
+
+    # If the project's charging method is manual, there should be none
+    project.charging = "Manual"
+    project.save()
+    assert len(report._get_projects_to_create_report_for(start_date, end_date)) == 0
+
+    # If the project's funding is internal, there should none, as well
+    project.charging = "Actual"
+    project.save()
+    funding.source = "Internal"
+    funding.save()
+    assert len(report._get_projects_to_create_report_for(start_date, end_date)) == 0

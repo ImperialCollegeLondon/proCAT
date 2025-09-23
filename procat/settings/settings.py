@@ -128,6 +128,7 @@ INSTALLED_APPS += [
     "django_filters",
     "huey.contrib.djhuey",
     "mozilla_django_oidc",
+    "rangefilter",
 ]
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
@@ -162,6 +163,7 @@ HUEY = {
 }
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+WORKING_DAYS = 220  # Number of working days per year
 EFFORT_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for effort left (percent)
 WEEKS_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for weeks left (percent)
 CLOCKIFY_API_KEY = os.environ.get("CLOCKIFY_API_KEY")

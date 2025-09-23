@@ -204,7 +204,7 @@ def test_funding_expired_but_has_budget(funding, project):
     expected_message = (
         f"\nDear {funding.project.lead.get_full_name()},\n\n"
         f"The project {project.name} has expired, but there is still unspent "
-        f"funds of\n£{funding.budget} available.\n\n"
+        f"funds of\n£{funding.funding_left} available (£{funding.budget} total).\n\n"
         f"Please check the funding status and take necessary actions.\n\n"
         f"Best regards,\nProCAT\n"
     )
@@ -452,7 +452,7 @@ def test_monthly_days_used_exceeding_days_left(user, project, funding):
     """Test that an email is sent when days used exceed days left."""
     from main.models import TimeEntry
 
-    funding.project = project
+    funding.project = project  # 26 days total effort
     funding.save()
     project.status = "Active"
     project.save()
@@ -476,10 +476,9 @@ def test_monthly_days_used_exceeding_days_left(user, project, funding):
             message=(
                 "\nDear test user,\n\n"
                 f"The total days used for project {project.name} has exceeded "
-                "the days left\n"
-                "for the project.\n\n"
-                "Days used: 29.0\n"
-                "Days left: 25.7\n\n"  # 10000 (budget)/389 (daily rate)
+                "the total budget.\n\n"
+                "Days left: -3.0\n"
+                "Total days for project: 26\n\n"
                 "Please review the project budget and take necessary actions.\n\n"
                 "Best regards,\nProCAT\n"
             ),
