@@ -1,9 +1,10 @@
  <!-- markdownlint-disable MD041 -->
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/proCAT/graph/badge.svg?token=A9KNEMYXXN)](https://codecov.io/gh/ImperialCollegeLondon/proCAT)
 
-# proCAT
+# Project Charging and Analytics Tool (proCAT)
 
-A Django web app for hosting the Project Charging and Analytics Tool (ProCAT).
+A Django web app for hosting the Project Charging and Analytics Tool (proCAT). The app
+can be found at <https://rse02.rcs.ic.ac.uk/>.
 
 This Django project uses:
 
@@ -132,3 +133,7 @@ python package version specifiers, i.e. `"black<23"` or `"pip-tools!=6.12.2"`
 [pre-commit.ci]: https://pre-commit.ci
 [Docker]: https://docs.docker.com/desktop/
 [virtual environment]: https://docs.python.org/3/library/venv.html
+
+## API Documentation
+
+The API documentation is built using the [Material theme for MkDocs](https://squidfunk.github.io/mkdocs-material/) and can be found at <https://imperialcollegelondon.github.io/proCAT/>.
