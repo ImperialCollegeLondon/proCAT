@@ -107,6 +107,10 @@ docker compose up
 
 The app will be available at <http://127.0.0.1:8000/>
 
+## Documentation
+
+The documentation is built using the [Material theme for MkDocs](https://squidfunk.github.io/mkdocs-material/) and can be found at <https://imperialcollegelondon.github.io/proCAT/>.
+
 ## Updating Dependencies
 
 To add or remove dependencies:
@@ -133,7 +137,3 @@ python package version specifiers, i.e. `"black<23"` or `"pip-tools!=6.12.2"`
 [pre-commit.ci]: https://pre-commit.ci
 [Docker]: https://docs.docker.com/desktop/
 [virtual environment]: https://docs.python.org/3/library/venv.html
-
-## API Documentation
-
-The API documentation is built using the [Material theme for MkDocs](https://squidfunk.github.io/mkdocs-material/) and can be found at <https://imperialcollegelondon.github.io/proCAT/>.
