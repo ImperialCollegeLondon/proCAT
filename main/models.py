@@ -242,6 +242,20 @@ class Project(models.Model):
         return None
 
     @property
+    def total_funding_left(self) -> float | None:
+        """Provide the total funding left after deducting confirmed charges.
+
+        Returns:
+            The total monetary amount of funding left, or none if there is no funding
+            information.
+        """
+        if self.funding_source.exists():
+            total = sum([funding.funding_left for funding in self.funding_source.all()])
+            return total
+
+        return None
+
+    @property
     def percent_effort_left(self) -> float | None:
         """Provide the percentage of effort left.
 
