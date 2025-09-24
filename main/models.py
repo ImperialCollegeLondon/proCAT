@@ -242,7 +242,7 @@ class Project(models.Model):
         return None
 
     @property
-    def total_funding_left(self) -> float | None:
+    def total_funding_left(self) -> Decimal | None:
         """Provide the total funding left after deducting confirmed charges.
 
         Returns:
