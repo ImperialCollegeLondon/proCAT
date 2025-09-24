@@ -753,6 +753,7 @@ class TestMonthlyCharge:
             funding=funding,
             date=funding.expiry_date - timedelta(1),
             amount=funding.funding_left + 1,  # Invalid funding
+            status="Confirmed",
         )
         funding.refresh_from_db()  # Update funding object
 
