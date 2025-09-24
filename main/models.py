@@ -495,12 +495,14 @@ class Funding(models.Model):
     def funding_left(self) -> Decimal:
         """Provide the funding left in currency.
 
+        Funding left is calculated based on 'Confirmed' monthly charges.
+
         Returns:
             The amount of funding left.
         """
-        funding_spent = MonthlyCharge.objects.filter(funding=self).aggregate(
-            Sum("amount")
-        )["amount__sum"]
+        funding_spent = MonthlyCharge.objects.filter(
+            funding=self, status="Confirmed"
+        ).aggregate(Sum("amount"))["amount__sum"]
         if funding_spent:
             return self.budget - funding_spent
         return self.budget

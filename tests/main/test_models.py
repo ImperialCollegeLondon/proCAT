@@ -472,7 +472,19 @@ class TestFunding:
         # Check when monthly charge created
         charge_date = funding.expiry_date - timedelta(days=5)
         monthly_charge = models.MonthlyCharge.objects.create(
-            project=project, funding=funding, amount=100.00, date=charge_date
+            project=project,
+            funding=funding,
+            amount=100.00,
+            date=charge_date,
+            status="Confirmed",
+        )
+        # Create Draft monthly charge (should not be counted)
+        models.MonthlyCharge.objects.create(
+            project=project,
+            funding=funding,
+            amount=200.00,
+            date=charge_date,
+            status="Draft",
         )
         monthly_charge.refresh_from_db()
         assert funding.funding_left == funding.budget - monthly_charge.amount
@@ -488,7 +500,19 @@ class TestFunding:
         # Check when monthly charge created
         charge_date = funding.expiry_date - timedelta(days=5)
         monthly_charge = models.MonthlyCharge.objects.create(
-            project=project, funding=funding, amount=100.00, date=charge_date
+            project=project,
+            funding=funding,
+            amount=100.00,
+            date=charge_date,
+            status="Confirmed",
+        )
+        # Create Draft monthly charge (should not be counted)
+        models.MonthlyCharge.objects.create(
+            project=project,
+            funding=funding,
+            amount=200.00,
+            date=charge_date,
+            status="Draft",
         )
         monthly_charge.refresh_from_db()
         effort_left = float(
