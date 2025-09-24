@@ -3,8 +3,7 @@
 
 # Project Charging and Analytics Tool (proCAT)
 
-A Django web app for hosting the Project Charging and Analytics Tool (proCAT). The app
-can be found at <https://rse02.rcs.ic.ac.uk/>.
+A Django web app for hosting the Project Charging and Analytics Tool (proCAT).
 
 This Django project uses:
 
