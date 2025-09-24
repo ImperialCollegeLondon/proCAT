@@ -250,7 +250,10 @@ class Project(models.Model):
             information.
         """
         if self.funding_source.exists():
-            total = sum([funding.funding_left for funding in self.funding_source.all()])
+            total = sum(
+                [funding.funding_left for funding in self.funding_source.all()],
+                Decimal(0),
+            )
             return total
 
         return None
