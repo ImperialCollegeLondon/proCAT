@@ -146,6 +146,7 @@ def test_get_budget_status():
         project=project,
         funding=funding3,
         amount=2000.00,
+        status="Confirmed",
     )
 
     funds_ran_out_not_expired, funding_expired_budget_left = get_budget_status(
