@@ -8,7 +8,7 @@ from django.db.models import QuerySet
 from django.utils.safestring import mark_safe
 
 from .models import Capacity, Funding, MonthlyCharge, Project
-from .utils import order_queryset_by_property
+from .utils import format_currency, order_queryset_by_property
 
 
 class ProjectTable(tables.Table):
@@ -39,6 +39,19 @@ class ProjectTable(tables.Table):
         queryset = order_queryset_by_property(queryset, "days_left", is_descending)
         return (queryset, True)
 
+    def render_total_funding_left(self, value: Decimal) -> str:
+        """Render the total funding left as a monetary value."""
+        return format_currency(value)
+
+    def order_total_funding_left(
+        self, queryset: QuerySet[Project], is_descending: bool
+    ) -> tuple[QuerySet[Project], bool]:
+        """Order the total funding left column."""
+        queryset = order_queryset_by_property(
+            queryset, "total_funding_left", is_descending
+        )
+        return (queryset, True)
+
     class Meta:
         """Meta class for the table."""
 
@@ -54,6 +67,7 @@ class ProjectTable(tables.Table):
             "weeks_to_deadline",
             "total_effort",
             "days_left",
+            "total_funding_left",
         )
         attrs: ClassVar[dict[str, str]] = {
             "class": "table table-striped table-hover table-responsive",
@@ -106,6 +120,10 @@ class FundingTable(tables.Table):
         order_by=("cost_centre", "activity"),
     )
 
+    def render_budget(self, value: Decimal) -> str:
+        """Render the budget as a monetary value."""
+        return format_currency(value)
+
     def order_effort(
         self, queryset: QuerySet[Funding], is_descending: bool
     ) -> tuple[QuerySet[Funding], bool]:
@@ -120,6 +138,17 @@ class FundingTable(tables.Table):
         queryset = order_queryset_by_property(queryset, "effort_left", is_descending)
         return (queryset, True)
 
+    def render_funding_left(self, value: Decimal) -> str:
+        """Render the funding left as a monetary value."""
+        return format_currency(value)
+
+    def order_funding_left(
+        self, queryset: QuerySet[Funding], is_descending: bool
+    ) -> tuple[QuerySet[Funding], bool]:
+        """Order the funding_left column."""
+        queryset = order_queryset_by_property(queryset, "funding_left", is_descending)
+        return (queryset, True)
+
     class Meta:
         """Meta class for the table."""
 
@@ -132,6 +161,7 @@ class FundingTable(tables.Table):
             "expiry_date",
             "budget",
             "effort",
+            "funding_left",
             "effort_left",
         )
         attrs: ClassVar[dict[str, str]] = {

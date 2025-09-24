@@ -3,6 +3,7 @@
 from collections import defaultdict
 from collections.abc import Iterable
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
 from django.contrib.auth import get_user_model
@@ -229,3 +230,8 @@ def get_financial_year_dates() -> tuple[datetime, datetime]:
         start = today.replace(day=1, month=8, year=today.year - 1)
         end = today.replace(day=31, month=7, year=today.year)
     return start, end
+
+
+def format_currency(value: Decimal) -> str:
+    """Format a float value as a GBP currency with two decimal places."""
+    return f"£{value: .2f}"
