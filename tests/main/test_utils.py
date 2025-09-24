@@ -112,7 +112,7 @@ def test_get_current_and_last_month_start():
 @pytest.mark.django_db
 def test_get_budget_status():
     """Test get_budget_status function."""
-    from main.models import Department, Funding, Project
+    from main.models import Department, Funding, MonthlyCharge, Project
     from main.utils import get_budget_status
 
     today = datetime.today().date()
@@ -132,17 +132,20 @@ def test_get_budget_status():
     funding2 = Funding.objects.create(
         project=project,
         budget=5000,
-        expiry_date=today - timedelta(days=30),  # Expired
+        expiry_date=today - timedelta(days=30),  # Expired but has budget
     )
     funding3 = Funding.objects.create(
         project=project,
-        budget=-1000,
+        budget=1000,
         expiry_date=today + timedelta(days=30),  # Ran out but not expired
     )
-    funding4 = Funding.objects.create(
+
+    # Create monthly charge to deplete funding 3
+    MonthlyCharge.objects.create(
+        date=today,
         project=project,
-        budget=2000,
-        expiry_date=today - timedelta(days=30),  # Expired but has budget
+        funding=funding3,
+        amount=2000.00,
     )
 
     funds_ran_out_not_expired, funding_expired_budget_left = get_budget_status(
@@ -150,14 +153,12 @@ def test_get_budget_status():
     )
 
     # Check the results
-    assert funds_ran_out_not_expired.count() == 1
-    assert funds_ran_out_not_expired.first() == funding3
+    assert len(funds_ran_out_not_expired) == 1
+    assert funds_ran_out_not_expired[0] == funding3
     assert funding2 not in funds_ran_out_not_expired
-    assert funding4 not in funds_ran_out_not_expired
 
     # Check funding expired but has budget
     assert funding2 in funding_expired_budget_left
-    assert funding4 in funding_expired_budget_left
     assert funding1 not in funding_expired_budget_left
     assert funding3 not in funding_expired_budget_left
 

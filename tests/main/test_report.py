@@ -438,6 +438,37 @@ def test_invalid_date_create_charges_report():
 
 
 @pytest.mark.django_db
+def test_confirmed_charges_are_not_deleted(project, funding):
+    """Test that confirmed charges are not deleted when the report is created."""
+    from main import models, report
+
+    date = datetime.today().date().replace(day=1)
+    confirmed_charge = models.MonthlyCharge.objects.create(
+        date=date,
+        project=project,
+        funding=funding,
+        amount=10.00,
+        status="Confirmed",
+    )
+    draft_charge = models.MonthlyCharge.objects.create(
+        date=date, project=project, funding=funding, amount=20.00, status="Draft"
+    )
+
+    # Check both charges in queryset
+    charges = models.MonthlyCharge.objects.all()
+    assert confirmed_charge in charges
+    assert draft_charge in charges
+
+    writer = Mock()
+    report.create_charges_report(date.month, date.year, writer)
+
+    # Check only confirmed charge in queryset
+    charges = models.MonthlyCharge.objects.all()
+    assert confirmed_charge in charges
+    assert draft_charge not in charges
+
+
+@pytest.mark.django_db
 def test_create_charges_report_for_download(department, user, analysis_code):
     """Test the create_charges_report_for_download function."""
     from main import models, report

@@ -85,6 +85,7 @@ def create_pro_rata_monthly_charges(
             funding=funding,
             amount=funding.monthly_pro_rata_charge,
             date=start_date,
+            status="Draft",
         )
         charge.clean()
         charge.save()
@@ -118,7 +119,11 @@ def create_actual_monthly_charges(
             days_deduce = min(total_days, funding.effort_left)
             amount = round(days_deduce * float(funding.daily_rate), 2)
             charge = models.MonthlyCharge.objects.create(
-                project=project, funding=funding, amount=amount, date=start_date
+                project=project,
+                funding=funding,
+                amount=amount,
+                date=start_date,
+                status="Draft",
             )
             charge.clean()
             charge.save()
@@ -255,9 +260,11 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
         raise ValidationError("Report date must not be in the future.")
     end_date = (start_date + timedelta(days=31)).replace(day=1)
 
-    # delete existing Pro-rata and Actual charges so they can be re-created
+    # delete existing draft Pro-rata and Actual charges so they can be re-created
     models.MonthlyCharge.objects.filter(date=start_date).exclude(
         project__charging="Manual"
+    ).exclude(
+        status="Confirmed",
     ).delete()
 
     # get all Pro-rata and Actual projects that overlap with this time period

@@ -578,6 +578,8 @@ class Capacity(models.Model):
 class MonthlyCharge(models.Model):
     """Monthly charge for a specific project, account and analysis code."""
 
+    _STATUS_CHOICES = (("Draft", "Draft"), ("Confirmed", "Confirmed"))
+
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
@@ -617,6 +619,17 @@ class MonthlyCharge(models.Model):
         blank=True,
         help_text="Line description displayed in the charges report. Mandatory for "
         "manually charged projects.",
+    )
+
+    status = models.CharField(
+        "Status",
+        max_length=20,
+        choices=_STATUS_CHOICES,
+        default="Draft",
+        blank=False,
+        null=False,
+        help_text="The status of the monthly charge ('Draft' or 'Confirmed'). Confirmed"
+        " monthly charges are not deleted.",
     )
 
     def __str__(self) -> str:

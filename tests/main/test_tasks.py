@@ -204,7 +204,7 @@ def test_funding_expired_but_has_budget(funding, project):
     expected_message = (
         f"\nDear {funding.project.lead.get_full_name()},\n\n"
         f"The project {project.name} has expired, but there is still unspent "
-        f"funds of\n£{funding.budget} available.\n\n"
+        f"funds of\n£{funding.funding_left} available (£{funding.budget} total).\n\n"
         f"Please check the funding status and take necessary actions.\n\n"
         f"Best regards,\nProCAT\n"
     )
