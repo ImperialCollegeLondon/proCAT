@@ -168,11 +168,59 @@ class TestProject:
         assert project.total_effort == total_effort
 
     @pytest.mark.django_db
+    def test_total_funding_left(self, project, analysis_code):
+        """Test the total_funding_left method."""
+        from main import models
+
+        # Check when there is no Funding object
+        assert project.total_funding_left is None
+
+        # Create Funding object and Monthly Charges
+        funding = models.Funding.objects.create(
+            project=project,
+            source="External",
+            funding_body="Funding body",
+            cost_centre="centre",
+            activity="G12345",
+            analysis_code=analysis_code,
+            expiry_date=datetime.now().date() + timedelta(days=42),
+            budget=1000.00,
+            daily_rate=200.00,
+        )
+        monthly_charge_A = models.MonthlyCharge.objects.create(
+            date=datetime.today().date(),
+            project=project,
+            funding=funding,
+            amount=100.00,
+            status="Confirmed",
+        )
+        monthly_charge_B = models.MonthlyCharge.objects.create(
+            date=datetime.today().date(),
+            project=project,
+            funding=funding,
+            amount=200.00,
+            status="Confirmed",
+        )
+        models.MonthlyCharge.objects.create(
+            date=datetime.today().date(),
+            project=project,
+            funding=funding,
+            amount=300.00,
+            status="Draft",  # not counted
+        )
+
+        expected_funding_left = (
+            funding.budget - monthly_charge_A.amount - monthly_charge_B.amount
+        )
+
+        assert project.total_funding_left == expected_funding_left
+
+    @pytest.mark.django_db
     def test_percent_effort_left(self, project, analysis_code):
         """Test the percent_effort_left method."""
         from main import models
 
-        # Check when there is no Funding objrect
+        # Check when there is no Funding object
         assert project.percent_effort_left is None
 
         # Create Funding object and Monthly Charge
@@ -472,7 +520,19 @@ class TestFunding:
         # Check when monthly charge created
         charge_date = funding.expiry_date - timedelta(days=5)
         monthly_charge = models.MonthlyCharge.objects.create(
-            project=project, funding=funding, amount=100.00, date=charge_date
+            project=project,
+            funding=funding,
+            amount=100.00,
+            date=charge_date,
+            status="Confirmed",
+        )
+        # Create Draft monthly charge (should not be counted)
+        models.MonthlyCharge.objects.create(
+            project=project,
+            funding=funding,
+            amount=200.00,
+            date=charge_date,
+            status="Draft",
         )
         monthly_charge.refresh_from_db()
         assert funding.funding_left == funding.budget - monthly_charge.amount
@@ -488,7 +548,19 @@ class TestFunding:
         # Check when monthly charge created
         charge_date = funding.expiry_date - timedelta(days=5)
         monthly_charge = models.MonthlyCharge.objects.create(
-            project=project, funding=funding, amount=100.00, date=charge_date
+            project=project,
+            funding=funding,
+            amount=100.00,
+            date=charge_date,
+            status="Confirmed",
+        )
+        # Create Draft monthly charge (should not be counted)
+        models.MonthlyCharge.objects.create(
+            project=project,
+            funding=funding,
+            amount=200.00,
+            date=charge_date,
+            status="Draft",
         )
         monthly_charge.refresh_from_db()
         effort_left = float(
@@ -681,6 +753,7 @@ class TestMonthlyCharge:
             funding=funding,
             date=funding.expiry_date - timedelta(1),
             amount=funding.funding_left + 1,  # Invalid funding
+            status="Confirmed",
         )
         funding.refresh_from_db()  # Update funding object
 

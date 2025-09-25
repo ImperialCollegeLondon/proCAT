@@ -242,6 +242,23 @@ class Project(models.Model):
         return None
 
     @property
+    def total_funding_left(self) -> Decimal | None:
+        """Provide the total funding left after deducting confirmed charges.
+
+        Returns:
+            The total monetary amount of funding left, or none if there is no funding
+            information.
+        """
+        if self.funding_source.exists():
+            total = sum(
+                [funding.funding_left for funding in self.funding_source.all()],
+                Decimal(0),
+            )
+            return total
+
+        return None
+
+    @property
     def percent_effort_left(self) -> float | None:
         """Provide the percentage of effort left.
 
@@ -495,12 +512,14 @@ class Funding(models.Model):
     def funding_left(self) -> Decimal:
         """Provide the funding left in currency.
 
+        Funding left is calculated based on 'Confirmed' monthly charges.
+
         Returns:
             The amount of funding left.
         """
-        funding_spent = MonthlyCharge.objects.filter(funding=self).aggregate(
-            Sum("amount")
-        )["amount__sum"]
+        funding_spent = MonthlyCharge.objects.filter(
+            funding=self, status="Confirmed"
+        ).aggregate(Sum("amount"))["amount__sum"]
         if funding_spent:
             return self.budget - funding_spent
         return self.budget
