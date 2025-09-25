@@ -200,7 +200,9 @@ def order_queryset_by_property(  # type: ignore[explicit-any]
     model_ids = list(queryset.values_list("id", flat=True))
     values = [getattr(obj, property) for obj in queryset]
     sorted_indexes = sorted(
-        range(len(values)), key=lambda i: values[i], reverse=is_descending
+        range(len(values)),
+        key=lambda i: (values[i] is not None, values[i]),
+        reverse=is_descending,
     )
     # Create conditional expression using custom ordering
     preserved_ordering = Case(
