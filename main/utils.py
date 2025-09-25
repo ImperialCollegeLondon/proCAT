@@ -196,6 +196,7 @@ def order_queryset_by_property(  # type: ignore[explicit-any]
     Returns:
         The queryset ordered according to the property.
     """
+    queryset = queryset.order_by("id")
     model_ids = list(queryset.values_list("id", flat=True))
     values = [getattr(obj, property) for obj in queryset]
     sorted_indexes = sorted(
