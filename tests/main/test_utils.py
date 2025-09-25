@@ -1,6 +1,7 @@
 """Tests for the utils module."""
 
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
@@ -146,6 +147,7 @@ def test_get_budget_status():
         project=project,
         funding=funding3,
         amount=2000.00,
+        status="Confirmed",
     )
 
     funds_ran_out_not_expired, funding_expired_budget_left = get_budget_status(
@@ -322,3 +324,10 @@ def test_get_financial_year_dates():
         datetime_mock.now.return_value = datetime(2025, 9, 1, 10, 0, 0, 0)
         assert get_financial_year_dates()[0].date() == date(2025, 8, 1)
         assert get_financial_year_dates()[1].date() == date(2026, 7, 31)
+
+
+def test_format_currency():
+    """Test the format_currency function."""
+    from main.utils import format_currency
+
+    assert format_currency(Decimal("23.4567")) == "£23.46"
