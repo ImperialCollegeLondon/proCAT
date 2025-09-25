@@ -1,4 +1,3 @@
-
 """Tests for the models."""
 
 from contextlib import nullcontext as does_not_raise
