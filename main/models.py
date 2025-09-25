@@ -229,33 +229,31 @@ class Project(models.Model):
         return None
 
     @property
-    def total_effort(self) -> Decimal | None:
+    def total_effort(self) -> float | None:
         """Provide the total days worth of effort available from funding.
 
         Returns:
             The total number of days effort, or None if there is no funding information.
         """
         if self.funding_source.exists():
-            total = Decimal(
-                sum([funding.effort for funding in self.funding_source.all()])
-            )
+            total = sum([funding.effort for funding in self.funding_source.all()])
             return total
 
         return None
 
     @property
-    def percent_effort_left(self) -> Decimal | None:
+    def percent_effort_left(self) -> float | None:
         """Provide the percentage of effort left.
 
         Returns:
             The percentage of effort left, or None if there is no funding information.
         """
         if left := self.days_left:
-            return Decimal(left[1])
+            return left[1]
         return None
 
     @property
-    def days_left(self) -> tuple[Decimal, Decimal] | None:
+    def days_left(self) -> tuple[float, float] | None:
         """Provide the days worth of effort left.
 
         Returns:
@@ -267,9 +265,8 @@ class Project(models.Model):
         if self.total_effort:
             time_entries = self.timeentry_set.all()
             hours_logged = get_logged_hours(time_entries)[0]
-            left = self.total_effort - (Decimal(hours_logged) / Decimal("7"))
-            percent = Decimal(left / self.total_effort * 100)
-            return round(Decimal(left), 1), round(percent, 1)
+            left = self.total_effort - (hours_logged / 7)
+            return round(left, 1), round(left / self.total_effort * 100, 1)
 
         return None
 
@@ -341,7 +338,7 @@ class Project(models.Model):
         return None
 
     @property
-    def effort_per_day(self) -> Decimal | None:
+    def effort_per_day(self) -> float | None:
         """Calculate the estimated effort per day.
 
         Considers only working (business) days.
@@ -427,7 +424,7 @@ class Funding(models.Model):
 
     daily_rate = models.DecimalField(
         "Daily rate",
-        default=Decimal("389.00"),
+        default=389.00,
         blank=False,
         null=False,
         max_digits=12,
@@ -485,7 +482,7 @@ class Funding(models.Model):
         return None
 
     @property
-    def effort(self) -> Decimal:
+    def effort(self) -> float:
         """Provide the effort in days, calculated based on the budget and daily rate.
 
         Returns:
@@ -509,7 +506,7 @@ class Funding(models.Model):
         return self.budget
 
     @property
-    def effort_left(self) -> Decimal:
+    def effort_left(self) -> float:
         """Provide the effort left in days.
 
         Returns:

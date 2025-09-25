@@ -2,6 +2,7 @@
 
 from contextlib import nullcontext as does_not_raise
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -345,7 +346,7 @@ class TestFunding:
         from main import models
 
         funding = models.Funding(budget=10000.00, daily_rate=389.00)
-        assert funding.effort == 26
+        assert funding.effort == 25.7
 
     def test_clean_when_internal(self):
         """Test the clean method."""
@@ -483,7 +484,7 @@ class TestFunding:
 
         # No monthly charges
         funding.refresh_from_db()
-        assert round(funding.effort_left) == funding.effort
+        assert funding.effort_left == funding.effort
 
         # Check when monthly charge created
         charge_date = funding.expiry_date - timedelta(days=5)
@@ -491,7 +492,7 @@ class TestFunding:
             project=project, funding=funding, amount=100.00, date=charge_date
         )
         monthly_charge.refresh_from_db()
-        effort_left = float(
+        effort_left = Decimal(
             (funding.budget - monthly_charge.amount) / funding.daily_rate
         )
         assert funding.effort_left == round(effort_left, 1)

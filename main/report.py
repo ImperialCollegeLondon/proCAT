@@ -4,7 +4,6 @@ import csv
 import io
 from _csv import Writer
 from datetime import date, datetime, timedelta
-from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet, Sum
@@ -16,7 +15,7 @@ from .models import Funding, Project
 
 def get_actual_chargeable_days(
     project: Project, start_date: date, end_date: date
-) -> tuple[Decimal, list[int]] | tuple[None, None]:
+) -> tuple[float, list[int]] | tuple[None, None]:
     """Get the number of chargeable days for projects with Actual charging.
 
     Args:
@@ -43,7 +42,7 @@ def get_actual_chargeable_days(
         return None, None
 
     hours, _ = utils.get_logged_hours(time_entries)
-    total_days = Decimal(str(round(hours / 7, 1)))
+    total_days = round(hours / 7, 1)
     return total_days, pks
 
 
@@ -118,7 +117,7 @@ def create_actual_monthly_charges(
                 break
 
             days_deduce = min(total_days, funding.effort_left)
-            amount = round(days_deduce * funding.daily_rate, 1)
+            amount = round(days_deduce * float(funding.daily_rate), 1)
             charge = models.MonthlyCharge.objects.create(
                 project=project,
                 funding=funding,
