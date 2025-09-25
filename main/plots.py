@@ -267,8 +267,6 @@ def create_cost_recovery_plots(
 
     # in %
     avg_project_capacity_pct = capacity_timeseries / number_team_members * 100
-    # at present, the sum of the capacity is being displayed for all members, it is
-    # not getting divided by the number of team members - need to fix this
 
     total_capacity_used_pct = total_project_effort * 100
 
