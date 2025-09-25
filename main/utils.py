@@ -237,4 +237,4 @@ def get_financial_year_dates() -> tuple[datetime, datetime]:
 
 def format_currency(value: Decimal) -> str:
     """Format a float value as a GBP currency with two decimal places."""
-    return f"£{value: .2f}"
+    return f"£{value:.2f}"

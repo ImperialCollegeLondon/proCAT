@@ -76,6 +76,23 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
             auth_client.get(endpoint, {"sort": "-days_left"})
             assert order_mock.call_args.args[2]
 
+    @pytest.mark.django_db
+    def test_total_funding_left(self, auth_client):
+        """Test the total_funding_left method."""
+        with patch("main.tables.order_queryset_by_property") as order_mock:
+            endpoint = reverse("main:projects")
+            order_mock.return_value = Project.objects.all()
+
+            # Test ascending sort
+            auth_client.get(endpoint, {"sort": "total_funding_left"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "total_funding_left"
+            assert not order_mock.call_args.args[2]
+
+            # Test descending sort
+            auth_client.get(endpoint, {"sort": "-total_funding_left"})
+            assert order_mock.call_args.args[2]
+
 
 class TestFundingListView(LoginRequiredMixin, TemplateOkMixin):
     """Test suite for the funding view."""
@@ -117,6 +134,23 @@ class TestFundingListView(LoginRequiredMixin, TemplateOkMixin):
 
             # Test descending sort
             auth_client.get(endpoint, {"sort": "-effort_left"})
+            assert order_mock.call_args.args[2]
+
+    @pytest.mark.django_db
+    def test_order_funding_left(self, auth_client):
+        """Test the order_funding_left method."""
+        with patch("main.tables.order_queryset_by_property") as order_mock:
+            endpoint = reverse("main:funding")
+            order_mock.return_value = Funding.objects.all()
+
+            # Test ascending sort
+            auth_client.get(endpoint, {"sort": "funding_left"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "funding_left"
+            assert not order_mock.call_args.args[2]
+
+            # Test descending sort
+            auth_client.get(endpoint, {"sort": "-funding_left"})
             assert order_mock.call_args.args[2]
 
 
