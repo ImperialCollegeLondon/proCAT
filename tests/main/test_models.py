@@ -2,7 +2,6 @@
 
 from contextlib import nullcontext as does_not_raise
 from datetime import date, datetime, timedelta
-from decimal import Decimal
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -492,7 +491,7 @@ class TestFunding:
             project=project, funding=funding, amount=100.00, date=charge_date
         )
         monthly_charge.refresh_from_db()
-        effort_left = Decimal(
+        effort_left = float(
             (funding.budget - monthly_charge.amount) / funding.daily_rate
         )
         assert funding.effort_left == round(effort_left, 1)
