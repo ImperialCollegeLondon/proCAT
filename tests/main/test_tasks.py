@@ -477,8 +477,8 @@ def test_monthly_days_used_exceeding_days_left(user, project, funding):
                 "\nDear test user,\n\n"
                 f"The total days used for project {project.name} has exceeded "
                 "the total budget.\n\n"
-                "Days left: -3.0\n"
-                "Total days for project: 26\n\n"
+                "Days left: -3.3\n"
+                "Total days for project: 25.7\n\n"
                 "Please review the project budget and take necessary actions.\n\n"
                 "Best regards,\nProCAT\n"
             ),
