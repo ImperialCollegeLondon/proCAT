@@ -1,8 +1,8 @@
+
 """Tests for the models."""
 
 from contextlib import nullcontext as does_not_raise
 from datetime import date, datetime, timedelta
-from decimal import Decimal
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -155,8 +155,7 @@ class TestProject:
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
-            budget=Decimal("10000.00"),
-            daily_rate=Decimal("200.00"),
+            budget=10000.00,
         )
         funding_B = models.Funding.objects.create(
             project=project,
@@ -164,8 +163,7 @@ class TestProject:
             cost_centre="centre",
             activity="G56789",
             analysis_code=analysis_code,
-            budget=Decimal("5000.00"),
-            daily_rate=Decimal("250.00"),
+            budget=5000.00,
         )
         total_effort = funding_A.effort + funding_B.effort
         assert project.total_effort == total_effort
@@ -207,6 +205,7 @@ class TestProject:
         today = datetime.today().date()
         end_date = today.replace(day=1)
         start_date = (end_date - timedelta(days=1)).replace(day=1)
+        start_time = datetime.combine(start_date, datetime.min.time())
 
         project = models.Project.objects.create(
             name="ProCAT",
@@ -222,54 +221,22 @@ class TestProject:
         assert project.days_left is None
 
         # Create multiple funding objects
-        funding_A = models.Funding.objects.create(
+        funding = models.Funding.objects.create(
             project=project,
             source="External",
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
-            budget=Decimal("10000.00"),
-            daily_rate=Decimal("50.00"),
+            budget=10000.00,
+            daily_rate=50.00,
             expiry_date=end_date,
-        )
-        funding_B = models.Funding.objects.create(
-            project=project,
-            source="External",
-            cost_centre="centre",
-            activity="G56789",
-            analysis_code=analysis_code,
-            budget=Decimal("5000.00"),
-            daily_rate=Decimal("250.00"),
-            expiry_date=end_date,
-        )
-        funding_A.refresh_from_db()
-        funding_B.refresh_from_db()
+        )  # 200 days total
+        funding.refresh_from_db()
 
-        # create some monthly charges
-        models.MonthlyCharge.objects.create(
-            date=start_date,
-            project=project,
-            funding=funding_A,
-            amount=Decimal("100.00"),
-        )
-        models.MonthlyCharge.objects.create(
-            date=start_date,
-            project=project,
-            funding=funding_B,
-            amount=Decimal("300.00"),
-        )
+        # Check days_left when there are no time entries
+        assert project.days_left == (200, 100)
 
-        # Check days_left when there are no extra time entries
-        total_effort = funding_A.effort + funding_B.effort  # (10000/50 + 5000/250)
-        left = funding_A.effort_left + funding_B.effort_left  # (9900/50 + 4700/250)
-        days_left = (round(left, 1), round(left / total_effort * 100, 1))
-        print(f"Expected days_left: {days_left}")
-        print(f"Actual days_left: {project.days_left}")
-        assert project.days_left == days_left
-
-        # Create a time entry object for yesterday
-        yesterday = today - timedelta(days=1)
-        start_time = datetime.combine(yesterday, datetime.min.time())
+        # Create some time entries
         models.TimeEntry.objects.create(
             user=user,
             project=project,
@@ -277,11 +244,16 @@ class TestProject:
             end_time=start_time + timedelta(hours=3.5),
         )  # 3.5 hours total (0.5 days)
 
+        models.TimeEntry.objects.create(
+            user=user,
+            project=project,
+            start_time=start_time,
+            end_time=start_time + timedelta(hours=14),
+        )  # 14 hours total (2 days)
+
         # Check days_left has been updated
-        left -= Decimal("0.5")
-        days_left = (round(left, 1), round(left / total_effort * 100, 1))
-        print(f"Updated days_left: {days_left}")
-        print(f"Actual days_left after time entry: {project.days_left}")
+        left = funding.effort - 2.5
+        days_left = round(left, 1), round(left / project.total_effort * 100, 1)
         assert project.days_left == days_left
 
     @pytest.mark.parametrize(
@@ -290,9 +262,9 @@ class TestProject:
             ["Draft", None, None, None],
             [
                 "Active",
-                datetime.now().date(),
-                datetime.now().date() + timedelta(days=7),
-                5,
+                date(2025, 7, 1),
+                date(2025, 8, 14),
+                27,
             ],
         ],
     )
@@ -374,7 +346,7 @@ class TestFunding:
         from main import models
 
         funding = models.Funding(budget=10000.00, daily_rate=389.00)
-        assert funding.effort == 25.7
+        assert funding.effort == 26
 
     def test_clean_when_internal(self):
         """Test the clean method."""
@@ -512,7 +484,7 @@ class TestFunding:
 
         # No monthly charges
         funding.refresh_from_db()
-        assert funding.effort_left == funding.effort
+        assert round(funding.effort_left) == funding.effort
 
         # Check when monthly charge created
         charge_date = funding.expiry_date - timedelta(days=5)
@@ -520,8 +492,8 @@ class TestFunding:
             project=project, funding=funding, amount=100.00, date=charge_date
         )
         monthly_charge.refresh_from_db()
-        effort_left = round(
-            (funding.budget - monthly_charge.amount) / funding.daily_rate, 1
+        effort_left = float(
+            (funding.budget - monthly_charge.amount) / funding.daily_rate
         )
         assert funding.effort_left == round(effort_left, 1)
 

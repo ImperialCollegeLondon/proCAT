@@ -6,12 +6,14 @@
 #
 asgiref==3.9.1
     # via django
-bokeh==3.7.3
+bokeh==3.8.0
     # via procat (pyproject.toml)
 build==1.3.0
     # via pip-tools
 certifi==2025.7.14
     # via requests
+cffi==2.0.0
+    # via cryptography
 cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.4.2
@@ -28,11 +30,15 @@ coverage[toml]==7.9.2
     # via pytest-cov
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
+cryptography==45.0.7
+    # via
+    #   josepy
+    #   mozilla-django-oidc
 cssbeautifier==1.15.4
     # via djlint
-distlib==0.3.9
+distlib==0.4.0
     # via virtualenv
-django==5.2.4
+django==5.2.6
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -41,7 +47,10 @@ django==5.2.4
     #   django-stubs
     #   django-stubs-ext
     #   django-tables2
+    #   mozilla-django-oidc
     #   procat (pyproject.toml)
+django-admin-rangefilter==0.13.3
+    # via procat (pyproject.toml)
 django-bootstrap5==25.2
     # via procat (pyproject.toml)
 django-crispy-forms==2.4
@@ -62,11 +71,11 @@ editorconfig==0.17.1
     # via
     #   cssbeautifier
     #   jsbeautifier
-filelock==3.18.0
+filelock==3.19.1
     # via virtualenv
 huey==2.5.3
     # via procat (pyproject.toml)
-identify==2.6.13
+identify==2.6.14
     # via pre-commit
 idna==3.10
     # via requests
@@ -74,21 +83,25 @@ iniconfig==2.1.0
     # via pytest
 jinja2==3.1.6
     # via bokeh
+josepy==2.1.0
+    # via mozilla-django-oidc
 jsbeautifier==1.15.4
     # via
     #   cssbeautifier
     #   djlint
-json5==0.12.0
+json5==0.12.1
     # via djlint
 markupsafe==3.0.2
     # via jinja2
+mozilla-django-oidc==4.0.1
+    # via procat (pyproject.toml)
 mypy==1.15.0
     # via
     #   django-stubs
     #   procat (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
-narwhals==2.0.1
+narwhals==2.3.0
     # via bokeh
 nodeenv==1.9.1
     # via pre-commit
@@ -113,7 +126,7 @@ pathspec==0.12.1
     # via djlint
 pillow==11.3.0
     # via bokeh
-pip-tools==7.4.1
+pip-tools==7.5.0
     # via procat (pyproject.toml)
 platformdirs==4.3.8
     # via virtualenv
@@ -121,15 +134,17 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pre-commit==4.2.0
+pre-commit==4.3.0
     # via procat (pyproject.toml)
+pycparser==2.22
+    # via cffi
 pygments==2.19.2
     # via pytest
 pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pytest==8.4.1
+pytest==8.4.2
     # via
     #   procat (pyproject.toml)
     #   pytest-cov
@@ -139,7 +154,7 @@ pytest-cov==6.2.1
     # via procat (pyproject.toml)
 pytest-django==4.11.1
     # via procat (pyproject.toml)
-pytest-mock==3.14.1
+pytest-mock==3.15.0
     # via procat (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via pandas
@@ -153,7 +168,9 @@ pyyaml==6.0.2
 regex==2024.11.6
     # via djlint
 requests==2.32.4
-    # via procat (pyproject.toml)
+    # via
+    #   mozilla-django-oidc
+    #   procat (pyproject.toml)
 ruff==0.12.8
     # via procat (pyproject.toml)
 six==1.17.0
@@ -163,13 +180,13 @@ six==1.17.0
     #   python-dateutil
 sqlparse==0.5.3
     # via django
-tornado==6.5.1
+tornado==6.5.2
     # via bokeh
 tqdm==4.67.1
     # via djlint
-types-pytz==2025.2.0.20250516
+types-pytz==2025.2.0.20250809
     # via pandas-stubs
-types-pyyaml==6.0.12.20250516
+types-pyyaml==6.0.12.20250822
     # via django-stubs
 types-requests==2.32.4.20250611
     # via procat (pyproject.toml)
@@ -184,7 +201,7 @@ urllib3==2.5.0
     # via
     #   requests
     #   types-requests
-virtualenv==20.33.0
+virtualenv==20.34.0
     # via pre-commit
 wheel==0.45.1
     # via pip-tools

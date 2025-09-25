@@ -5,8 +5,7 @@ from typing import Any
 import bokeh
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import Form, ModelForm
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -19,11 +18,6 @@ from django_filters.views import FilterView
 from django_tables2 import RequestConfig, SingleTableMixin
 
 from . import forms, models, plots, report, tables
-
-
-def index(request: HttpRequest) -> HttpResponse:
-    """View that renders the index page."""
-    return render(request=request, template_name="main/index.html")
 
 
 class RegistrationView(CreateView):  # type: ignore [type-arg]
@@ -168,8 +162,7 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add HTML components and Bokeh version to the context."""
         context = super().get_context_data(**kwargs)
-        timeseries_plot, bar_plot = plots.create_cost_recovery_plots()
-        context.update(plots.html_components_from_plot(timeseries_plot, "timeseries"))
-        context.update(plots.html_components_from_plot(bar_plot, "bar"))
+        layout = plots.create_cost_recovery_layout()
+        context.update(plots.html_components_from_plot(layout))
         context["bokeh_version"] = bokeh.__version__
         return context

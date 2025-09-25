@@ -1,6 +1,7 @@
 """Tests for the utils module."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import Group
@@ -111,7 +112,7 @@ def test_get_current_and_last_month_start():
 @pytest.mark.django_db
 def test_get_budget_status():
     """Test get_budget_status function."""
-    from main.models import Department, Funding, Project
+    from main.models import Department, Funding, MonthlyCharge, Project
     from main.utils import get_budget_status
 
     today = datetime.today().date()
@@ -131,17 +132,20 @@ def test_get_budget_status():
     funding2 = Funding.objects.create(
         project=project,
         budget=5000,
-        expiry_date=today - timedelta(days=30),  # Expired
+        expiry_date=today - timedelta(days=30),  # Expired but has budget
     )
     funding3 = Funding.objects.create(
         project=project,
-        budget=-1000,
+        budget=1000,
         expiry_date=today + timedelta(days=30),  # Ran out but not expired
     )
-    funding4 = Funding.objects.create(
+
+    # Create monthly charge to deplete funding 3
+    MonthlyCharge.objects.create(
+        date=today,
         project=project,
-        budget=2000,
-        expiry_date=today - timedelta(days=30),  # Expired but has budget
+        funding=funding3,
+        amount=2000.00,
     )
 
     funds_ran_out_not_expired, funding_expired_budget_left = get_budget_status(
@@ -149,14 +153,12 @@ def test_get_budget_status():
     )
 
     # Check the results
-    assert funds_ran_out_not_expired.count() == 1
-    assert funds_ran_out_not_expired.first() == funding3
+    assert len(funds_ran_out_not_expired) == 1
+    assert funds_ran_out_not_expired[0] == funding3
     assert funding2 not in funds_ran_out_not_expired
-    assert funding4 not in funds_ran_out_not_expired
 
     # Check funding expired but has budget
     assert funding2 in funding_expired_budget_left
-    assert funding4 in funding_expired_budget_left
     assert funding1 not in funding_expired_budget_left
     assert funding3 not in funding_expired_budget_left
 
@@ -184,19 +186,19 @@ def test_days_used_within_days_left(user, project):
     # Create funding for the project
     Funding.objects.create(
         project=project,
-        budget=1000,
+        budget=1600,
         source="Test Source",
         daily_rate=400,
         expiry_date=current_month_start + timedelta(days=30),  # Not expired
     )
 
-    result = get_projects_with_days_used_exceeding_days_left(date=date)
+    result = get_projects_with_days_used_exceeding_days_left()
 
     # Check if the project is not in the result
     assert len(result) == 0, (
         "Project should not be in the result as days used is within days left"
     )
-    assert project.days_left == (2.5, 125.0)
+    assert project.days_left == (2.0, 50.0)
 
 
 @pytest.mark.django_db
@@ -217,7 +219,7 @@ def test_days_used_exceeding_days_left(user, project):
         project=project,
         start_time=start_time,
         end_time=end_time,
-    )
+    )  # 7.1 days
 
     # Create funding for the project
     Funding.objects.create(
@@ -226,20 +228,20 @@ def test_days_used_exceeding_days_left(user, project):
         source="Test Source",
         daily_rate=400,
         expiry_date=current_month_start + timedelta(days=30),  # Not expired
-    )
+    )  # Rounded to 2 days
     project.status = "Active"
     project.save()
 
-    result = get_projects_with_days_used_exceeding_days_left(date=date)
+    result = get_projects_with_days_used_exceeding_days_left()
 
     # Check if the project is in the result
     assert len(result) == 1, (
         "Project should be in the result as days used exceeds days left"
     )
-    project_result, days_used, days_left = result[0]
+    project_result, days_left, total_effort = result[0]
     assert project_result == project
-    assert round(days_used, 1) == 7.1
-    assert round(days_left, 1) == 2.5
+    assert round(days_left, 1) == -5.1
+    assert total_effort == 2
 
 
 @pytest.mark.django_db
@@ -312,19 +314,11 @@ def test_get_financial_year_dates():
     """Test the get_financial_year_dates function."""
     from main.utils import get_financial_year_dates
 
-    today = datetime.now()
+    with patch("main.utils.datetime") as datetime_mock:
+        datetime_mock.now.return_value = datetime(2025, 8, 1, 10, 0, 0, 0)
+        assert get_financial_year_dates()[0].date() == date(2024, 8, 1)
+        assert get_financial_year_dates()[1].date() == date(2025, 7, 31)
 
-    if today.month >= 8:
-        assert get_financial_year_dates()[0].date() == datetime(today.year, 8, 1).date()
-        assert (
-            get_financial_year_dates()[1].date()
-            == datetime(today.year + 1, 7, 31).date()
-        )
-    else:
-        assert (
-            get_financial_year_dates()[0].date()
-            == datetime(today.year - 1, 8, 1).date()
-        )
-        assert (
-            get_financial_year_dates()[1].date() == datetime(today.year, 7, 31).date()
-        )
+        datetime_mock.now.return_value = datetime(2025, 9, 1, 10, 0, 0, 0)
+        assert get_financial_year_dates()[0].date() == date(2025, 8, 1)
+        assert get_financial_year_dates()[1].date() == date(2026, 7, 31)

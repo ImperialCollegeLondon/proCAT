@@ -121,27 +121,30 @@ def get_head_email() -> list[str]:
 
 def get_budget_status(
     date: date | None = None,
-) -> tuple[QuerySet[Funding], QuerySet[Funding]]:
+) -> tuple[list[Funding], list[Funding]]:
     """Get the budget status of a funding."""
     if date is None:
         date = datetime.today().date()
 
-    funds_ran_out_not_expired = Funding.objects.filter(
-        expiry_date__gt=date, budget__lt=0
-    )
-    funding_expired_budget_left = Funding.objects.filter(
-        expiry_date__lt=date, budget__gt=0
-    )
+    funds_ran_out_not_expired = list(Funding.objects.filter(expiry_date__gt=date))
+    funds_ran_out_not_expired = [
+        fund for fund in funds_ran_out_not_expired if fund.funding_left <= 0
+    ]
+
+    funding_expired_budget_left = list(Funding.objects.filter(expiry_date__lt=date))
+    funding_expired_budget_left = [
+        fund for fund in funding_expired_budget_left if fund.funding_left > 0
+    ]
     return funds_ran_out_not_expired, funding_expired_budget_left
 
 
-def get_month_dates_for_previous_year() -> list[tuple[date, date]]:
-    """Get the start and end date of each month for the previous year."""
+def get_month_dates_for_previous_years() -> list[tuple[date, date]]:
+    """Get the start and end date of each month for the previous 3 years."""
     dates = []
     today = datetime.today().date()
 
     start_current_month = today.replace(day=1)
-    for _ in range(12):
+    for _ in range(36):
         end_prev_month = start_current_month - timedelta(days=1)
         start_prev_month = end_prev_month.replace(day=1)
         dates.append((start_prev_month, end_prev_month))
@@ -151,47 +154,24 @@ def get_month_dates_for_previous_year() -> list[tuple[date, date]]:
     return dates
 
 
-def get_projects_with_days_used_exceeding_days_left(
-    date: datetime | None = None,
-) -> list[tuple[Project, float, float]]:
-    """Get projects whose days used in the last month exceed the days left."""
-    if date is None:
-        date = datetime.today()
-
-    projects_with_days_used_exceeding_days_left = []
-
-    last_month_start, _, current_month_start, _ = get_current_and_last_month(date)
-
+def get_projects_with_days_used_exceeding_days_left() -> list[
+    tuple[Project, float, int | None]
+]:
+    """Get projects whose time entries exceed the total effort of the project."""
     projects = Project.objects.filter(status="Active")
+    projects_with_negative_days_left = []
 
     for project in projects:
         if project.days_left is None:
             continue
 
         days_left, _ = project.days_left
-
-        time_entries = project.timeentry_set.filter(
-            start_time__gte=last_month_start,
-            end_time__lt=current_month_start,
-            monthly_charge__isnull=True,  # include entries that are not yet charged
-        )
-
-        if not time_entries.exists():
-            continue
-
-        total_hours = sum(
-            (entry.end_time - entry.start_time).total_seconds() / 3600
-            for entry in time_entries
-        )
-
-        days_used = round(total_hours / 7, 1)  # Assuming 7 hrs/workday
-
-        if days_used > days_left:
-            projects_with_days_used_exceeding_days_left.append(
-                (project, days_used, days_left)
+        if days_left < 0:
+            projects_with_negative_days_left.append(
+                (project, days_left, project.total_effort)
             )
 
-    return projects_with_days_used_exceeding_days_left
+    return projects_with_negative_days_left
 
 
 def order_queryset_by_property(  # type: ignore[explicit-any]
@@ -242,7 +222,7 @@ def get_calendar_year_dates() -> tuple[datetime, datetime]:
 def get_financial_year_dates() -> tuple[datetime, datetime]:
     """Get the start and end dates for the current financial year."""
     today = datetime.now()
-    if today.month >= 8:
+    if today.month > 8:
         start = today.replace(day=1, month=8)
         end = today.replace(day=31, month=7, year=today.year + 1)
     else:

@@ -17,15 +17,6 @@ from main.models import Funding, Project
 from .view_utils import LoginRequiredMixin, TemplateOkMixin
 
 
-class TestIndex(TemplateOkMixin):
-    """Test suite for the index view."""
-
-    _template_name = "main/index.html"
-
-    def _get_url(self):
-        return reverse("main:index")
-
-
 class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
     """Test suite for the projects view."""
 
@@ -241,10 +232,8 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         endpoint = reverse("main:cost_recovery")
         response = auth_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
-        assert "<script" in response.context["timeseries_script"]
-        assert "<div" in response.context["timeseries_div"]
-        assert "<script" in response.context["bar_script"]
-        assert "<div" in response.context["bar_div"]
+        assert "<script" in response.context["script"]
+        assert "<div" in response.context["div"]
         assert response.context["bokeh_version"] == bokeh.__version__
 
     def test_form_valid(self, user):

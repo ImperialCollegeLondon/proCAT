@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
+from django.db.models import QuerySet, Sum
 from django.http import HttpResponse
 
 from . import models, utils
@@ -86,6 +86,7 @@ def create_pro_rata_monthly_charges(
             funding=funding,
             amount=funding.monthly_pro_rata_charge,
             date=start_date,
+            status="Draft",
         )
         charge.clean()
         charge.save()
@@ -104,7 +105,7 @@ def create_actual_monthly_charges(
     total_days, pks = get_actual_chargeable_days(project, start_date, end_date)
 
     if total_days and project.days_left:
-        if total_days > project.days_left[0]:
+        if project.days_left[0] < 0:
             raise ValidationError(
                 "Total chargeable days exceeds the total effort left "
                 f"for project {project.name}."
@@ -119,7 +120,11 @@ def create_actual_monthly_charges(
             days_deduce = min(total_days, funding.effort_left)
             amount = round(days_deduce * funding.daily_rate, 1)
             charge = models.MonthlyCharge.objects.create(
-                project=project, funding=funding, amount=amount, date=start_date
+                project=project,
+                funding=funding,
+                amount=amount,
+                date=start_date,
+                status="Draft",
             )
             charge.clean()
             charge.save()
@@ -218,6 +223,30 @@ def write_to_csv(
             writer.writerow(row)
 
 
+def _get_projects_to_create_report_for(
+    start_date: date, end_date: date
+) -> QuerySet[models.Project]:
+    """Get the models for which to create the report.
+
+    These are the ones that overlap with the time period to charge, that are external
+    (and hence, have funding) and that are not charged manually.
+
+    Args:
+        start_date: The start date of the period to charge.
+        end_date: The end date of the period to charge.
+
+    Returns:
+        Queryset with the projects that fulfill the conditions.
+    """
+    return models.Project.objects.filter(
+        start_date__lt=end_date,
+        end_date__gte=start_date,
+        start_date__isnull=False,
+        end_date__isnull=False,
+        funding_source__source="External",
+    ).exclude(charging="Manual")
+
+
 def create_charges_report(month: int, year: int, writer: Writer) -> None:
     """Generate the CSV report by creating Monthly Charge objects and writing to a CSV.
 
@@ -232,18 +261,15 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
         raise ValidationError("Report date must not be in the future.")
     end_date = (start_date + timedelta(days=31)).replace(day=1)
 
-    # delete existing Pro-rata and Actual charges so they can be re-created
+    # delete existing draft Pro-rata and Actual charges so they can be re-created
     models.MonthlyCharge.objects.filter(date=start_date).exclude(
         project__charging="Manual"
+    ).exclude(
+        status="Confirmed",
     ).delete()
 
     # get all Pro-rata and Actual projects that overlap with this time period
-    projects = models.Project.objects.filter(
-        start_date__lt=end_date,
-        end_date__gte=start_date,
-        start_date__isnull=False,
-        end_date__isnull=False,
-    ).exclude(charging="Manual")
+    projects = _get_projects_to_create_report_for(start_date, end_date)
 
     for project in projects:
         if project.charging == "Pro-rata":

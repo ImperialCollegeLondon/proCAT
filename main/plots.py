@@ -1,6 +1,6 @@
 """Plots for displaying database data."""
 
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Any
 
 import pandas as pd
@@ -15,17 +15,23 @@ from . import timeseries, widgets
 from .utils import (
     get_calendar_year_dates,
     get_financial_year_dates,
-    get_month_dates_for_previous_year,
+    get_month_dates_for_previous_years,
 )
 
 
-def create_bar_plot(title: str, months: list[str], values: list[float]) -> figure:
+def create_bar_plot(
+    title: str,
+    months: list[str],
+    values: list[float],
+    x_range: list[str] | None = None,
+) -> figure:
     """Creates a bar plot with dates versus values.
 
     Args:
         title: plot title
         months: a list of months to display on the x-axis
         values: a list of total charge values for the bar height indicate on the y-axis
+        x_range: (optional) list of values to use as the x_range for the displayed plot
 
     Returns:
         Bokeh figure for the bar chart.
@@ -41,7 +47,8 @@ def create_bar_plot(title: str, months: list[str], values: list[float]) -> figur
     plot.yaxis.axis_label = "Total charge (£)"
     plot.xaxis.axis_label = "Month-Year"
     plot.vbar(x="months", top="values", width=0.5, source=source)
-
+    if x_range:
+        plot.x_range.factors = x_range  # type: ignore[attr-defined]
     # Add basic tooltips to show monthly totals
     hover = HoverTool()
     hover.tooltips = [
@@ -87,6 +94,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         plot.x_range = Range1d(x_range[0], x_range[1])
     plot.yaxis.axis_label = "Value"
     plot.xaxis.axis_label = "Date"
+
     for trace in traces:
         plot.line(
             "index",
@@ -96,7 +104,17 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             color=trace["colour"],
             legend_label=trace["label"],
         )
+        hover = HoverTool(
+            tooltips=[
+                ("Date", "$x{%F}"),
+                ("Value", "$y{0.00}"),
+            ],
+            formatters={"$x": "datetime"},
+        )
+        plot.add_tools(hover)
+
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
+
     return plot
 
 
@@ -196,21 +214,33 @@ def create_capacity_planning_layout() -> Row:
     return plot_layout
 
 
-def create_cost_recovery_plots() -> tuple[figure, figure]:
+def create_cost_recovery_plots(
+    dates: list[tuple[date, date]],
+    start_date: datetime,
+    end_date: datetime,
+    x_range: tuple[datetime, datetime],
+    chart_months: list[str],
+) -> tuple[figure, figure]:
     """Creates the cost recovery plot for the last year.
 
     Provides an overview of team capacity over the past year and the project charging.
+
+    Args:
+        dates: list of tuples (from oldest to most recent) containing dates for all
+            months of the last 3 years; each tuple contains two dates for the first
+            and last date of the month
+        start_date: datetime object representing the start of the timeseries plotting
+            period
+        end_date: datetime object representing the end of the timeseries plotting
+            period
+        x_range: (optional) tuple of datetimes to use as the x_range for the displayed
+            plot
+        chart_months: list of months for x-axis in bar chart
 
     Returns:
         Tuple of Bokeh figures containing cost recovery data timeseries data and
             monthly charges for the past year.
     """
-    dates = get_month_dates_for_previous_year()
-
-    # Get start and end date as datetimes for capacity timeseries
-    start_date = datetime.combine(dates[0][0], time.min)
-    end_date = datetime.combine(dates[-1][1], time.min)
-
     # Create timeseries plot
     cost_recovery_timeseries, monthly_totals = timeseries.get_cost_recovery_timeseries(
         dates
@@ -227,25 +257,111 @@ def create_cost_recovery_plots() -> tuple[figure, figure]:
         {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
     ]
     timeseries_plot = create_timeseries_plot(
-        title=(
-            f"Team capacity and project charging from {start_date.strftime('%B')} "
-            f"{start_date.year} to {end_date.strftime('%B')} {end_date.year}"
-        ),
+        title=("Team capacity and project charging over time"),
         traces=traces,
+        x_range=x_range,
     )
 
     # Create bar plot for monthly charges
-    chart_months = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
     bar_plot = create_bar_plot(
-        title=(
-            f"Monthly charges from {start_date.strftime('%B')} {start_date.year} to "
-            f"{end_date.strftime('%B')} {end_date.year}"
-        ),
+        title=("Total monthly charges"),
         months=chart_months,
         values=monthly_totals,
+        x_range=(chart_months[-12:]),
+    )
+    return timeseries_plot, bar_plot
+
+
+def create_cost_recovery_layout() -> Row:
+    """Create the cost recovery plots in layout with widgets.
+
+    Creates the cost recovery timeseries plot and bar plot for monthly charges, plus the
+    associated widgets used to control the data displayed in the plots.
+
+    Returns:
+        A Row object (the Row containing a Column of widgets and a Column of plots).
+    """
+    dates = get_month_dates_for_previous_years()
+
+    # Get start and end date as datetimes for capacity timeseries
+    min_date = datetime.combine(dates[0][0], time.min)
+    max_date = datetime.combine(dates[-1][1], time.min)
+    start = datetime.combine(dates[-12][0], time.min)
+
+    # Get x-axis values for bar plot
+    chart_months = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
+
+    # Plots are initialised with data for last 3 years but only the last year is shown
+    # by default
+    timeseries_plot, bar_plot = create_cost_recovery_plots(
+        dates=dates,
+        start_date=min_date,
+        end_date=max_date,
+        x_range=(start, max_date),
+        chart_months=chart_months,
     )
 
-    return timeseries_plot, bar_plot
+    # Create date picker widgets to control the dates shown in the plot
+    start_picker, end_picker = widgets.get_plot_date_pickers(
+        min_date=min_date.date(),
+        max_date=max_date.date(),
+        default_start=start.date(),
+        default_end=max_date.date(),
+    )
+    widgets.add_timeseries_callback_to_date_pickers(
+        start_picker=start_picker, end_picker=end_picker, plot=timeseries_plot
+    )
+    widgets.add_bar_callback_to_date_pickers(
+        start_picker=start_picker,
+        end_picker=end_picker,
+        plot=bar_plot,
+        chart_months=chart_months,
+    )
+
+    # Create button to set plots to calendar year
+    calendar_button = Button(
+        label="Current calendar year",
+    )
+    widgets.add_callback_to_button(
+        button=calendar_button,
+        dates=get_calendar_year_dates(),
+        plot=timeseries_plot,
+        start_picker=start_picker,
+        end_picker=end_picker,
+        include_future_dates=False,
+    )
+    widgets.add_bar_callback_to_button(
+        button=calendar_button,
+        dates=get_calendar_year_dates(),
+        plot=bar_plot,
+        chart_months=chart_months,
+    )
+
+    # Create button to set plots to financial year
+    financial_button = Button(
+        label="Current financial year",
+    )
+    widgets.add_callback_to_button(
+        button=financial_button,
+        dates=get_financial_year_dates(),
+        plot=timeseries_plot,
+        start_picker=start_picker,
+        end_picker=end_picker,
+        include_future_dates=False,
+    )
+    widgets.add_bar_callback_to_button(
+        button=financial_button,
+        dates=get_financial_year_dates(),
+        plot=bar_plot,
+        chart_months=chart_months,
+    )
+
+    # Create layout to display widgets aligned as a column next to the plot
+    plot_layout = row(
+        column(start_picker, end_picker, calendar_button, financial_button),
+        column(timeseries_plot, bar_plot),
+    )
+    return plot_layout
 
 
 def html_components_from_plot(
