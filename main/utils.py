@@ -3,6 +3,7 @@
 from collections import defaultdict
 from collections.abc import Iterable
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
 from django.contrib.auth import get_user_model
@@ -155,7 +156,7 @@ def get_month_dates_for_previous_years() -> list[tuple[date, date]]:
 
 
 def get_projects_with_days_used_exceeding_days_left() -> list[
-    tuple[Project, float, int | None]
+    tuple[Project, Decimal, Decimal | None]
 ]:
     """Get projects whose time entries exceed the total effort of the project."""
     projects = Project.objects.filter(status="Active")

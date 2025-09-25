@@ -236,7 +236,9 @@ class Project(models.Model):
             The total number of days effort, or None if there is no funding information.
         """
         if self.funding_source.exists():
-            total = sum([funding.effort for funding in self.funding_source.all()])
+            total = Decimal(
+                sum([funding.effort for funding in self.funding_source.all()])
+            )
             return total
 
         return None
@@ -249,7 +251,7 @@ class Project(models.Model):
             The percentage of effort left, or None if there is no funding information.
         """
         if left := self.days_left:
-            return left[1]
+            return Decimal(left[1])
         return None
 
     @property
@@ -265,8 +267,9 @@ class Project(models.Model):
         if self.total_effort:
             time_entries = self.timeentry_set.all()
             hours_logged = get_logged_hours(time_entries)[0]
-            left = self.total_effort - (hours_logged / 7)
-            return round(left, 1), round(left / self.total_effort * 100, 1)
+            left = self.total_effort - (Decimal(hours_logged) / Decimal("7"))
+            percent = Decimal(left / self.total_effort * 100)
+            return round(Decimal(left), 1), round(percent, 1)
 
         return None
 
