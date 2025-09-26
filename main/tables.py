@@ -16,6 +16,42 @@ class ProjectTable(tables.Table):
 
     name = tables.Column(linkify=("main:project_detail", {"pk": tables.A("pk")}))
 
+    weeks_to_deadline = tables.Column(
+        attrs={
+            "th": {"title": "The number of weeks left until the\nproject deadline."}
+        },
+    )
+
+    total_effort = tables.Column(
+        verbose_name="Effort",
+        attrs={
+            "th": {
+                "title": "The total effort in days available,\n"
+                "before any deductions are made."
+            }
+        },
+    )
+
+    days_left = tables.Column(
+        attrs={
+            "th": {
+                "title": "The total days remaining,\n"
+                "after deducting all logged\n"
+                "Clockify hours."
+            }
+        },
+    )
+
+    total_funding_left = tables.Column(
+        verbose_name="Funding left",
+        attrs={
+            "th": {
+                "title": "The total funding remaining,\n"
+                "after deducting confirmed charges."
+            }
+        },
+    )
+
     def order_weeks_to_deadline(
         self, queryset: QuerySet[Project], is_descending: bool
     ) -> tuple[QuerySet[Project], bool]:
@@ -118,6 +154,35 @@ class FundingTable(tables.Table):
     project_code = tables.Column(
         linkify=("main:funding_detail", {"pk": tables.A("pk")}),
         order_by=("cost_centre", "activity"),
+    )
+
+    effort = tables.Column(
+        attrs={
+            "th": {
+                "title": "The total effort in days available,\n"
+                "before any deductions are made."
+            }
+        },
+    )
+
+    funding_left = tables.Column(
+        attrs={
+            "th": {
+                "title": "The amount of funding remaining,\n"
+                "after deducting confirmed monthly\n"
+                "charges."
+            }
+        },
+    )
+
+    effort_left = tables.Column(
+        attrs={
+            "th": {
+                "title": "The amount of days remaining,\n"
+                "after deducting confirmed monthly\n"
+                "charges."
+            }
+        },
     )
 
     def render_budget(self, value: Decimal) -> str:
