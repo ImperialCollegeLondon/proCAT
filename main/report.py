@@ -42,7 +42,7 @@ def get_actual_chargeable_days(
         return None, None
 
     hours, _ = utils.get_logged_hours(time_entries)
-    total_days = round(hours / 7, 3)
+    total_days = round(hours / 7, 1)
     return total_days, pks
 
 
@@ -117,7 +117,7 @@ def create_actual_monthly_charges(
                 break
 
             days_deduce = min(total_days, funding.effort_left)
-            amount = round(days_deduce * float(funding.daily_rate), 2)
+            amount = round(days_deduce * float(funding.daily_rate), 1)
             charge = models.MonthlyCharge.objects.create(
                 project=project,
                 funding=funding,

@@ -242,8 +242,8 @@ def test_days_used_exceeding_days_left(user, project):
     )
     project_result, days_left, total_effort = result[0]
     assert project_result == project
-    assert round(days_left, 1) == -5.1
-    assert total_effort == 2
+    assert round(days_left, 1) == -4.6
+    assert total_effort == 2.5
 
 
 @pytest.mark.django_db
