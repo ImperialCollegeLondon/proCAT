@@ -129,7 +129,7 @@ def get_internal_effort_timeseries(
 
 
 def get_active_team_members(start_date: datetime, end_date: datetime) -> int:
-    """Get the number of active team members working on projects over time.
+    """Get number of active team members with capacity above zero in a given period.
 
     Args:
         start_date: datetime object representing the start of the plotting
@@ -137,14 +137,23 @@ def get_active_team_members(start_date: datetime, end_date: datetime) -> int:
         end_date: datetime object representing the end of the plotting period
 
     Returns:
-        The number of active team members over the time period.
+        The number of active team members with capacity above zero over the time period.
     """
-    # all users who are active on projects in the date range
+    # all users who have capacity value > 0
     return (
         models.User.objects.filter(
-            timeentry__start_time__date__gte=start_date.date(),
-            timeentry__start_time__date__lte=end_date.date(),
+            capacity__start_date__lt=end_date.date(),
+            capacity__value__gt=0,
         )
+        .annotate(
+            capacity_end_date=Window(  # same like in get_capacity_timeseries
+                expression=Lead("capacity__start_date"),
+                order_by=F("capacity__start_date").asc(),
+                partition_by="username",
+            )
+        )
+        .annotate(capacity_end_date=Coalesce("capacity_end_date", end_date.date()))
+        .filter(capacity_end_date__gte=start_date.date())
         .distinct()
         .count()
     )
