@@ -33,22 +33,23 @@ class TestProject:
         project = models.Project(name="ProCAT")
         assert str(project) == "ProCAT"
 
-    def test_clean_when_draft(self):
+    def test_clean_when_tentative(self):
         """Test the clean method."""
         from main import models
 
         project = models.Project(name="ProCAT")
         project.clean()
 
-    def test_clean_when_not_draft(self, user):
+    def test_clean_when_not_tentative(self, user):
         """Test the clean method."""
         from main import models
 
         # Mandatory fields are present
-        project = models.Project(name="ProCAT", status="Not Started")
+        project = models.Project(name="ProCAT", status="Confirmed")
         with pytest.raises(
             ValidationError,
-            match="All fields are mandatory except if Project status id 'Draft'.",
+            match="All fields are mandatory except if Project status is 'Tentative'"
+            " or 'Not done'.",
         ):
             project.clean()
 
@@ -58,7 +59,7 @@ class TestProject:
             lead=user,
             start_date=datetime.now().date(),
             end_date=datetime.now().date(),
-            status="Not Started",
+            status="Confirmed",
         )
         with pytest.raises(
             ValidationError,
@@ -72,7 +73,7 @@ class TestProject:
             lead=user,
             start_date=datetime.now().date(),
             end_date=datetime.now().date() + timedelta(days=42),
-            status="Not Started",
+            status="Confirmed",
         )
         project.clean()
 
@@ -87,7 +88,7 @@ class TestProject:
             department=department,
             start_date=datetime.now().date(),
             end_date=datetime.now().date() + timedelta(days=42),
-            status="Not Started",
+            status="Confirmed",
         )
         project.clean()
         project.save()
@@ -111,12 +112,12 @@ class TestProject:
     @pytest.mark.parametrize(
         ["status", "start_date", "end_date", "output"],
         [
-            ["Draft", None, None, None],
-            ["Not Started", datetime.now().date(), None, None],
-            ["Not Started", None, datetime.now().date(), None],
-            ["Draft", datetime.now().date(), datetime.now().date(), None],
+            ["Tentative", None, None, None],
+            ["Confirmed", datetime.now().date(), None, None],
+            ["Confirmed", None, datetime.now().date(), None],
+            ["Tentative", datetime.now().date(), datetime.now().date(), None],
             [
-                "Not Started",
+                "Confirmed",
                 datetime.now().date(),
                 datetime.now().date() + timedelta(days=1),
                 (0, 100.0),
@@ -306,7 +307,7 @@ class TestProject:
     @pytest.mark.parametrize(
         ["status", "start_date", "end_date", "output"],
         [
-            ["Draft", None, None, None],
+            ["Tentative", None, None, None],
             [
                 "Active",
                 date(2025, 7, 1),
