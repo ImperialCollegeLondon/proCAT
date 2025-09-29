@@ -263,5 +263,5 @@ class MonthlyChargeTable(tables.Table):
         """Meta class for the table."""
 
         model = MonthlyCharge
-        fields = ("date", "amount", "description")
+        fields = ("date", "amount", "status", "description")
         attrs: ClassVar[dict[str, str]] = {"class": "table table-striped"}
