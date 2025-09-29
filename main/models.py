@@ -221,7 +221,7 @@ class Project(models.Model):
         Only relevant for active projects.
 
         Returns:
-            The number of weeks left or None if the project is in Draft.
+            The number of weeks left or None if the project is Tentative or Not done.
         """
         if (
             self.status != "Tentative"
