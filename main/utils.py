@@ -156,7 +156,7 @@ def get_month_dates_for_previous_years() -> list[tuple[date, date]]:
 
 
 def get_projects_with_days_used_exceeding_days_left() -> list[
-    tuple[Project, float, int | None]
+    tuple[Project, float, float | None]
 ]:
     """Get projects whose time entries exceed the total effort of the project."""
     projects = Project.objects.filter(status="Active")

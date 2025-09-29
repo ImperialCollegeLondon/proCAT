@@ -85,6 +85,80 @@ def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series
     return timeseries
 
 
+def get_internal_effort_timeseries(
+    start_date: datetime, end_date: datetime
+) -> pd.Series[float]:
+    """Get the timeseries data for projects that are not included in MonthlyCharges.
+
+    This includes internal projects that are not charged to an external
+    funding source.
+
+    Args:
+        start_date: datetime object representing the start of the
+            plotting period
+        end_date: datetime object representing the end of the
+            plotting period
+
+    Returns:
+        Pandas Series containing internal effort timeseries data.
+    """
+    dates = pd.bdate_range(
+        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+    )
+    # filter Projects to ensure dates exist and overlap with timeseries dates
+    projects = list(
+        models.Project.objects.filter(
+            start_date__lt=end_date.date(),
+            end_date__gte=start_date.date(),
+            start_date__isnull=False,
+            end_date__isnull=False,
+        )
+    )
+    projects = [
+        project
+        for project in projects
+        if project.funding_source.filter(source="Internal").exists()
+    ]
+
+    # initialize timeseries
+    timeseries = pd.Series(0.0, index=dates)
+    for project in projects:
+        timeseries = update_timeseries(timeseries, project, "effort_per_day")
+
+    return timeseries
+
+
+def get_active_team_members(start_date: datetime, end_date: datetime) -> int:
+    """Get number of active team members with capacity above zero in a given period.
+
+    Args:
+        start_date: datetime object representing the start of the plotting
+            period
+        end_date: datetime object representing the end of the plotting period
+
+    Returns:
+        The number of active team members with capacity above zero over the time period.
+    """
+    # all users who have capacity value > 0
+    return (
+        models.User.objects.filter(
+            capacity__start_date__lt=end_date.date(),
+            capacity__value__gt=0,
+        )
+        .annotate(
+            capacity_end_date=Window(  # same like in get_capacity_timeseries
+                expression=Lead("capacity__start_date"),
+                order_by=F("capacity__start_date").asc(),
+                partition_by="username",
+            )
+        )
+        .annotate(capacity_end_date=Coalesce("capacity_end_date", end_date.date()))
+        .filter(capacity_end_date__gte=start_date.date())
+        .distinct()
+        .count()
+    )
+
+
 def get_capacity_timeseries(
     start_date: datetime, end_date: datetime
 ) -> pd.Series[float]:

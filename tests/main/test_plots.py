@@ -60,8 +60,9 @@ def test_create_cost_recovery_plot(project, funding):
     assert ts_plot.xaxis.axis_label == "Date"
 
     ts_legend_items = [item.label.value for item in ts_plot.legend.items]
-    assert "Capacity used" in ts_legend_items
-    assert "Capacity" in ts_legend_items
+    assert "Average capacity for project work %" in ts_legend_items
+    assert "Fraction of capacity used for all projects %" in ts_legend_items
+    assert "Fraction of capacity used for charged projects %" in ts_legend_items
 
     # Test bar plot
     assert isinstance(bar_plot, figure)

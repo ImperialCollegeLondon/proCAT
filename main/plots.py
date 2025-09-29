@@ -248,13 +248,46 @@ def create_cost_recovery_plots(
     capacity_timeseries = timeseries.get_capacity_timeseries(
         start_date=start_date, end_date=end_date
     )
+
+    internal_effort_timeseries = timeseries.get_internal_effort_timeseries(
+        start_date=start_date, end_date=end_date
+    )
+
+    number_team_members = timeseries.get_active_team_members(
+        start_date=start_date, end_date=end_date
+    )
+
+    internal_project_effort = internal_effort_timeseries / number_team_members
+
+    # charged project effort using cost recovery timeseries divided by team members
+    charged_project_effort = cost_recovery_timeseries / number_team_members
+
+    # total project effort for all projects
+    total_project_effort = charged_project_effort + internal_project_effort
+
+    # in %
+    avg_project_capacity_pct = capacity_timeseries / number_team_members * 100
+
+    total_capacity_used_pct = total_project_effort * 100
+
+    charged_capacity_used_pct = charged_project_effort * 100
+
     traces = [
         {
-            "timeseries": cost_recovery_timeseries,
+            "timeseries": avg_project_capacity_pct,
             "colour": "gold",
-            "label": "Capacity used",
+            "label": "Average capacity for project work %",
         },
-        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
+        {
+            "timeseries": total_capacity_used_pct,
+            "colour": "navy",
+            "label": "Fraction of capacity used for all projects %",
+        },
+        {
+            "timeseries": charged_capacity_used_pct,
+            "colour": "green",
+            "label": "Fraction of capacity used for charged projects %",
+        },
     ]
     timeseries_plot = create_timeseries_plot(
         title=("Team capacity and project charging over time"),

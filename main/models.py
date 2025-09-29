@@ -229,7 +229,7 @@ class Project(models.Model):
         return None
 
     @property
-    def total_effort(self) -> int | None:
+    def total_effort(self) -> float | None:
         """Provide the total days worth of effort available from funding.
 
         Returns:
@@ -499,14 +499,14 @@ class Funding(models.Model):
         return None
 
     @property
-    def effort(self) -> int:
+    def effort(self) -> float:
         """Provide the effort in days, calculated based on the budget and daily rate.
 
         Returns:
             The total number of days of effort provided by the funding.
         """
-        days_effort = round(self.budget / self.daily_rate)
-        return days_effort
+        days_effort = round(self.budget / self.daily_rate, 1)
+        return float(days_effort)
 
     @property
     def funding_left(self) -> Decimal:
@@ -531,7 +531,7 @@ class Funding(models.Model):
         Returns:
             The number of days worth of effort left.
         """
-        return round(float(self.funding_left / self.daily_rate), 1)
+        return float(round(self.funding_left / self.daily_rate, 1))
 
     @property
     def monthly_pro_rata_charge(self) -> float | None:
