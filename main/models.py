@@ -93,10 +93,11 @@ class Project(models.Model):
 
     _NATURE = (("Support", "Support"), ("Standard", "Standard"))
     _STATUS = (
-        ("Draft", "Draft"),
-        ("Not started", "Not started"),
+        ("Tentative", "Tentative"),
+        ("Confirmed", "Confirmed"),
         ("Active", "Active"),
-        ("Completted", "Completted"),
+        ("Finished", "Finished"),
+        ("Not done", "Not done"),
     )
     _CHARGING = (
         ("Actual", "Actual"),
@@ -151,10 +152,10 @@ class Project(models.Model):
         "Status",
         blank=False,
         null=False,
-        default="Draft",
+        default="Tentative",
         choices=_STATUS,
-        help_text="Status of the project. Unless the status is 'Draft', most other "
-        "fields are mandatory.",
+        help_text="Status of the project. Unless the status is 'Tentative' or "
+        "'Not done', most other fields are mandatory.",
     )
     charging = models.CharField(
         "Charging method",
@@ -192,16 +193,17 @@ class Project(models.Model):
         return self.name
 
     def clean(self) -> None:
-        """Ensure that all fields have a value unless the status is 'Draft'.
+        """Ensure all fields have a value unless status is 'Tentative' or 'Not done'.
 
         It also checks that, if present, the end date is after the start date.
         """
-        if self.status == "Draft":
+        if self.status == "Tentative" or self.status == "Not done":
             return super().clean()
 
         if not self.start_date or not self.end_date or not self.lead:
             raise ValidationError(
-                "All fields are mandatory except if Project status id 'Draft'."
+                "All fields are mandatory except if Project status is 'Tentative' or "
+                "'Not done'."
             )
 
         if self.end_date <= self.start_date:
@@ -221,7 +223,12 @@ class Project(models.Model):
         Returns:
             The number of weeks left or None if the project is in Draft.
         """
-        if self.status != "Draft" and self.end_date and self.start_date:
+        if (
+            self.status != "Tentative"
+            and self.status != "Not done"
+            and self.end_date
+            and self.start_date
+        ):
             left = (self.end_date - datetime.now().date()).days / 7
             total = (self.end_date - self.start_date).days / 7
             return int(left), round(left / total * 100, 1)
