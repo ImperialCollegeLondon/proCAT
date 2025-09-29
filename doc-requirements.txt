@@ -142,7 +142,7 @@ pillow==11.3.0
     # via bokeh
 platformdirs==4.3.8
     # via mkdocs-get-deps
-pycparser==2.22
+pycparser==2.23
     # via cffi
 pygments==2.19.2
     # via mkdocs-material

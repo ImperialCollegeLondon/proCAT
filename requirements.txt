@@ -70,7 +70,7 @@ pandas==2.3.1
     #   procat (pyproject.toml)
 pillow==11.3.0
     # via bokeh
-pycparser==2.22
+pycparser==2.23
     # via cffi
 python-dateutil==2.9.0.post0
     # via pandas
