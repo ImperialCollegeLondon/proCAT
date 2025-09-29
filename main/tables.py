@@ -16,6 +16,43 @@ class ProjectTable(tables.Table):
 
     name = tables.Column(linkify=("main:project_detail", {"pk": tables.A("pk")}))
 
+    weeks_to_deadline = tables.Column(
+        attrs={
+            "th": {"title": "The number of weeks left until the\nproject deadline."}
+        },
+    )
+
+    total_effort = tables.Column(
+        attrs={
+            "th": {
+                "title": "The total effort in days available,\n"
+                "including all funding sources,\n"
+                "before any deductions are made."
+            }
+        },
+    )
+
+    days_left = tables.Column(
+        verbose_name="Total days left",
+        attrs={
+            "th": {
+                "title": "The total days remaining,\n"
+                "after deducting all logged\n"
+                "Clockify hours."
+            }
+        },
+    )
+
+    total_funding_left = tables.Column(
+        attrs={
+            "th": {
+                "title": "The total funding remaining,\n"
+                "including all funding sources,\n"
+                "after deducting confirmed charges."
+            }
+        },
+    )
+
     def order_weeks_to_deadline(
         self, queryset: QuerySet[Project], is_descending: bool
     ) -> tuple[QuerySet[Project], bool]:
@@ -120,6 +157,35 @@ class FundingTable(tables.Table):
         order_by=("cost_centre", "activity"),
     )
 
+    effort = tables.Column(
+        attrs={
+            "th": {
+                "title": "The total effort in days available,\n"
+                "before any deductions are made."
+            }
+        },
+    )
+
+    effort_left = tables.Column(
+        attrs={
+            "th": {
+                "title": "The amount of days remaining,\n"
+                "after deducting confirmed monthly\n"
+                "charges."
+            }
+        },
+    )
+
+    funding_left = tables.Column(
+        attrs={
+            "th": {
+                "title": "The amount of funding remaining,\n"
+                "after deducting confirmed monthly\n"
+                "charges."
+            }
+        },
+    )
+
     def render_budget(self, value: Decimal) -> str:
         """Render the budget as a monetary value."""
         return format_currency(value)
@@ -161,8 +227,8 @@ class FundingTable(tables.Table):
             "expiry_date",
             "budget",
             "effort",
-            "funding_left",
             "effort_left",
+            "funding_left",
         )
         attrs: ClassVar[dict[str, str]] = {
             "class": "table table-striped table-hover table-responsive",
