@@ -115,7 +115,7 @@ mkdocstrings==0.30.1
     # via
     #   mkdocstrings-python
     #   procat (pyproject.toml)
-mkdocstrings-python==1.16.12
+mkdocstrings-python==1.18.2
     # via procat (pyproject.toml)
 mozilla-django-oidc==4.0.1
     # via procat (pyproject.toml)
