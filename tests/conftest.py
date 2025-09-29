@@ -45,7 +45,7 @@ def project(user, department):
         lead=user,
         start_date=datetime.now().date(),
         end_date=datetime.now().date() + timedelta(days=42),
-        status="Not Started",
+        status="Confirmed",
     )[0]
 
 
