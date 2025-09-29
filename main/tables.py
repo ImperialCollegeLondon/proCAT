@@ -26,6 +26,7 @@ class ProjectTable(tables.Table):
         attrs={
             "th": {
                 "title": "The total effort in days available,\n"
+                "including all funding sources,\n"
                 "before any deductions are made."
             }
         },
@@ -46,6 +47,7 @@ class ProjectTable(tables.Table):
         attrs={
             "th": {
                 "title": "The total funding remaining,\n"
+                "including all funding sources,\n"
                 "after deducting confirmed charges."
             }
         },
@@ -164,20 +166,20 @@ class FundingTable(tables.Table):
         },
     )
 
-    funding_left = tables.Column(
+    effort_left = tables.Column(
         attrs={
             "th": {
-                "title": "The amount of funding remaining,\n"
+                "title": "The amount of days remaining,\n"
                 "after deducting confirmed monthly\n"
                 "charges."
             }
         },
     )
 
-    effort_left = tables.Column(
+    funding_left = tables.Column(
         attrs={
             "th": {
-                "title": "The amount of days remaining,\n"
+                "title": "The amount of funding remaining,\n"
                 "after deducting confirmed monthly\n"
                 "charges."
             }
@@ -225,8 +227,8 @@ class FundingTable(tables.Table):
             "expiry_date",
             "budget",
             "effort",
-            "funding_left",
             "effort_left",
+            "funding_left",
         )
         attrs: ClassVar[dict[str, str]] = {
             "class": "table table-striped table-hover table-responsive",
