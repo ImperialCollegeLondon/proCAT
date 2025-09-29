@@ -308,50 +308,67 @@ def sync_clockify_time_entries(
             "projects": {"contains": "CONTAINS", "ids": [project.clockify_id]},
         }
 
-        try:
-            response = api.get_time_entries(payload)
-        except Exception as e:
-            logger.error(
-                f"Error fetching time entries for project {project.clockify_id}: {e}"
-            )
-            continue
-
-        entries = response.get("timeentries", [])
-        if not isinstance(entries, list):
-            entries = []
-
-        for entry in entries:
-            entry_id = entry.get("id") or entry.get("_id")
-            project_id = entry.get("projectId")
-            user_email = entry.get("userEmail")
-            time_interval = entry.get("timeInterval", {})
-            start = time_interval.get("start")
-            end = time_interval.get("end")
-
-            if not (project_id and user_email and start and end):
-                logger.warning(f"Skipping incomplete entry: {entry_id}")
-                continue
-
+        seen_entry_ids: set[str] = set()
+        page = 1
+        while True:
+            payload["detailedFilter"]["page"] = page
             try:
-                user = User.objects.get(email=user_email)
-            except User.DoesNotExist:
-                logger.warning(
-                    f"User {user_email} not found. Skipping entry {entry_id}."
+                response = api.get_time_entries(payload)
+            except Exception as e:
+                logger.error(
+                    f"Error fetching time entries for project {project.clockify_id}: {e}"  # noqa E501
                 )
-                continue
+                break
 
-            start_time = datetime.datetime.fromisoformat(start)
-            end_time = datetime.datetime.fromisoformat(end)
+            entries = response.get("timeentries", [])
+            if not isinstance(entries, list) or not entries:
+                break
 
-            TimeEntry.objects.get_or_create(
-                clockify_id=entry_id,
-                defaults={
-                    "user": user,
-                    "project": project,
-                    "start_time": start_time,
-                    "end_time": end_time,
-                },
-            )
+            for entry in entries:
+                entry_id = entry.get("id") or entry.get("_id")
+                project_id = entry.get("projectId")
+                user_email = entry.get("userEmail")
+                time_interval = entry.get("timeInterval", {})
+                start = time_interval.get("start")
+                end = time_interval.get("end")
+
+                if not (project_id and user_email and start and end and entry_id):
+                    logger.warning(f"Skipping incomplete entry: {entry_id}")
+                    continue
+
+                try:
+                    user = User.objects.get(email=user_email)
+                except User.DoesNotExist:
+                    logger.warning(
+                        f"User {user_email} not found. Skipping entry {entry_id}."
+                    )
+                    continue
+
+                start_time = datetime.datetime.fromisoformat(
+                    start.replace("Z", "+00:00")
+                )
+                end_time = datetime.datetime.fromisoformat(end.replace("Z", "+00:00"))
+
+                TimeEntry.objects.update_or_create(
+                    clockify_id=entry_id,
+                    defaults={
+                        "user": user,
+                        "project": project,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                    },
+                )
+                seen_entry_ids.add(entry_id)
+
+            if len(entries) < page_size:
+                break
+            page += 1
+
+        TimeEntry.objects.filter(
+            project=project,
+            start_time__gte=start_date,
+            end_time__lte=end_date,
+        ).exclude(clockify_id__in=seen_entry_ids).delete()
 
 
 @db_periodic_task(crontab(day_of_week="mon", hour=2, minute=0))
