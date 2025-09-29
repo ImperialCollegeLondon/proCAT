@@ -23,7 +23,6 @@ class ProjectTable(tables.Table):
     )
 
     total_effort = tables.Column(
-        verbose_name="Effort",
         attrs={
             "th": {
                 "title": "The total effort in days available,\n"
@@ -33,6 +32,7 @@ class ProjectTable(tables.Table):
     )
 
     days_left = tables.Column(
+        verbose_name="Total days left",
         attrs={
             "th": {
                 "title": "The total days remaining,\n"
@@ -43,7 +43,6 @@ class ProjectTable(tables.Table):
     )
 
     total_funding_left = tables.Column(
-        verbose_name="Funding left",
         attrs={
             "th": {
                 "title": "The total funding remaining,\n"
