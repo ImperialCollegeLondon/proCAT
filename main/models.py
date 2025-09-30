@@ -512,7 +512,7 @@ class Funding(models.Model):
         )
 
     @property
-    def project_code(self) -> str | None:
+    def project_code(self) -> str:
         """Provide the project code, containing the cost centre and activity code.
 
         Returns:
@@ -521,7 +521,7 @@ class Funding(models.Model):
         if self.cost_centre and self.activity:
             return f"{self.cost_centre}_{self.activity}"
 
-        return None
+        return "None"
 
     @property
     def effort(self) -> float:

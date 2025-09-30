@@ -393,7 +393,7 @@ class TestFunding:
         from main import models
 
         funding = models.Funding()
-        assert funding.project_code is None
+        assert funding.project_code == "None"
 
         funding = models.Funding(cost_centre="centre", activity="G12345")
         assert funding.project_code == "centre_G12345"
