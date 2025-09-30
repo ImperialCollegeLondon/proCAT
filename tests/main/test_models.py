@@ -426,6 +426,26 @@ class TestFunding:
         )
         funding.is_complete()
 
+    def test_clean(self):
+        """Test the clean method."""
+        from main import models
+
+        # All good, as the project is Tentative
+        project = models.Project(name="ProCAT")
+        funding = models.Funding(
+            project=project,
+            budget=10000.00,
+            cost_centre="centre",
+            activity="G12345",
+            source="External",
+        )
+        funding.clean()
+
+        # Project is Active, so funding must be complete
+        funding.project.status = "Active"
+        with pytest.raises(ValidationError):
+            funding.clean()
+
     @pytest.mark.parametrize(
         ["activity", "expectation"],
         [

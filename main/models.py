@@ -468,6 +468,15 @@ class Funding(models.Model):
 
     def clean(self) -> None:
         """Ensure that the activity code has a valid value."""
+        if (
+            self.project
+            and self.project.status in ("Active", "Confirmed")
+            and not self.is_complete()
+        ):
+            raise ValidationError(
+                "Funding of Active and Confirmed projects must be complete."
+            )
+
         allowed_characters = ["P", "F", "G", "I"]
         if self.activity and (
             len(self.activity) != 6
