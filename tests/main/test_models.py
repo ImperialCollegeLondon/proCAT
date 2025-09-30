@@ -396,24 +396,20 @@ class TestFunding:
         funding = models.Funding(budget=10000.00, daily_rate=389.00)
         assert funding.effort == 25.7
 
-    def test_clean_when_internal(self):
-        """Test the clean method."""
+    def test_is_complete_when_internal(self):
+        """Test the is_complete method."""
         from main import models
 
         funding = models.Funding(source="Internal")
-        funding.clean()
+        assert funding.is_complete()
 
-    def test_clean_when_external(self):
-        """Test the clean method."""
+    def test_is_complete_when_external(self):
+        """Test the is_complete method."""
         from main import models
 
         # test with missing fields
         funding = models.Funding(source="External")
-        with pytest.raises(
-            ValidationError,
-            match="All fields are mandatory except if source is 'Internal'.",
-        ):
-            funding.clean()
+        assert not funding.is_complete()
 
         # all fields present
         analysis_code = models.AnalysisCode(
@@ -428,7 +424,7 @@ class TestFunding:
             analysis_code=analysis_code,
             expiry_date=datetime.now().date(),
         )
-        funding.clean()
+        funding.is_complete()
 
     @pytest.mark.parametrize(
         ["activity", "expectation"],
