@@ -9,6 +9,7 @@ from django.db.models import (
     DurationField,
     ExpressionWrapper,
     F,
+    Q,
     Sum,
     Window,
 )
@@ -53,12 +54,16 @@ def update_timeseries(
     return timeseries
 
 
-def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series[float]:
+def get_effort_timeseries(
+    start_date: datetime, end_date: datetime, project_statuses: list[str] | None = None
+) -> pd.Series[float]:
     """Get the timeseries data for aggregated project effort.
 
     Args:
         start_date: datetime object representing the start of the plotting period
         end_date: datetime object representing the end of the plotting period
+        project_statuses: a list of project status values to filter the Project results
+            by (e.g. ['Active', 'Confirmed']), or None if no filter applied
 
     Returns:
         Pandas series of aggregated effort with date range as index.
@@ -73,6 +78,8 @@ def get_effort_timeseries(start_date: datetime, end_date: datetime) -> pd.Series
             end_date__gte=start_date.date(),
             start_date__isnull=False,
             end_date__isnull=False,
+        ).filter(  # apply status filter if supplied
+            Q(status__in=project_statuses) if project_statuses else Q()
         )
     )
     projects = [project for project in projects if project.funding_source.exists()]
