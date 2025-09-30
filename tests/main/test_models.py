@@ -113,7 +113,7 @@ class TestProject:
         ):
             project.clean()
 
-        # Now things work, as the above is enought for an internal source to be complete
+        # Now things work, as the above is enough for an internal source to be complete
         funding.source = "Internal"
         funding.save()
         project.clean()
