@@ -209,9 +209,16 @@ class Project(models.Model):
         if self.end_date <= self.start_date:
             raise ValidationError("The end date must be after the start date.")
 
-        if self.status == "Active" and not self.funding_source.exists():
+        if self.status in ("Active", "Confirmed") and not self.funding_source.exists():
             raise ValidationError(
-                "Active projects must have at least 1 funding source."
+                "Active and Confirmed projects must have at least 1 funding source."
+            )
+
+        if self.status in ("Active", "Confirmed") and not all(
+            [f.is_complete() for f in self.funding_source.all()]
+        ):
+            raise ValidationError(
+                "Funding of Active and Confirmed projects must be complete."
             )
 
     @property
