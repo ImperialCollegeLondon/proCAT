@@ -45,7 +45,7 @@ class TestProject:
         from main import models
 
         # Mandatory fields are present
-        project = models.Project(name="ProCAT", status="Confirmed")
+        project = models.Project(name="ProCAT", status="Finished")
         with pytest.raises(
             ValidationError,
             match="All fields are mandatory except if Project status is 'Tentative'"
@@ -59,7 +59,7 @@ class TestProject:
             lead=user,
             start_date=datetime.now().date(),
             end_date=datetime.now().date(),
-            status="Confirmed",
+            status="Finished",
         )
         with pytest.raises(
             ValidationError,
@@ -73,7 +73,7 @@ class TestProject:
             lead=user,
             start_date=datetime.now().date(),
             end_date=datetime.now().date() + timedelta(days=42),
-            status="Confirmed",
+            status="Finished",
         )
         project.clean()
 
@@ -81,14 +81,14 @@ class TestProject:
         """Test the clean method."""
         from main import models
 
-        # All good!
+        # All good, the project is tentative.
         project = models.Project(
             name="ProCAT",
             lead=user,
             department=department,
             start_date=datetime.now().date(),
             end_date=datetime.now().date() + timedelta(days=42),
-            status="Confirmed",
+            status="Tentative",
         )
         project.clean()
         project.save()
@@ -97,16 +97,25 @@ class TestProject:
         project.status = "Active"
         with pytest.raises(
             ValidationError,
-            match="Active projects must have at least 1 funding source.",
+            match="Active and Confirmed projects must have at least 1 funding source.",
         ):
             project.clean()
 
-        # Add funding source and all works!
-        models.Funding.objects.get_or_create(
+        # Add funding source, but it is incomplete, so still fails
+        funding, _ = models.Funding.objects.get_or_create(
             project=project,
-            source="Internal",
+            source="External",
             budget=10000.00,
         )
+        with pytest.raises(
+            ValidationError,
+            match="Funding of Active and Confirmed projects must be complete.",
+        ):
+            project.clean()
+
+        # Now things work, as the above is enought for an internal source to be complete
+        funding.source = "Internal"
+        funding.save()
         project.clean()
 
     @pytest.mark.parametrize(
