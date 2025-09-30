@@ -94,6 +94,69 @@ def test_get_effort_timeseries(
 
 
 @pytest.mark.django_db
+def test_get_effort_timeseries_status_filter(
+    department,
+    user,
+    analysis_code,
+):
+    """Test the get_effort_timeseries function filters by project status."""
+    from main import models, timeseries
+
+    start_date, end_date = (
+        datetime.now(),
+        datetime.now() + timedelta(21),
+    )
+    active_project = models.Project.objects.create(
+        name="Active project",
+        department=department,
+        lead=user,
+        status="Active",
+        start_date=start_date,
+        end_date=end_date,
+    )
+    tentative_project = models.Project.objects.create(
+        name="Tentative project",
+        department=department,
+        lead=user,
+        status="Tentative",
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    models.Funding.objects.create(
+        project=active_project,
+        source="External",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        budget=1000.00,
+        daily_rate=100.00,
+    )
+    models.Funding.objects.create(
+        project=tentative_project,
+        source="External",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        budget=2000.00,
+        daily_rate=400.00,
+    )
+
+    # Check effort_per_day is totalled over all projects with no status filter
+    ts = timeseries.get_effort_timeseries(start_date, end_date)
+    assert (
+        ts.iloc[0] == active_project.effort_per_day + tentative_project.effort_per_day
+    )
+
+    # Check with status filter
+    ts = timeseries.get_effort_timeseries(start_date, end_date, ["Active"])
+    assert ts.iloc[0] == active_project.effort_per_day
+
+    ts = timeseries.get_effort_timeseries(start_date, end_date, ["Tentative"])
+    assert ts.iloc[0] == tentative_project.effort_per_day
+
+
+@pytest.mark.django_db
 def test_get_capacity_timeseries(user):
     """Test the get_capacity_timeseries function."""
     from main import models, timeseries
