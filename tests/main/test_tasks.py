@@ -301,7 +301,8 @@ class TestSyncClockifyTimeEntries:
         self, mock_now, mock_clockify_api, mock_settings, user, funding
     ):
         """Test that a new time entry from the API is created in the database."""
-        mock_now.return_value = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
         project = funding.project
@@ -325,7 +326,7 @@ class TestSyncClockifyTimeEntries:
         }
 
         assert TimeEntry.objects.count() == 0
-        sync_clockify_time_entries()
+        sync_clockify_time_entries(end_date=current_time)
 
         assert TimeEntry.objects.count() == 1
         new_entry = TimeEntry.objects.first()
@@ -419,6 +420,117 @@ class TestSyncClockifyTimeEntries:
 
         assert "User non.existent.user@example.com not found" in caplog.text
         assert TimeEntry.objects.count() == 0
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.ClockifyAPI")
+    @patch("main.tasks.timezone.now")
+    def test_sync_updates_existing_entry(
+        self,
+        mock_now,
+        mock_clockify_api,
+        mock_settings,
+        user,
+        funding,
+    ):
+        """Existing entries are refreshed when the API reports changes."""
+        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        mock_now.return_value = current_time
+        mock_settings.CLOCKIFY_API_KEY = "fake_key"
+        mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+
+        project = funding.project
+        project.clockify_id = "proj_1"
+        project.status = "Active"
+        project.save()
+
+        original_start = timezone.make_aware(datetime(2025, 7, 10, 9, 0, 0))
+        original_end = original_start + timedelta(hours=1)
+
+        entry = TimeEntry.objects.create(
+            clockify_id="entry_existing",
+            user=user,
+            project=project,
+            start_time=original_start,
+            end_time=original_end,
+        )
+
+        updated_start = "2025-07-15T10:00:00Z"
+        updated_end = "2025-07-15T12:00:00Z"
+
+        mock_api_instance = mock_clockify_api.return_value
+        mock_api_instance.get_time_entries.return_value = {
+            "timeentries": [
+                {
+                    "id": "entry_existing",
+                    "projectId": project.clockify_id,
+                    "userEmail": user.email,
+                    "timeInterval": {
+                        "start": updated_start,
+                        "end": updated_end,
+                    },
+                }
+            ]
+        }
+
+        sync_clockify_time_entries(end_date=current_time)
+
+        entry.refresh_from_db()
+        assert entry.start_time == datetime.fromisoformat(
+            updated_start.replace("Z", "+00:00")
+        )
+        assert entry.end_time == datetime.fromisoformat(
+            updated_end.replace("Z", "+00:00")
+        )
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.ClockifyAPI")
+    @patch("main.tasks.timezone.now")
+    def test_sync_deletes_missing_entries_within_window(
+        self,
+        mock_now,
+        mock_clockify_api,
+        mock_settings,
+        user,
+        funding,
+    ):
+        """Entries absent from the API inside the 30-day window are removed."""
+        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        mock_now.return_value = current_time
+        mock_settings.CLOCKIFY_API_KEY = "fake_key"
+        mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+
+        project = funding.project
+        project.clockify_id = "proj_1"
+        project.status = "Active"
+        project.save()
+
+        in_window_start = current_time - timedelta(days=5)
+        in_window_end = in_window_start + timedelta(hours=2)
+        stale_entry = TimeEntry.objects.create(
+            clockify_id="entry_stale",
+            user=user,
+            project=project,
+            start_time=in_window_start,
+            end_time=in_window_end,
+        )
+
+        out_of_window_start = current_time - timedelta(days=45)
+        out_of_window_end = out_of_window_start + timedelta(hours=2)
+        preserved_entry = TimeEntry.objects.create(
+            clockify_id="entry_old",
+            user=user,
+            project=project,
+            start_time=out_of_window_start,
+            end_time=out_of_window_end,
+        )
+
+        mock_api_instance = mock_clockify_api.return_value
+        mock_api_instance.get_time_entries.return_value = {"timeentries": []}
+
+        sync_clockify_time_entries(end_date=current_time)
+
+        assert not TimeEntry.objects.filter(id=stale_entry.id).exists()
+        assert TimeEntry.objects.filter(id=preserved_entry.id).exists()
 
 
 @pytest.mark.django_db
