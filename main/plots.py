@@ -126,8 +126,8 @@ def create_capacity_planning_plot(
     """Generates all the time series data and creates the capacity planning plot.
 
     Includes all business days between the selected start and end date, inclusive of
-    the start date. Time for the effort (aggregated over all projects) and
-    capacity (aggregated over all users) are calculated.
+    the start date. Timeseries for the effort (separate traces depending on project
+    status) and capacity (aggregated over all users) are calculated.
 
     Args:
         start_date: datetime object representing the start of the plotting period
@@ -138,16 +138,32 @@ def create_capacity_planning_plot(
     Returns:
         Bokeh figure containing timeseries data.
     """
-    effort_timeseries = timeseries.get_effort_timeseries(start_date, end_date)
+    # Create overall capacity timeseries
     capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
     traces = [
-        {
-            "timeseries": effort_timeseries,
-            "colour": "firebrick",
-            "label": "Project effort",
-        },
-        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"},
+        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"}
     ]
+
+    # Create individual effort timeseries according to project status
+    projects = (
+        ("Active", "orange"),
+        ("Confirmed", "deeppink"),
+        ("Tentative", "firebrick"),
+    )
+    filter = []  # Traces are cumulative
+    for status, colour in projects:
+        filter.append(status)
+        effort_timeseries = timeseries.get_effort_timeseries(
+            start_date, end_date, filter
+        )
+        traces.append(
+            {
+                "timeseries": effort_timeseries,
+                "colour": colour,
+                "label": f"{status} project effort",
+            },
+        )
+
     plot = create_timeseries_plot(
         title="Project effort and team capacity over time",
         traces=traces,
