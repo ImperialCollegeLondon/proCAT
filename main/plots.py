@@ -180,18 +180,16 @@ def create_capacity_planning_plot(
     # Create overall capacity timeseries
     capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
     traces = [
-        {"timeseries": capacity_timeseries, "colour": "navy", "label": "Capacity"}
+        {"timeseries": capacity_timeseries, "colour": "darkgreen", "label": "Capacity"}
     ]
 
     # Create individual effort timeseries according to project status
-    projects = (
-        ("Active", "orange"),
-        ("Confirmed", "darkgreen"),
-        ("Tentative", "firebrick"),
+    projects = (  # Traces are cumulative
+        ("Tentative", "firebrick", ["Tentative", "Confirmed", "Active"]),
+        ("Confirmed", "orange", ["Confirmed", "Active"]),
+        ("Active", "navy", ["Active"]),
     )
-    filter = []  # Traces are cumulative
-    for status, colour in projects:
-        filter.append(status)
+    for status, colour, filter in projects:
         effort_timeseries = timeseries.get_effort_timeseries(
             start_date, end_date, filter
         )
