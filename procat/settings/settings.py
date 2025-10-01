@@ -178,3 +178,10 @@ OIDC_OP_USER_ENDPOINT = os.environ.get("OIDC_OP_USER_ENDPOINT")
 OIDC_OP_JWKS_ENDPOINT = os.environ.get("OIDC_OP_JWKS_ENDPOINT")
 OIDC_RP_SCOPES = os.environ.get("OIDC_RP_SCOPES")
 OIDC_RP_SIGN_ALGO = os.environ.get("OIDC_RP_SIGN_ALGO", "RS256")
+
+HUEY_TASK_SCHEDULES = {
+    "SYNC_CLOCKIFY_TIME_ENTRIES": {
+        "hour": 0,
+        "minute": 0,
+    },
+}
