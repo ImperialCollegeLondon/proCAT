@@ -25,9 +25,9 @@ def add_varea_glyph(
     """Adds a varea glyph to add shading between traces.
 
     The shading is applied when the upper trace is above the lower trace. If below,
-    no shading is applied. VArea creates this shading between two sets of y-values.
-    A new set of y values therefore has to be generated, otherwise the VArea is applied
-    whenever either trace is greater than the other.
+    no shading is applied. VArea creates this shading between two sets of y-values:
+    the element-wise maximum of the two traces and the lower trace. Otherwise, the
+    shading is applied whenever either trace is above the other.
 
     Args:
         plot: the plot to add the glyph to
@@ -40,9 +40,7 @@ def add_varea_glyph(
         {
             "index": df["index"],
             "y1": df[lower_trace],
-            "y2": df[upper_trace].where(
-                df[upper_trace] > df[lower_trace], df[lower_trace]
-            ),
+            "y2": df[upper_trace].combine(df[lower_trace], max),
         }
     )
     plot.add_glyph(
