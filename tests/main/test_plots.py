@@ -1,8 +1,35 @@
 """Tests for the plots module."""
 
 from datetime import datetime, time, timedelta
+from unittest.mock import patch
 
+import pandas as pd
 import pytest
+
+
+def test_add_varea_glyph():
+    """Test function to add a varea glyph to a plot."""
+    from main.plots import add_varea_glyph
+
+    with patch("main.plots.figure") as plot_mock:
+        with patch("main.plots.ColumnDataSource") as source_mock:
+            df = pd.DataFrame(
+                {
+                    "index": list(range(10)),
+                    "upper": [5, 5, 5, 3, 3, 7, 2, 10, 10, 12],
+                    "lower": [3, 3, 7, 7, 4, 4, 4, 12, 9, 9],
+                }
+            )
+            expected_series = pd.Series([5, 5, 7, 7, 4, 7, 4, 12, 10, 12])
+
+            add_varea_glyph(plot_mock, df, "upper", "lower", "green")
+
+            args = source_mock.call_args[0]
+            pd.testing.assert_series_equal(df["index"], args[0]["index"])
+            pd.testing.assert_series_equal(df["lower"], args[0]["y1"])
+            pd.testing.assert_series_equal(
+                expected_series, args[0]["y2"], check_names=False
+            )
 
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
