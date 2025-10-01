@@ -369,7 +369,7 @@ def sync_clockify_time_entries(
             )
 
 
-@db_periodic_task(crontab(day_of_week="mon", hour=2, minute=0))
+@db_periodic_task(crontab(**settings.HUEY_TASK_SCHEDULES["SYNC_CLOCKIFY_TIME_ENTRIES"]))
 def sync_clockify_time_entries_task() -> None:
     """Scheduled task to sync time entries from Clockify API."""
     sync_clockify_time_entries()
