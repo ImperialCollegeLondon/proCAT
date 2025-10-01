@@ -209,9 +209,16 @@ class Project(models.Model):
         if self.end_date <= self.start_date:
             raise ValidationError("The end date must be after the start date.")
 
-        if self.status == "Active" and not self.funding_source.exists():
+        if self.status in ("Active", "Confirmed") and not self.funding_source.exists():
             raise ValidationError(
-                "Active projects must have at least 1 funding source."
+                "Active and Confirmed projects must have at least 1 funding source."
+            )
+
+        if self.status in ("Active", "Confirmed") and not all(
+            [f.is_complete() for f in self.funding_source.all()]
+        ):
+            raise ValidationError(
+                "Funding of Active and Confirmed projects must be complete."
             )
 
     @property
@@ -467,23 +474,18 @@ class Funding(models.Model):
         return f"{self.project} - £{self.budget:.2f} - {self.project_code}"
 
     def clean(self) -> None:
-        """Ensure that all fields have a value unless the source is 'Internal'."""
-        if self.source == "Internal":
-            return super().clean()
-
+        """Ensure that the activity code has a valid value."""
         if (
-            not self.funding_body
-            or not self.cost_centre
-            or not self.activity
-            or not self.analysis_code
-            or not self.expiry_date
+            self.project
+            and self.project.status in ("Active", "Confirmed")
+            and not self.is_complete()
         ):
             raise ValidationError(
-                "All fields are mandatory except if source is 'Internal'."
+                "Funding of Active and Confirmed projects must be complete."
             )
 
         allowed_characters = ["P", "F", "G", "I"]
-        if (
+        if self.activity and (
             len(self.activity) != 6
             or not self.activity.isalnum()
             or self.activity[0] not in allowed_characters
@@ -492,6 +494,22 @@ class Funding(models.Model):
                 "Activity code must be 6 alphanumeric characters starting with P, F, "
                 "G or I."
             )
+
+    def is_complete(self) -> bool:
+        """Checks if funding record is complete.
+
+        This is only relevant to funding where source is external.
+        """
+        if self.source == "Internal":
+            return True
+
+        return bool(
+            self.funding_body
+            and self.cost_centre
+            and self.activity
+            and self.analysis_code
+            and self.expiry_date
+        )
 
     @property
     def project_code(self) -> str:
