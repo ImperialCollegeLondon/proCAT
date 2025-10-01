@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, HoverTool, Range1d
+from bokeh.models import ColumnDataSource, HoverTool, Range1d, VArea
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
 from bokeh.plotting import figure
@@ -17,6 +17,37 @@ from .utils import (
     get_financial_year_dates,
     get_month_dates_for_previous_years,
 )
+
+
+def add_varea_glyph(
+    plot: figure, df: pd.DataFrame, upper_trace: str, lower_trace: str, colour: str
+) -> None:
+    """Adds a varea glyph to add shading between traces.
+
+    The shading is applied when the upper trace is above the lower trace. If below,
+    no shading is applied. VArea creates this shading between two sets of y-values.
+    A new set of y values therefore has to be generated, otherwise the VArea is applied
+    whenever either trace is greater than the other.
+
+    Args:
+        plot: the plot to add the glyph to
+        df: pandas DataFrame containing trace data
+        upper_trace: the label of the upper trace
+        lower_trace: the label of the lower trace
+        colour: the colour to apply to the shading
+    """
+    source = ColumnDataSource(
+        {
+            "index": df["index"],
+            "y1": df[lower_trace],
+            "y2": df[upper_trace].where(
+                df[upper_trace] > df[lower_trace], df[lower_trace]
+            ),
+        }
+    )
+    plot.add_glyph(
+        source, VArea(x="index", y1="y1", y2="y2", fill_color=colour, fill_alpha=0.3)
+    )
 
 
 def create_bar_plot(
@@ -63,6 +94,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     title: str,
     traces: list[dict[str, Any]],
     x_range: tuple[datetime, datetime] | None = None,
+    vareas: tuple[tuple[tuple[str, str], str], ...] | None = None,
 ) -> figure:
     """Creates a generic timeseries plot.
 
@@ -72,6 +104,9 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             'colour'
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot
+        vareas: (optional) tuple of tuples, containing a tuple of trace labels to apply
+            shading between and the colour to use, e.g.
+            ((("Capacity", "Project effort"), "Green"), ...)
 
     Returns:
         Bokeh figure containing timeseries data.
@@ -104,14 +139,20 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             color=trace["colour"],
             legend_label=trace["label"],
         )
-        hover = HoverTool(
-            tooltips=[
-                ("Date", "$x{%F}"),
-                ("Value", "$y{0.00}"),
-            ],
-            formatters={"$x": "datetime"},
-        )
-        plot.add_tools(hover)
+
+    # If provided, add varea shading between traces
+    if vareas:
+        for labels, colour in vareas:
+            add_varea_glyph(plot, df, labels[0], labels[1], colour)
+
+    hover = HoverTool(
+        tooltips=[
+            ("Date", "$x{%F}"),
+            ("Value", "$y{0.00}"),
+        ],
+        formatters={"$x": "datetime"},
+    )
+    plot.add_tools(hover)
 
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
 
@@ -147,7 +188,7 @@ def create_capacity_planning_plot(
     # Create individual effort timeseries according to project status
     projects = (
         ("Active", "orange"),
-        ("Confirmed", "deeppink"),
+        ("Confirmed", "darkgreen"),
         ("Tentative", "firebrick"),
     )
     filter = []  # Traces are cumulative
@@ -164,10 +205,18 @@ def create_capacity_planning_plot(
             },
         )
 
+    # Apply area shading between select traces
+    vareas = (
+        (("Capacity", "Confirmed project effort"), "green"),
+        (("Confirmed project effort", "Active project effort"), "yellow"),
+        (("Tentative project effort", "Confirmed project effort"), "red"),
+    )
+
     plot = create_timeseries_plot(
         title="Project effort and team capacity over time",
         traces=traces,
         x_range=x_range,
+        vareas=vareas,
     )
     return plot
 
