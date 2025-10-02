@@ -178,7 +178,7 @@ _template_funding_expired_but_has_budget = """
 Dear {lead},
 
 The project {project_name} has expired, but there is still unspent funds of
-£{funding_left} available (£{budget} total).
+£{funding_left:.2f} available (£{budget:.2f} total).
 
 Please check the funding status and take necessary actions.
 
