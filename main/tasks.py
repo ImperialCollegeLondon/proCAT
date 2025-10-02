@@ -283,7 +283,7 @@ def email_monthly_charges_report() -> None:
 def sync_clockify_time_entries(
     days_back: int = 30,
     end_date: datetime.datetime = timezone.now(),
-    page_size: int = 200,
+    page_size: int = 1000,
 ) -> None:
     """Task to sync time entries from Clockify API to TimeEntry model.
 
