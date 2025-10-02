@@ -314,7 +314,7 @@ def create_cost_recovery_plots(
         start_date=start_date, end_date=end_date
     )
 
-    number_team_members = timeseries.get_active_team_members(
+    number_team_members = timeseries.get_team_members_timeseries(
         start_date=start_date, end_date=end_date
     )
 

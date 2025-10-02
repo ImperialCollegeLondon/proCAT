@@ -157,6 +157,44 @@ def test_get_effort_timeseries_status_filter(
 
 
 @pytest.mark.django_db
+def test_get_team_members_timeseries(user, django_user_model):
+    """Test the get_team_members_timeseries function."""
+    from main import models, timeseries
+
+    another_user = django_user_model.objects.create_user(
+        first_name="test2",
+        last_name="user",
+        email="test.user@mail.com",
+        password="1234",
+        username="testuser2",
+    )
+
+    models.Capacity.objects.create(
+        user=user, value=0.5, start_date=datetime.now().date()
+    )
+    models.Capacity.objects.create(
+        user=another_user, value=0.7, start_date=datetime.now().date() + timedelta(7)
+    )
+    plot_start_date, plot_end_date = (
+        datetime.now() - timedelta(7),
+        datetime.now() + timedelta(28),
+    )
+    ts = timeseries.get_team_members_timeseries(plot_start_date, plot_end_date)
+    assert isinstance(ts, pd.Series)
+    assert all(ts[ts.index < pd.to_datetime(datetime.now().date())] == 0)
+    assert all(
+        ts[
+            (pd.to_datetime(datetime.now().date()) <= ts.index)
+            * (ts.index < pd.to_datetime(datetime.now().date() + timedelta(7)))
+        ]
+        == 1
+    )
+    assert all(
+        ts[ts.index >= pd.to_datetime(datetime.now().date() + timedelta(7))] == 2
+    )
+
+
+@pytest.mark.django_db
 def test_get_capacity_timeseries(user):
     """Test the get_capacity_timeseries function."""
     from main import models, timeseries
