@@ -135,8 +135,12 @@ def get_internal_effort_timeseries(
     return timeseries
 
 
-def get_active_team_members(start_date: datetime, end_date: datetime) -> int:
+def get_team_members_timeseries(
+    start_date: datetime, end_date: datetime
+) -> pd.Series[float]:
     """Get number of active team members with capacity above zero in a given period.
+
+    The number of team members is time dependent.
 
     Args:
         start_date: datetime object representing the start of the plotting
@@ -146,24 +150,32 @@ def get_active_team_members(start_date: datetime, end_date: datetime) -> int:
     Returns:
         The number of active team members with capacity above zero over the time period.
     """
-    # all users who have capacity value > 0
-    return (
-        models.User.objects.filter(
-            capacity__start_date__lt=end_date.date(),
-            capacity__value__gt=0,
-        )
+    dates = pd.bdate_range(
+        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+    )
+
+    capacities = list(
+        models.Capacity.objects.filter(start_date__lte=end_date.date(), value__gt=0)
         .annotate(
-            capacity_end_date=Window(  # same like in get_capacity_timeseries
-                expression=Lead("capacity__start_date"),
-                order_by=F("capacity__start_date").asc(),
-                partition_by="username",
+            end_date=Window(
+                expression=Lead("start_date"),  # get start date of next capacity
+                order_by=F("start_date").asc(),  # orders by ascending start date
+                partition_by="user__username",
             )
         )
-        .annotate(capacity_end_date=Coalesce("capacity_end_date", end_date.date()))
-        .filter(capacity_end_date__gte=start_date.date())
-        .distinct()
-        .count()
+        .annotate(end_date=Coalesce("end_date", end_date.date()))
     )
+
+    # initialize timeseries
+    timeseries = pd.Series(0.0, index=dates)
+
+    # By setting the capacity value to 1, we are effectively counting team members
+    # active in those dates.
+    for capacity in capacities:
+        capacity.value = 1.0
+        timeseries = update_timeseries(timeseries, capacity, "value")
+
+    return timeseries
 
 
 def get_capacity_timeseries(
