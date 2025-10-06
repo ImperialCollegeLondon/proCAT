@@ -69,9 +69,9 @@ def create_bar_plot(
     plot = figure(
         x_range=months,  # type: ignore[arg-type]
         title=title,
-        width=1000,
         height=500,
         background_fill_color="#efefef",
+        sizing_mode="stretch_width",
     )
     plot.yaxis.axis_label = "Total charge (£)"
     plot.xaxis.axis_label = "Month-Year"
@@ -117,11 +117,11 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
 
     plot = figure(
         title=title,
-        width=1000,
         height=500,
         background_fill_color="#efefef",
         x_axis_type="datetime",  # type: ignore[call-arg]
         tools="save,xpan,xwheel_zoom,reset",
+        sizing_mode="stretch_width",
     )
     if x_range:
         plot.x_range = Range1d(x_range[0], x_range[1])
@@ -270,7 +270,9 @@ def create_capacity_planning_layout() -> Row:
 
     # Create layout to display widgets aligned as a column next to the plot
     plot_layout = row(
-        column(start_picker, end_picker, calendar_button, financial_button), plot
+        column(start_picker, end_picker, calendar_button, financial_button),
+        plot,
+        sizing_mode="stretch_width",
     )
     return plot_layout
 
@@ -453,7 +455,12 @@ def create_cost_recovery_layout() -> Row:
     # Create layout to display widgets aligned as a column next to the plot
     plot_layout = row(
         column(start_picker, end_picker, calendar_button, financial_button),
-        column(timeseries_plot, bar_plot),
+        column(
+            timeseries_plot,
+            bar_plot,
+            sizing_mode="stretch_width",
+        ),
+        sizing_mode="stretch_width",
     )
     return plot_layout
 
