@@ -20,6 +20,17 @@
         "review",
         "test"
       ]
+    },
+    {
+      "login": "stephwills",
+      "name": "Steph Wills",
+      "avatar_url": "https://avatars.githubusercontent.com/u/72925860?v=4",
+      "profile": "https://github.com/stephwills",
+      "contributions": [
+        "code",
+        "review",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
