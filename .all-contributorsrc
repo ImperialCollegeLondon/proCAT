@@ -53,6 +53,15 @@
         "review",
         "test"
       ]
+    },
+    {
+      "login": "jfcoker",
+      "name": "jfcoker",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62701887?v=4",
+      "profile": "https://www.imperial.ac.uk/people/j.coker20",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
