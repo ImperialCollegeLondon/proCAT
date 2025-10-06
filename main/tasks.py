@@ -178,7 +178,7 @@ _template_funding_expired_but_has_budget = """
 Dear {lead},
 
 The project {project_name} has expired, but there is still unspent funds of
-£{funding_left} available (£{budget} total).
+£{funding_left:.2f} available (£{budget:.2f} total).
 
 Please check the funding status and take necessary actions.
 
@@ -283,7 +283,7 @@ def email_monthly_charges_report() -> None:
 def sync_clockify_time_entries(
     days_back: int = 30,
     end_date: datetime.datetime = timezone.now(),
-    page_size: int = 200,
+    page_size: int = 1000,
 ) -> None:
     """Task to sync time entries from Clockify API to TimeEntry model.
 
