@@ -12,7 +12,7 @@ backrefs==5.9
     # via mkdocs-material
 bokeh==3.8.0
     # via procat (pyproject.toml)
-certifi==2025.7.14
+certifi==2025.10.5
     # via requests
 cffi==2.0.0
     # via cryptography
