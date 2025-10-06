@@ -59,7 +59,7 @@ django-crispy-forms==2.4
     #   procat (pyproject.toml)
 django-filter==25.1
     # via procat (pyproject.toml)
-django-stubs[compatible-mypy]==5.2.2
+django-stubs[compatible-mypy]==5.2.6
     # via procat (pyproject.toml)
 django-stubs-ext==5.2.2
     # via django-stubs
