@@ -151,7 +151,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             ("Value", "$y{0.00}"),
         ],
         formatters={"$x": "datetime"},
-        renderers=lines,
+        renderers=lines,  # type: ignore[arg-type]
     )
     plot.add_tools(hover)
 
