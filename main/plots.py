@@ -128,8 +128,9 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     plot.yaxis.axis_label = "Value"
     plot.xaxis.axis_label = "Date"
 
+    lines = []
     for trace in traces:
-        plot.line(
+        line = plot.line(
             "index",
             trace["label"],
             source=source,
@@ -137,6 +138,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             color=trace["colour"],
             legend_label=trace["label"],
         )
+        lines.append(line)
 
     # If provided, add varea shading between traces
     if vareas:
@@ -149,6 +151,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             ("Value", "$y{0.00}"),
         ],
         formatters={"$x": "datetime"},
+        renderers=lines,
     )
     plot.add_tools(hover)
 
