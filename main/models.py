@@ -209,17 +209,16 @@ class Project(models.Model):
         if self.end_date <= self.start_date:
             raise ValidationError("The end date must be after the start date.")
 
-        if self.status in ("Active", "Confirmed") and not self.funding_source.exists():
-            raise ValidationError(
-                "Active and Confirmed projects must have at least 1 funding source."
-            )
+        if self.pk is not None and self.status in ("Active", "Confirmed"):
+            if not self.funding_source.exists():
+                raise ValidationError(
+                    "Active and Confirmed projects must have at least 1 funding source."
+                )
 
-        if self.status in ("Active", "Confirmed") and not all(
-            [f.is_complete() for f in self.funding_source.all()]
-        ):
-            raise ValidationError(
-                "Funding of Active and Confirmed projects must be complete."
-            )
+            if not all([f.is_complete() for f in self.funding_source.all()]):
+                raise ValidationError(
+                    "Funding of Active and Confirmed projects must be complete."
+                )
 
     @property
     def weeks_to_deadline(self) -> tuple[int, float] | None:
