@@ -45,6 +45,7 @@ class CostRecoveryForm(forms.Form):
         choices=_MONTHS,
         label="Month",
         coerce=int,
+        initial=datetime.now().month,
         help_text="Month for which to generate the charges report.",
     )
     year = forms.TypedChoiceField(
