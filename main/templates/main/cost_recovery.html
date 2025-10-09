@@ -2,26 +2,54 @@
 {% load django_bootstrap5 %}
 {% block content %}
 
+  <style>p {text-align: justify;}</style>
+
   <script src="https://cdn.bokeh.org/bokeh/release/bokeh-{{ bokeh_version }}.min.js"></script>
   <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{ bokeh_version }}.min.js"></script>
   <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{ bokeh_version }}.min.js"></script>
   <script src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-{{ bokeh_version }}.min.js"></script>
   <script src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-{{ bokeh_version }}.min.js"></script>
 
-  <h2>Charges report</h2>
-  <form method="post">
-    {% csrf_token %}
-    {% bootstrap_form form layout="horizontal" %}
-    {% if user.is_superuser %}
-      {% bootstrap_button button_type="submit" content="Download CSV" %}
-    {% endif %}
-  </form>
+  <h2>Cost recovery</h2>
 
   <br>
 
-  <h2>Cost recovery plots</h2>
+  <!-- Page description and form -->
 
-  {{ script | safe }}
-  {{ div | safe }}
+  <div class="container-fluid">
+    <div class="row align-items-top gx-5">
+      <div class="col-md-6">
+        <h6>Description</h6>
+        <p>
+          This page displays information related to past charges. Here, you can download
+          the charges report (in csv format) for past months and view data regarding
+          recovered costs. The first plot, '<i>Team capacity and project charging over time</i>',
+          displays the average capacity for project work and the fraction of capacity
+          that was recovered (based on Clockify time entries). The second plot,
+          '<i>Total monthly charges</i>' shows aggregated monthly charges for individual months.
+        </p>
+      </div>
+      <div class="col-md-6">
+        <form method="post">
+          <h6>Download charges report</h6>
+          {% csrf_token %}
+          {% bootstrap_form form layout="horizontal" %}
+          {% if user.is_superuser %}
+            {% bootstrap_button button_type="submit" content="Download CSV" %}
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <br>
+
+    <!-- Bokeh plots -->
+
+    <h6>Cost recovery plots</h6>
+
+    {{ script | safe }}
+    {{ div | safe }}
+
+  </div>
 
 {% endblock content %}
