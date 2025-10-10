@@ -1,4 +1,7 @@
  <!-- markdownlint-disable MD041 -->
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/proCAT/graph/badge.svg?token=A9KNEMYXXN)](https://codecov.io/gh/ImperialCollegeLondon/proCAT)
 
 # Project Charging and Analytics Tool (proCAT)
@@ -136,3 +139,30 @@ python package version specifiers, i.e. `"black<23"` or `"pip-tools!=6.12.2"`
 [pre-commit.ci]: https://pre-commit.ci
 [Docker]: https://docs.docker.com/desktop/
 [virtual environment]: https://docs.python.org/3/library/venv.html
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/service-offering/research-software-engineering/"><img src="https://avatars.githubusercontent.com/u/6095790?v=4?s=100" width="100px;" alt="Diego Alonso Álvarez"/><br /><sub><b>Diego Alonso Álvarez</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=dalonsoa" title="Code">💻</a> <a href="#ideas-dalonsoa" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-dalonsoa" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-dalonsoa" title="Maintenance">🚧</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/pulls?q=is%3Apr+reviewed-by%3Adalonsoa" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=dalonsoa" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/stephwills"><img src="https://avatars.githubusercontent.com/u/72925860?v=4?s=100" width="100px;" alt="Steph Wills"/><br /><sub><b>Steph Wills</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=stephwills" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/pulls?q=is%3Apr+reviewed-by%3Astephwills" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=stephwills" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Sahil590"><img src="https://avatars.githubusercontent.com/u/56438860?v=4?s=100" width="100px;" alt="Sahil Raja"/><br /><sub><b>Sahil Raja</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=Sahil590" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/pulls?q=is%3Apr+reviewed-by%3ASahil590" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=Sahil590" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/SaranjeetKaur"><img src="https://avatars.githubusercontent.com/u/28556616?v=4?s=100" width="100px;" alt="Saranjeet Kaur"/><br /><sub><b>Saranjeet Kaur</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=SaranjeetKaur" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/pulls?q=is%3Apr+reviewed-by%3ASaranjeetKaur" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=SaranjeetKaur" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.imperial.ac.uk/people/j.coker20"><img src="https://avatars.githubusercontent.com/u/62701887?v=4?s=100" width="100px;" alt="jfcoker"/><br /><sub><b>jfcoker</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=jfcoker" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/pulls?q=is%3Apr+reviewed-by%3Ajfcoker" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=jfcoker" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/AdrianDAlessandro"><img src="https://avatars.githubusercontent.com/u/40875798?v=4?s=100" width="100px;" alt="Adrian D'Alessandro"/><br /><sub><b>Adrian D'Alessandro</b></sub></a><br /><a href="#ideas-AdrianDAlessandro" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-AdrianDAlessandro" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

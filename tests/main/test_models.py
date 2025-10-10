@@ -91,10 +91,13 @@ class TestProject:
             status="Tentative",
         )
         project.clean()
-        project.save()
+
+        # Change to active but no pk value
+        project.status = "Active"
+        project.clean()
 
         # No funding, no active
-        project.status = "Active"
+        project.save()
         with pytest.raises(
             ValidationError,
             match="Active and Confirmed projects must have at least 1 funding source.",
