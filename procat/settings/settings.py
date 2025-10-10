@@ -149,7 +149,7 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
 
-LOGIN_URL = "/auth/login/" if DEBUG else "/oidc/authentication/"
+LOGIN_URL = "/oidc/authenticate/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
