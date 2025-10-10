@@ -1,10 +1,9 @@
 """Forms needed by ProCAT."""
 
-from datetime import datetime
-
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+from django.utils import timezone
 
 
 class CustomUserCreationForm(UserCreationForm):  # type: ignore [type-arg]
@@ -38,14 +37,14 @@ class CostRecoveryForm(forms.Form):
         (11, "November"),
         (12, "December"),
     )
-    current_year = datetime.now().year
+    current_year = timezone.now().year
     _YEARS = ((year, str(year)) for year in range(current_year, current_year - 5, -1))
 
     month = forms.TypedChoiceField(
         choices=_MONTHS,
         label="Month",
         coerce=int,
-        initial=datetime.now().month,
+        initial=timezone.now().month,
         help_text="Month for which to generate the charges report.",
     )
     year = forms.TypedChoiceField(
