@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import Group
+from django.utils import timezone
 
 
 @pytest.mark.django_db
@@ -116,7 +117,7 @@ def test_get_budget_status():
     from main.models import Department, Funding, MonthlyCharge, Project
     from main.utils import get_budget_status
 
-    today = datetime.today().date()
+    today = timezone.now().date()
 
     # Create a department
     department = Department.objects.create(name="Test Department")
@@ -259,7 +260,7 @@ def test_order_queryset_by_property(project, analysis_code):
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
-        expiry_date=datetime.today().date(),
+        expiry_date=timezone.now().date(),
         budget=1000.00,
         daily_rate=100.00,
         id=1,
@@ -272,7 +273,7 @@ def test_order_queryset_by_property(project, analysis_code):
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
-        expiry_date=datetime.today().date(),
+        expiry_date=timezone.now().date(),
         budget=2000.00,
         daily_rate=100.00,
         id=2,
@@ -285,7 +286,7 @@ def test_order_queryset_by_property(project, analysis_code):
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
-        expiry_date=datetime.today().date(),
+        expiry_date=timezone.now().date(),
         budget=500.00,
         daily_rate=100.00,
         id=3,
@@ -307,7 +308,7 @@ def test_get_calendar_year_dates():
     """Test the get_calendar_year_dates function."""
     from main.utils import get_calendar_year_dates
 
-    today = datetime.now()
+    today = timezone.now()
     assert get_calendar_year_dates()[0].date() == datetime(today.year, 1, 1).date()
     assert get_calendar_year_dates()[1].date() == datetime(today.year, 12, 31).date()
 
@@ -316,7 +317,7 @@ def test_get_financial_year_dates():
     """Test the get_financial_year_dates function."""
     from main.utils import get_financial_year_dates
 
-    with patch("main.utils.datetime") as datetime_mock:
+    with patch("main.utils.timezone") as datetime_mock:
         datetime_mock.now.return_value = datetime(2025, 8, 1, 10, 0, 0, 0)
         assert get_financial_year_dates()[0].date() == date(2024, 8, 1)
         assert get_financial_year_dates()[1].date() == date(2025, 7, 31)

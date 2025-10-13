@@ -192,11 +192,11 @@ def test_process_time_logged_summary_multiple_projects(user, department):
 def test_funding_expired_but_has_budget(funding, project):
     """Test that funding expired but has budget."""
     # Create a funding object with expired date but still has budget
-    funding.expiry_date = datetime.now().date() - timedelta(days=1)
+    funding.expiry_date = timezone.now().date() - timedelta(days=1)
     funding.budget = 1000
     funding.save()
     funding.refresh_from_db()
-    assert funding.expiry_date < datetime.now().date()
+    assert funding.expiry_date < timezone.now().date()
     assert funding.budget > 0
 
     expected_subject = f"[Funding Expired] {project.name}"
@@ -223,11 +223,11 @@ def test_funding_expired_but_has_budget(funding, project):
 def test_funding_ran_out_not_expired(funding, project):
     """Test that funding ran out but not expired."""
     # Create a funding object with not expired date but budget ran out
-    funding.expiry_date = datetime.now().date() + timedelta(days=30)
+    funding.expiry_date = timezone.now().date() + timedelta(days=30)
     funding.budget = -1000
     funding.save()
     funding.refresh_from_db()
-    assert funding.expiry_date > datetime.now().date()
+    assert funding.expiry_date > timezone.now().date()
     assert funding.budget < 0
 
     expected_subject = f"[Funding Update] {project.name}"

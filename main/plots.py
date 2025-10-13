@@ -10,6 +10,7 @@ from bokeh.models import ColumnDataSource, HoverTool, Range1d, VArea
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
 from bokeh.plotting import figure
+from django.utils import timezone
 
 from . import timeseries, widgets
 from .utils import (
@@ -229,7 +230,7 @@ def create_capacity_planning_layout() -> Row:
     Returns:
         A Row object (the Row containing a Column of widgets and the plot).
     """
-    start, end = datetime.now(), datetime.now() + timedelta(days=365)
+    start, end = timezone.now(), timezone.now() + timedelta(days=365)
     # Min and max dates are three years before and ahead of current date
     min_date, max_date = start - timedelta(days=1095), start + timedelta(days=1095)
 

@@ -4,6 +4,9 @@ from datetime import datetime, time, timedelta
 
 import pandas as pd
 import pytest
+from django.utils import timezone
+
+from procat.settings.settings import TIME_ZONE
 
 
 def test_update_timeseries():
@@ -11,13 +14,13 @@ def test_update_timeseries():
     from main import models, timeseries
 
     dates = pd.bdate_range(
-        pd.Timestamp(datetime.now()),
-        pd.Timestamp(datetime.now() + timedelta(14)),
+        pd.Timestamp(timezone.now()),
+        pd.Timestamp(timezone.now() + timedelta(14)),
         inclusive="left",
     )
     ts = pd.Series(0.0, index=dates)
-    capacity = models.Capacity(value=0.5, start_date=datetime.now().date())
-    capacity.end_date = datetime.now().date() + timedelta(7)
+    capacity = models.Capacity(value=0.5, start_date=timezone.now().date())
+    capacity.end_date = timezone.now().date() + timedelta(7)
     assert ts.value_counts()[0.0] == 10
 
     ts = timeseries.update_timeseries(ts, capacity, "value")
@@ -29,22 +32,22 @@ def test_update_timeseries():
     ["start_date", "end_date", "plot_start_date", "plot_end_date"],
     [
         [
-            datetime.now().date() + timedelta(7),
-            datetime.now().date() + timedelta(14),
-            datetime.now(),
-            datetime.now() + timedelta(21),
+            timezone.now().date() + timedelta(7),
+            timezone.now().date() + timedelta(14),
+            timezone.now(),
+            timezone.now() + timedelta(21),
         ],
         [
-            datetime.now().date(),
-            datetime.now().date() + timedelta(21),
-            datetime.now() + timedelta(7),
-            datetime.now() + timedelta(14),
+            timezone.now().date(),
+            timezone.now().date() + timedelta(21),
+            timezone.now() + timedelta(7),
+            timezone.now() + timedelta(14),
         ],
         [
-            datetime.now().date(),
-            datetime.now().date() + timedelta(20),
-            datetime.now() + timedelta(4),
-            datetime.now() + timedelta(30),
+            timezone.now().date(),
+            timezone.now().date() + timedelta(20),
+            timezone.now() + timedelta(4),
+            timezone.now() + timedelta(30),
         ],
     ],
 )
@@ -87,8 +90,12 @@ def test_get_effort_timeseries(
     n_entries = ts.value_counts()[effort_per_day]
 
     # get intersecting dates
-    project_days = pd.bdate_range(start_date, end_date, inclusive="left")
-    plot_days = pd.bdate_range(plot_start_date, plot_end_date, inclusive="left")
+    project_days = pd.bdate_range(start_date, end_date, inclusive="left", tz=TIME_ZONE)
+    plot_days = pd.bdate_range(
+        plot_start_date,
+        plot_end_date,
+        inclusive="left",
+    )
     n_days = len(project_days.intersection(plot_days))
     assert n_entries == n_days
 
@@ -103,8 +110,8 @@ def test_get_effort_timeseries_status_filter(
     from main import models, timeseries
 
     start_date, end_date = (
-        datetime.now(),
-        datetime.now() + timedelta(21),
+        timezone.now(),
+        timezone.now() + timedelta(21),
     )
     active_project = models.Project.objects.create(
         name="Active project",
@@ -170,27 +177,28 @@ def test_get_team_members_timeseries(user, django_user_model):
     )
 
     models.Capacity.objects.create(
-        user=user, value=0.5, start_date=datetime.now().date()
+        user=user, value=0.5, start_date=timezone.now().date()
     )
     models.Capacity.objects.create(
-        user=another_user, value=0.7, start_date=datetime.now().date() + timedelta(7)
+        user=another_user, value=0.7, start_date=timezone.now().date() + timedelta(7)
     )
     plot_start_date, plot_end_date = (
-        datetime.now() - timedelta(7),
-        datetime.now() + timedelta(28),
+        timezone.now() - timedelta(7),
+        timezone.now() + timedelta(28),
     )
     ts = timeseries.get_team_members_timeseries(plot_start_date, plot_end_date)
+    ts_index = ts.index.tz_localize(None)
     assert isinstance(ts, pd.Series)
-    assert all(ts[ts.index < pd.to_datetime(datetime.now().date())] == 0)
+    assert all(ts[ts_index < pd.to_datetime(timezone.now().date())] == 0)
     assert all(
         ts[
-            (pd.to_datetime(datetime.now().date()) <= ts.index)
-            * (ts.index < pd.to_datetime(datetime.now().date() + timedelta(7)))
+            (pd.to_datetime(timezone.now().date()) <= ts_index)
+            * (ts_index < pd.to_datetime(timezone.now().date() + timedelta(7)))
         ]
         == 1
     )
     assert all(
-        ts[ts.index >= pd.to_datetime(datetime.now().date() + timedelta(7))] == 2
+        ts[ts_index >= pd.to_datetime(timezone.now().date() + timedelta(7))] == 2
     )
 
 
@@ -200,12 +208,12 @@ def test_get_capacity_timeseries(user):
     from main import models, timeseries
 
     capacity_A = models.Capacity.objects.create(
-        user=user, value=0.5, start_date=datetime.now().date()
+        user=user, value=0.5, start_date=timezone.now().date()
     )
     capacity_B = models.Capacity.objects.create(
-        user=user, value=0.7, start_date=datetime.now().date() + timedelta(7)
+        user=user, value=0.7, start_date=timezone.now().date() + timedelta(7)
     )
-    plot_start_date, plot_end_date = datetime.now(), datetime.now() + timedelta(28)
+    plot_start_date, plot_end_date = timezone.now(), timezone.now() + timedelta(28)
     ts = timeseries.get_capacity_timeseries(plot_start_date, plot_end_date)
     assert isinstance(ts, pd.Series)
     assert ts.value_counts()[capacity_A.value] == 5
@@ -217,7 +225,7 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     """Test the get_cost_recovery_timeseries function."""
     from main import models, report, timeseries, utils
 
-    today = datetime.today().date()
+    today = timezone.now().date()
 
     # Create a project and associated funding
     project = models.Project.objects.create(
@@ -308,7 +316,7 @@ def test_get_cost_recovery_timeseries_equal_to_num_people(
     """
     from main import models, report, timeseries, utils
 
-    today = datetime.today().date()
+    today = timezone.now().date()
 
     # Create a project and associated funding
     project = models.Project.objects.create(

@@ -1,6 +1,5 @@
 """Models module for main app."""
 
-from datetime import datetime
 from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
@@ -8,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Sum
+from django.utils import timezone
 
 from procat.settings.settings import (
     EFFORT_LEFT_THRESHOLD,
@@ -235,7 +235,7 @@ class Project(models.Model):
             and self.end_date
             and self.start_date
         ):
-            left = (self.end_date - datetime.now().date()).days / 7
+            left = (self.end_date - timezone.now().date()).days / 7
             total = (self.end_date - self.start_date).days / 7
             return int(left), round(left / total * 100, 1)
 
@@ -325,7 +325,7 @@ class Project(models.Model):
                 value=self.days_left[0] if self.days_left else 0,
             )
             self.notifications_effort[str(threshold)] = (
-                datetime.today().date().isoformat()
+                timezone.now().date().isoformat()
             )
             check = True
             break
@@ -346,9 +346,7 @@ class Project(models.Model):
                 threshold=threshold,
                 value=self.weeks_to_deadline[0] if self.weeks_to_deadline else 0,
             )
-            self.notifications_weeks[str(threshold)] = (
-                datetime.today().date().isoformat()
-            )
+            self.notifications_weeks[str(threshold)] = timezone.now().date().isoformat()
             check = True
             break
 

@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
+from django.utils import timezone
 
 
 def test_add_varea_glyph():
@@ -40,7 +41,7 @@ def test_create_capacity_planning_plot():
     from main import plots
 
     plot = plots.create_capacity_planning_plot(
-        datetime.now(), datetime.now() + timedelta(365)
+        timezone.now(), timezone.now() + timedelta(365)
     )
     assert isinstance(plot, figure)
 
@@ -68,7 +69,7 @@ def test_create_cost_recovery_plot(project, funding):
         project=project,
         funding=funding,
         amount=100.00,
-        date=datetime.today().date() - timedelta(100),
+        date=timezone.now().date() - timedelta(100),
     )
 
     # Create cost recovery plots

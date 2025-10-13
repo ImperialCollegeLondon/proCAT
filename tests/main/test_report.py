@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 @pytest.mark.django_db
@@ -64,7 +65,7 @@ def test_get_valid_funding_sources(project, analysis_code):
     """Test the get_valid_funding_sources function."""
     from main import models, report
 
-    end_date = datetime.now().date() + timedelta(days=14)
+    end_date = timezone.now().date() + timedelta(days=14)
 
     # Create expired funding
     models.Funding.objects.create(
@@ -429,7 +430,7 @@ def test_invalid_date_create_charges_report():
     """Test that a future date raises an error for create_charges_report."""
     from main import report
 
-    current_date = datetime.now().date()
+    current_date = timezone.now().date()
     future_date = current_date + timedelta(40)
     writer = Mock()
 
@@ -442,7 +443,7 @@ def test_confirmed_charges_are_not_deleted(project, funding):
     """Test that confirmed charges are not deleted when the report is created."""
     from main import models, report
 
-    date = datetime.today().date().replace(day=1)
+    date = timezone.now().date().replace(day=1)
     confirmed_charge = models.MonthlyCharge.objects.create(
         date=date,
         project=project,
