@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from bokeh.models import CustomJS
 from bokeh.models.widgets import Button, DatePicker
 from bokeh.plotting import figure
+from django.utils import timezone
 
 
 def date_picker(
@@ -168,7 +169,7 @@ def add_callback_to_button(
     end_date = (
         dates[1]
         if include_future_dates
-        else (datetime.today()).replace(day=1) - timedelta(days=1)
+        else (timezone.now()).replace(day=1) - timedelta(days=1)
     )
 
     button.js_on_click(

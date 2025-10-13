@@ -401,7 +401,7 @@ def notify_monthly_days_used_exceeding_days_left_logic(
     it sends an email notification to the project lead and HoRSE.
     """
     if date is None:
-        date = datetime.datetime.today()
+        date = datetime.timezone.now()
 
     projects = get_projects_with_days_used_exceeding_days_left()
 

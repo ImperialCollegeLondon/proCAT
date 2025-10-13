@@ -8,6 +8,7 @@ from datetime import date, datetime, timedelta
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet, Sum
 from django.http import HttpResponse
+from django.utils import timezone
 
 from . import models, utils
 from .models import Funding, Project
@@ -257,7 +258,7 @@ def create_charges_report(month: int, year: int, writer: Writer) -> None:
     """
     # get the start_date and end dates (as the 1st of the month)
     start_date = date(year, month, 1)
-    if start_date > datetime.today().date():
+    if start_date > timezone.now().date():
         raise ValidationError("Report date must not be in the future.")
     end_date = (start_date + timedelta(days=31)).replace(day=1)
 

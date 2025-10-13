@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 def test_department_model_str():
@@ -57,8 +58,8 @@ class TestProject:
         project = models.Project(
             name="ProCAT",
             lead=user,
-            start_date=datetime.now().date(),
-            end_date=datetime.now().date(),
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date(),
             status="Finished",
         )
         with pytest.raises(
@@ -71,8 +72,8 @@ class TestProject:
         project = models.Project(
             name="ProCAT",
             lead=user,
-            start_date=datetime.now().date(),
-            end_date=datetime.now().date() + timedelta(days=42),
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=42),
             status="Finished",
         )
         project.clean()
@@ -86,8 +87,8 @@ class TestProject:
             name="ProCAT",
             lead=user,
             department=department,
-            start_date=datetime.now().date(),
-            end_date=datetime.now().date() + timedelta(days=42),
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=42),
             status="Tentative",
         )
         project.clean()
@@ -125,13 +126,13 @@ class TestProject:
         ["status", "start_date", "end_date", "output"],
         [
             ["Tentative", None, None, None],
-            ["Confirmed", datetime.now().date(), None, None],
-            ["Confirmed", None, datetime.now().date(), None],
-            ["Tentative", datetime.now().date(), datetime.now().date(), None],
+            ["Confirmed", timezone.now().date(), None, None],
+            ["Confirmed", None, timezone.now().date(), None],
+            ["Tentative", timezone.now().date(), timezone.now().date(), None],
             [
                 "Confirmed",
-                datetime.now().date(),
-                datetime.now().date() + timedelta(days=1),
+                timezone.now().date(),
+                timezone.now().date() + timedelta(days=1),
                 (0, 100.0),
             ],
         ],
@@ -196,26 +197,26 @@ class TestProject:
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
-            expiry_date=datetime.now().date() + timedelta(days=42),
+            expiry_date=timezone.now().date() + timedelta(days=42),
             budget=1000.00,
             daily_rate=200.00,
         )
         monthly_charge_A = models.MonthlyCharge.objects.create(
-            date=datetime.today().date(),
+            date=timezone.now().date(),
             project=project,
             funding=funding,
             amount=100.00,
             status="Confirmed",
         )
         monthly_charge_B = models.MonthlyCharge.objects.create(
-            date=datetime.today().date(),
+            date=timezone.now().date(),
             project=project,
             funding=funding,
             amount=200.00,
             status="Confirmed",
         )
         models.MonthlyCharge.objects.create(
-            date=datetime.today().date(),
+            date=timezone.now().date(),
             project=project,
             funding=funding,
             amount=300.00,
@@ -244,12 +245,12 @@ class TestProject:
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
-            expiry_date=datetime.now().date() + timedelta(days=42),
+            expiry_date=timezone.now().date() + timedelta(days=42),
             budget=1000.00,
             daily_rate=200.00,
         )
         models.MonthlyCharge.objects.create(
-            date=datetime.today().date(),
+            date=timezone.now().date(),
             project=project,
             funding=funding,
             amount=100.00,
@@ -262,7 +263,7 @@ class TestProject:
         from main import models
 
         # Get start and end date as 1st last month-1st current month
-        today = datetime.today().date()
+        today = timezone.now().date()
         end_date = today.replace(day=1)
         start_date = (end_date - timedelta(days=1)).replace(day=1)
         start_time = datetime.combine(start_date, datetime.min.time())
@@ -358,8 +359,8 @@ class TestProject:
             department=department,
             lead=user,
             status="Active",
-            start_date=datetime.now().date(),
-            end_date=datetime.now().date() + timedelta(7),
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(7),
         )
         assert project.effort_per_day is None
 
@@ -434,7 +435,7 @@ class TestFunding:
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
-            expiry_date=datetime.now().date(),
+            expiry_date=timezone.now().date(),
         )
         funding.is_complete()
 
@@ -478,7 +479,7 @@ class TestFunding:
             cost_centre="centre",
             activity=activity,
             analysis_code=analysis_code,
-            expiry_date=datetime.now().date(),
+            expiry_date=timezone.now().date(),
             budget=38900.00,
             daily_rate=389.00,
         )
@@ -504,7 +505,7 @@ class TestFunding:
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
-            expiry_date=datetime.now().date(),
+            expiry_date=timezone.now().date(),
             budget=budget,
             daily_rate=389.00,
         )
@@ -530,7 +531,7 @@ class TestFunding:
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
-            expiry_date=datetime.now().date(),
+            expiry_date=timezone.now().date(),
             budget=1000.00,
             daily_rate=daily_rate,
         )
@@ -653,11 +654,11 @@ class TestCapacity:
         from main import models
 
         capacity = models.Capacity(
-            user=user, value=0.5, start_date=datetime.now().date()
+            user=user, value=0.5, start_date=timezone.now().date()
         )
         assert (
             str(capacity)
-            == f"From {datetime.now().date()}, the capacity of {user!s} is 0.5."
+            == f"From {timezone.now().date()}, the capacity of {user!s} is 0.5."
         )
 
     @pytest.mark.parametrize(
@@ -675,7 +676,7 @@ class TestCapacity:
         from main import models
 
         capacity = models.Capacity(
-            user=user, value=value, start_date=datetime.now().date()
+            user=user, value=value, start_date=timezone.now().date()
         )
         with expectation:
             capacity.full_clean()
@@ -691,8 +692,8 @@ class TestTimeEntry:
         time_entry = models.TimeEntry(
             user=user,
             project=project,
-            start_time=datetime.now(),
-            end_time=datetime.now() + timedelta(hours=7.5),
+            start_time=timezone.now(),
+            end_time=timezone.now() + timedelta(hours=7.5),
         )
         assert (
             str(time_entry)
@@ -708,12 +709,12 @@ class TestMonthlyCharge:
         from main import models
 
         monthly_charge = models.MonthlyCharge(
-            project=project, funding=funding, amount=500.00, date=datetime.now().date()
+            project=project, funding=funding, amount=500.00, date=timezone.now().date()
         )
         monthly_charge.clean()
         assert str(monthly_charge) == (
             f"RSE Project {project} ({funding.cost_centre}_{funding.activity}): "
-            f"{datetime.now().month}/{datetime.now().year} [rcs-manager@imperial.ac.uk]"
+            f"{timezone.now().month}/{timezone.now().year} [rcs-manager@imperial.ac.uk]"
         )
 
         monthly_charge = models.MonthlyCharge(
@@ -734,7 +735,7 @@ class TestMonthlyCharge:
         from main import models
 
         monthly_charge = models.MonthlyCharge(
-            project=project, funding=funding, amount=amount, date=datetime.now().date()
+            project=project, funding=funding, amount=amount, date=timezone.now().date()
         )
         with expectation:
             monthly_charge.full_clean()
@@ -746,7 +747,7 @@ class TestMonthlyCharge:
 
         funding = models.Funding(cost_centre="centre", activity="G12345")
         monthly_charge = models.MonthlyCharge(
-            project=project, funding=funding, amount=10, date=datetime.now().date()
+            project=project, funding=funding, amount=10, date=timezone.now().date()
         )
         with pytest.raises(
             ValidationError,
