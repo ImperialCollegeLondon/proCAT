@@ -51,11 +51,11 @@ jinja2==3.1.6
     # via bokeh
 josepy==2.1.0
     # via mozilla-django-oidc
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via jinja2
 mozilla-django-oidc==4.0.1
     # via procat (pyproject.toml)
-narwhals==2.3.0
+narwhals==2.7.0
     # via bokeh
 numpy==2.3.3
     # via
@@ -78,7 +78,7 @@ pytz==2025.2
     # via pandas
 pyyaml==6.0.2
     # via bokeh
-requests==2.32.4
+requests==2.32.5
     # via
     #   mozilla-django-oidc
     #   procat (pyproject.toml)
@@ -88,7 +88,7 @@ sqlparse==0.5.3
     # via django
 tornado==6.5.2
     # via bokeh
-types-requests==2.32.4.20250611
+types-requests==2.32.4.20250913
     # via procat (pyproject.toml)
 tzdata==2025.2
     # via pandas
