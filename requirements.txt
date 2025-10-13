@@ -51,7 +51,7 @@ jinja2==3.1.6
     # via bokeh
 josepy==2.1.0
     # via mozilla-django-oidc
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via jinja2
 mozilla-django-oidc==4.0.1
     # via procat (pyproject.toml)

@@ -91,7 +91,7 @@ jsbeautifier==1.15.4
     #   djlint
 json5==0.12.1
     # via djlint
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via jinja2
 mozilla-django-oidc==4.0.1
     # via procat (pyproject.toml)
