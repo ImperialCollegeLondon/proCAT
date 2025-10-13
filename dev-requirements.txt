@@ -165,7 +165,7 @@ pyyaml==6.0.2
     #   bokeh
     #   djlint
     #   pre-commit
-regex==2024.11.6
+regex==2025.9.18
     # via djlint
 requests==2.32.5
     # via
