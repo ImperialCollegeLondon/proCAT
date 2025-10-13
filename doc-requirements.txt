@@ -176,7 +176,7 @@ sqlparse==0.5.3
     # via django
 tornado==6.5.2
     # via bokeh
-types-requests==2.32.4.20250611
+types-requests==2.32.4.20250913
     # via procat (pyproject.toml)
 tzdata==2025.2
     # via pandas

@@ -188,7 +188,7 @@ types-pytz==2025.2.0.20250809
     # via pandas-stubs
 types-pyyaml==6.0.12.20250915
     # via django-stubs
-types-requests==2.32.4.20250611
+types-requests==2.32.4.20250913
     # via procat (pyproject.toml)
 typing-extensions==4.14.1
     # via
