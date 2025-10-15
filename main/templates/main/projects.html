@@ -3,18 +3,9 @@
 {% load django_tables2 %}
 {% block content %}
   <h2>Projects</h2>
-  <!-- Shortcut to access the projects list url -->
-  {% url 'main:projects' as projects %}
-  <!-- Filter -->
-  <form action="" method="get" class="form form-inline">
-    <div class="row">
-      <div class="col-lg-5">{% bootstrap_form filter.form layout='horizontal' %}</div>
-      <div class="col-lg-5">
-        {% bootstrap_button 'Filter' %}
-        {% bootstrap_button 'Clear' button_type="link" button_class="btn-success" href=projects %}
-      </div>
-    </div>
-  </form>
-  <!-- Table -->
-  {% render_table table %}
+
+  {% for title, table in tables %}
+    <h3 class="mt-4">{{ title }}</h3>
+    {% render_table table %}
+  {% endfor %}
 {% endblock content %}
