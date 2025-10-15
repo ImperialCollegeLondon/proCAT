@@ -91,7 +91,7 @@ jsbeautifier==1.15.4
     #   djlint
 json5==0.12.1
     # via djlint
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via jinja2
 mozilla-django-oidc==4.0.1
     # via procat (pyproject.toml)
@@ -101,7 +101,7 @@ mypy==1.15.0
     #   procat (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
-narwhals==2.3.0
+narwhals==2.7.0
     # via bokeh
 nodeenv==1.9.1
     # via pre-commit
@@ -165,9 +165,9 @@ pyyaml==6.0.2
     #   bokeh
     #   djlint
     #   pre-commit
-regex==2024.11.6
+regex==2025.9.18
     # via djlint
-requests==2.32.4
+requests==2.32.5
     # via
     #   mozilla-django-oidc
     #   procat (pyproject.toml)
@@ -186,9 +186,9 @@ tqdm==4.67.1
     # via djlint
 types-pytz==2025.2.0.20250809
     # via pandas-stubs
-types-pyyaml==6.0.12.20250822
+types-pyyaml==6.0.12.20250915
     # via django-stubs
-types-requests==2.32.4.20250611
+types-requests==2.32.4.20250913
     # via procat (pyproject.toml)
 typing-extensions==4.14.1
     # via
@@ -201,7 +201,7 @@ urllib3==2.5.0
     # via
     #   requests
     #   types-requests
-virtualenv==20.34.0
+virtualenv==20.35.3
     # via pre-commit
 wheel==0.45.1
     # via pip-tools
