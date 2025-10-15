@@ -32,13 +32,35 @@ class RegistrationView(CreateView):  # type: ignore [type-arg]
     template_name = "registration/register.html"
 
 
-class ProjectsListView(LoginRequiredMixin, SingleTableMixin, FilterView):
-    """View to display the list of projects."""
+class ProjectsListView(LoginRequiredMixin, FilterView):
+    """View to display the list of projects split in five pre-filtered tables."""
 
     model = models.Project
-    table_class = tables.ProjectTable
     template_name = "main/projects.html"
     filterset_fields = ("nature", "department", "status", "charging")
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
+        """Add multiple pre-filtered tables to the context."""
+        context = super().get_context_data(**kwargs)
+
+        base_qs = self.get_queryset()
+
+        buckets = [
+            ("Active", {"status": "Active"}, "active-"),
+            ("Confirmed", {"status": "Confirmed"}, "confirmed-"),
+            ("Tentative", {"status": "Tentative"}, "tentative-"),
+            ("Finished", {"status": "Finished"}, "finished-"),
+            ("Not done", {"status": "Not done"}, "not-done-"),
+        ]
+
+        created_tables: list[tuple[str, tables.ProjectTable]] = []
+        for title, filt, prefix in buckets:
+            qs = base_qs.filter(**filt)
+            tbl = tables.ProjectTable(qs, prefix=prefix)
+            created_tables.append((title, tbl))
+
+        context["tables"] = created_tables
+        return context
 
 
 class FundingListView(LoginRequiredMixin, SingleTableMixin, ListView):  # type: ignore [type-arg]
