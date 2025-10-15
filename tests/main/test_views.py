@@ -26,71 +26,195 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
         return reverse("main:projects")
 
     @pytest.mark.django_db
+    def test_get_context_data(self, auth_client, project):
+        """Test that the view returns the correct context data with filtered tables."""
+        endpoint = reverse("main:projects")
+        response = auth_client.get(endpoint)
+
+        # Check status code and context
+        assert response.status_code == HTTPStatus.OK
+        assert "tables" in response.context
+
+        # Check that there are 5 tables, one for each status
+        tables = response.context["tables"]
+        assert len(tables) == 5
+
+        # Check that the tables have the correct titles and prefixes
+        expected_tables = [
+            ("Active", "active-"),
+            ("Confirmed", "confirmed-"),
+            ("Tentative", "tentative-"),
+            ("Finished", "finished-"),
+            ("Not done", "not-done-"),
+        ]
+
+        for i, (title, prefix) in enumerate(expected_tables):
+            assert tables[i][0] == title
+            assert tables[i][1].prefix == prefix
+
+    @pytest.mark.django_db
+    def test_filtered_tables(self, auth_client, user, department, project):
+        """Test that each table contains only projects with the matching status."""
+        # Create projects with different statuses using the existing user fixture
+        Project.objects.create(
+            name="Test Active",
+            status="Active",
+            department=department,
+            lead=user,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
+        Project.objects.create(
+            name="Test Confirmed",
+            status="Confirmed",
+            department=department,
+            lead=user,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
+        Project.objects.create(
+            name="Test Tentative",
+            status="Tentative",
+            department=department,
+            lead=user,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
+        Project.objects.create(
+            name="Test Finished",
+            status="Finished",
+            department=department,
+            lead=user,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
+        Project.objects.create(
+            name="Test Not done",
+            status="Not done",
+            department=department,
+            lead=user,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
+
+        endpoint = reverse("main:projects")
+        response = auth_client.get(endpoint)
+
+        # Check each table contains only projects with the correct status
+        tables = dict(response.context["tables"])
+
+        # Check Active table
+        active_table = tables["Active"]
+        active_projects = [p for p in active_table.data]
+        assert len(active_projects) >= 1  # Could include default project from fixture
+        assert all(p.status == "Active" for p in active_projects)
+
+        # Check Confirmed table
+        confirmed_table = tables["Confirmed"]
+        confirmed_projects = [p for p in confirmed_table.data]
+        assert len(confirmed_projects) == 1
+        assert all(p.status == "Confirmed" for p in confirmed_projects)
+
+        # Check Tentative table
+        tentative_table = tables["Tentative"]
+        tentative_projects = [p for p in tentative_table.data]
+        assert len(tentative_projects) == 1
+        assert all(p.status == "Tentative" for p in tentative_projects)
+
+        # Check Finished table
+        finished_table = tables["Finished"]
+        finished_projects = [p for p in finished_table.data]
+        assert len(finished_projects) == 1
+        assert all(p.status == "Finished" for p in finished_projects)
+
+        # Check Not done table
+        not_done_table = tables["Not done"]
+        not_done_projects = [p for p in not_done_table.data]
+        assert len(not_done_projects) == 1
+        assert all(p.status == "Not done" for p in not_done_projects)
+
+    @pytest.mark.django_db
     def test_order_weeks_to_deadline(self, auth_client):
-        """Test the order_weeks_to_deadline method."""
+        """Test the order_weeks_to_deadline method (prefixed param)."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:projects")
             order_mock.return_value = Project.objects.all()
 
             # Test ascending sort
-            auth_client.get(endpoint, {"sort": "weeks_to_deadline"})
+            order_mock.reset_mock()
+            auth_client.get(endpoint, {"active-sort": "weeks_to_deadline"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "weeks_to_deadline"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            auth_client.get(endpoint, {"sort": "-weeks_to_deadline"})
+            order_mock.reset_mock()
+            auth_client.get(endpoint, {"active-sort": "-weeks_to_deadline"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "weeks_to_deadline"
             assert order_mock.call_args.args[2]
 
     @pytest.mark.django_db
     def test_order_total_effort(self, auth_client):
-        """Test the order_total_effort method."""
+        """Test the order_total_effort method (prefixed param)."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:projects")
             order_mock.return_value = Project.objects.all()
 
             # Test ascending sort
-            auth_client.get(endpoint, {"sort": "total_effort"})
+            order_mock.reset_mock()
+            auth_client.get(endpoint, {"active-sort": "total_effort"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "total_effort"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            auth_client.get(endpoint, {"sort": "-total_effort"})
+            order_mock.reset_mock()
+            auth_client.get(endpoint, {"active-sort": "-total_effort"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "total_effort"
             assert order_mock.call_args.args[2]
 
     @pytest.mark.django_db
     def test_order_days_left(self, auth_client):
-        """Test the order_days_left method."""
+        """Test the order_days_left method (prefixed param)."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:projects")
             order_mock.return_value = Project.objects.all()
 
             # Test ascending sort
-            auth_client.get(endpoint, {"sort": "days_left"})
+            order_mock.reset_mock()
+            auth_client.get(endpoint, {"active-sort": "days_left"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "days_left"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            auth_client.get(endpoint, {"sort": "-days_left"})
+            order_mock.reset_mock()
+            auth_client.get(endpoint, {"active-sort": "-days_left"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "days_left"
             assert order_mock.call_args.args[2]
 
     @pytest.mark.django_db
     def test_total_funding_left(self, auth_client):
-        """Test the total_funding_left method."""
+        """Test the total_funding_left method (prefixed param)."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:projects")
             order_mock.return_value = Project.objects.all()
 
             # Test ascending sort
-            auth_client.get(endpoint, {"sort": "total_funding_left"})
+            order_mock.reset_mock()
+            auth_client.get(endpoint, {"active-sort": "total_funding_left"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "total_funding_left"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            auth_client.get(endpoint, {"sort": "-total_funding_left"})
+            order_mock.reset_mock()
+            auth_client.get(endpoint, {"active-sort": "-total_funding_left"})
+            order_mock.assert_called()
+            assert order_mock.call_args.args[1] == "total_funding_left"
             assert order_mock.call_args.args[2]
 
 

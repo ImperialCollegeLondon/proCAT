@@ -57,6 +57,7 @@ class ProjectsListView(LoginRequiredMixin, FilterView):
         for title, filt, prefix in buckets:
             qs = base_qs.filter(**filt)
             tbl = tables.ProjectTable(qs, prefix=prefix)
+            RequestConfig(self.request).configure(tbl)
             created_tables.append((title, tbl))
 
         context["tables"] = created_tables
