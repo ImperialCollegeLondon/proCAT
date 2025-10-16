@@ -14,7 +14,10 @@ from .utils import format_currency, order_queryset_by_property
 class ProjectTable(tables.Table):
     """Table for Project listing."""
 
-    name = tables.Column(linkify=("main:project_detail", {"pk": tables.A("pk")}))
+    name = tables.Column(
+        linkify=("main:project_detail", {"pk": tables.A("pk")}),
+        attrs={"th": {"style": "min-width: 150px;"}},
+    )
 
     weeks_to_deadline = tables.Column(
         attrs={
