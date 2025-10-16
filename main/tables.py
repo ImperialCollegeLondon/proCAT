@@ -97,7 +97,6 @@ class ProjectTable(tables.Table):
             "name",
             "nature",
             "department",
-            "status",
             "charging",
             "start_date",
             "end_date",
