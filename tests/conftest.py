@@ -1,9 +1,10 @@
 """Pytest configuration file."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from django.test import Client
+from django.utils import timezone
 
 
 @pytest.fixture
@@ -43,8 +44,8 @@ def project(user, department):
         name="ProCAT",
         department=department,
         lead=user,
-        start_date=datetime.now().date(),
-        end_date=datetime.now().date() + timedelta(days=42),
+        start_date=timezone.now().date(),
+        end_date=timezone.now().date() + timedelta(days=42),
         status="Active",
     )[0]
 
@@ -71,7 +72,7 @@ def funding(project, analysis_code):
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
-        expiry_date=datetime.now().date() + timedelta(days=42),
+        expiry_date=timezone.now().date() + timedelta(days=42),
         budget=10000.00,
         daily_rate=389.00,
     )[0]
@@ -85,5 +86,5 @@ def capacity(user):
     return models.Capacity.objects.get_or_create(
         user=user,
         value=0.7,
-        start_date=datetime.now().date(),
+        start_date=timezone.now().date(),
     )

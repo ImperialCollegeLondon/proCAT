@@ -15,7 +15,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce, Lead
 
-from procat.settings.settings import WORKING_DAYS
+from procat.settings.settings import TIME_ZONE, WORKING_DAYS
 
 from . import models
 
@@ -47,6 +47,7 @@ def update_timeseries(
         start=object.start_date,
         end=object.end_date,  # type: ignore[union-attr]
         inclusive="left",
+        tz=TIME_ZONE,
     )
     # get intersection between the Model dates and the plotting dates
     index = timeseries.index.intersection(object_dates)
@@ -237,11 +238,7 @@ def get_cost_recovery_timeseries(
         Tuple of Pandas series containing cost recovery timeseries data and a list of
         monthly totals.
     """
-    date_range = pd.bdate_range(
-        start=dates[0][0],
-        end=dates[-1][1],
-        inclusive="both",
-    )
+    date_range = pd.bdate_range(start=dates[0][0], end=dates[-1][1], inclusive="both")
     # initialize timeseries
     timeseries = pd.Series(0.0, index=date_range)
 

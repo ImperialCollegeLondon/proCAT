@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db.models import Case, When
 from django.db.models.query import QuerySet
+from django.utils import timezone
 
 from . import models
 from .models import Funding, Project, TimeEntry
@@ -95,7 +96,7 @@ def get_current_and_last_month(
 ) -> tuple[datetime, str, datetime, str]:
     """Get the start of the last month and current month, and their names."""
     if date is None:
-        date = datetime.today()
+        date = timezone.now()
 
     current_month_start = datetime(year=date.year, month=date.month, day=1)
     last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
@@ -125,7 +126,7 @@ def get_budget_status(
 ) -> tuple[list[Funding], list[Funding]]:
     """Get the budget status of a funding."""
     if date is None:
-        date = datetime.today().date()
+        date = timezone.now().date()
 
     funds_ran_out_not_expired = list(Funding.objects.filter(expiry_date__gt=date))
     funds_ran_out_not_expired = [
@@ -142,7 +143,7 @@ def get_budget_status(
 def get_month_dates_for_previous_years() -> list[tuple[date, date]]:
     """Get the start and end date of each month for the previous 3 years."""
     dates = []
-    today = datetime.today().date()
+    today = timezone.now().date()
 
     start_current_month = today.replace(day=1)
     for _ in range(36):
@@ -217,7 +218,7 @@ def order_queryset_by_property(  # type: ignore[explicit-any]
 
 def get_calendar_year_dates() -> tuple[datetime, datetime]:
     """Get the start and end dates for the current calendar year."""
-    today = datetime.now()
+    today = timezone.now()
     start = today.replace(day=1, month=1)
     end = today.replace(day=31, month=12)
     return start, end
@@ -225,7 +226,7 @@ def get_calendar_year_dates() -> tuple[datetime, datetime]:
 
 def get_financial_year_dates() -> tuple[datetime, datetime]:
     """Get the start and end dates for the current financial year."""
-    today = datetime.now()
+    today = timezone.now()
     if today.month > 8:
         start = today.replace(day=1, month=8)
         end = today.replace(day=31, month=7, year=today.year + 1)

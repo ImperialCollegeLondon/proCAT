@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 from bokeh.models import CustomJS
 from bokeh.models.widgets import Button, DatePicker
+from django.utils import timezone
 
 
 @pytest.mark.django_db
@@ -13,7 +14,7 @@ def test_add_timeseries_callback_to_date_pickers():
     """Test the add_timeseries_callback_to_date_pickers function."""
     from main import plots, widgets
 
-    min_date, max_date = datetime.now(), datetime.now() + timedelta(365)
+    min_date, max_date = timezone.now(), timezone.now() + timedelta(365)
     display_dates = (min_date + timedelta(100), min_date + timedelta(200))
 
     plot = plots.create_capacity_planning_plot(
@@ -114,7 +115,7 @@ def test_add_callback_to_button():
 
     button = Button(label="button")
 
-    min_date, max_date = datetime.now(), datetime.now() + timedelta(365)
+    min_date, max_date = timezone.now(), timezone.now() + timedelta(365)
     display_dates = (min_date + timedelta(100), min_date + timedelta(200))
     start_picker, end_picker = widgets.get_plot_date_pickers(
         min_date.date(),
