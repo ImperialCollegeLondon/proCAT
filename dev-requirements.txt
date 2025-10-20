@@ -116,7 +116,7 @@ packaging==25.0
     #   bokeh
     #   build
     #   pytest
-pandas==2.3.1
+pandas==2.3.3
     # via
     #   bokeh
     #   procat (pyproject.toml)
