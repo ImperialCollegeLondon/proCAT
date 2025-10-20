@@ -55,7 +55,7 @@ markupsafe==3.0.3
     # via jinja2
 mozilla-django-oidc==4.0.1
     # via procat (pyproject.toml)
-narwhals==2.7.0
+narwhals==2.8.0
     # via bokeh
 numpy==2.3.3
     # via
