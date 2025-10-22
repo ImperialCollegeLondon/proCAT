@@ -74,6 +74,15 @@
         "ideas",
         "infra"
       ]
+    },
+    {
+      "login": "Alexnies",
+      "name": "Alexander Nies",
+      "avatar_url": "https://avatars.githubusercontent.com/u/139470181?v=4",
+      "profile": "https://github.com/Alexnies",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
