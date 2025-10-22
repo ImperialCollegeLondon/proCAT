@@ -74,6 +74,24 @@
         "ideas",
         "infra"
       ]
+    },
+    {
+      "login": "Alexnies",
+      "name": "Alexander Nies",
+      "avatar_url": "https://avatars.githubusercontent.com/u/139470181?v=4",
+      "profile": "https://github.com/Alexnies",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "laura-ellington",
+      "name": "laura-ellington",
+      "avatar_url": "https://avatars.githubusercontent.com/u/184098019?v=4",
+      "profile": "https://github.com/laura-ellington",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -236,10 +236,10 @@ def notify_funding_status_logic(
             )
 
 
-# Runs every day at 11:00 AM
-@db_periodic_task(crontab(hour=11, minute=0))
+# Runs every Monday at 09:00 AM
+@db_periodic_task(crontab(day_of_week=1, hour=9, minute=0))
 def notify_funding_status() -> None:
-    """Daily task to notify about funding status."""
+    """Weekly task to notify about funding status."""
     notify_funding_status_logic()
 
 

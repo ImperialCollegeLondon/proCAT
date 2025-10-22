@@ -48,7 +48,7 @@ Bugs are tracked as [GitHub issues](https://guides.github.com/features/issues/).
 - **Provide specific examples to demonstrate the steps**. Include links to files or GitHub projects, or copy/pasteable snippets, which you use in those examples. If you're providing snippets in the issue, use [Markdown code blocks](https://help.github.com/articles/markdown-basics/#multiple-lines).
 - **Describe the behavior you observed after following the steps** and point out what exactly is the problem with that behavior.
 - **Explain which behavior you expected to see instead and why.**
-- **If there is any error output in the temrinal, include that output with your report.**
+- **If there is any error output in the terminal, include that output with your report.**
 
 Provide more context by answering these questions:
 
