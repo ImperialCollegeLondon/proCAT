@@ -158,6 +158,8 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
 
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
 
+    plot.legend.location = "bottom_left"
+
     return plot
 
 
