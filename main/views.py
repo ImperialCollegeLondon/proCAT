@@ -31,7 +31,7 @@ class GroupRequiredMixin(UserPassesTestMixin):
         user = self.request.user
         if user.is_superuser:
             return True
-        return user.groups.filter(name__in=self.group_name).exists()
+        return user.groups.filter(name=self.group_name).exists()
 
 
 class RegistrationView(CreateView):  # type: ignore [type-arg]
