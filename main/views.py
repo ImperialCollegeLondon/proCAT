@@ -3,7 +3,7 @@
 from typing import Any
 
 import bokeh
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.forms import Form, ModelForm
 from django.http import HttpResponse
 from django.urls import reverse_lazy
@@ -18,6 +18,20 @@ from django_filters.views import FilterView
 from django_tables2 import RequestConfig, SingleTableMixin
 
 from . import forms, models, plots, report, tables
+
+
+class GroupRequiredMixin(UserPassesTestMixin):
+    """Mixin to ensure that the user belongs to specific group(s)."""
+
+    group_name = "RSE"
+    raise_exception = True
+
+    def test_func(self):  # type: ignore
+        """Check if the user belongs to allowed group(s) or is superuser."""
+        user = self.request.user
+        if user.is_superuser:
+            return True
+        return user.groups.filter(name__in=self.group_name).exists()
 
 
 class RegistrationView(CreateView):  # type: ignore [type-arg]
@@ -64,21 +78,27 @@ class ProjectsListView(LoginRequiredMixin, FilterView):
         return context
 
 
-class FundingListView(LoginRequiredMixin, SingleTableMixin, ListView):  # type: ignore [type-arg]
+class FundingListView(
+    GroupRequiredMixin, LoginRequiredMixin, SingleTableMixin, ListView
+):  # type: ignore [type-arg]
     """View to display the funding list for all projects."""
 
     model = models.Funding
     table_class = tables.FundingTable
     template_name = "main/funding.html"
+    group_name = "RSE"
 
 
-class CapacitiesListView(LoginRequiredMixin, SingleTableMixin, FilterView):
+class CapacitiesListView(
+    GroupRequiredMixin, LoginRequiredMixin, SingleTableMixin, FilterView
+):
     """View to display the list of capacities."""
 
     model = models.Capacity
     table_class = tables.CapacityTable
     template_name = "main/capacities.html"
     filterset_fields = ("user",)
+    group_name = "RSE"
 
 
 class CustomBaseDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
@@ -109,11 +129,12 @@ class CustomBaseDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [typ
         return form
 
 
-class ProjectDetailView(CustomBaseDetailView):
+class ProjectDetailView(CustomBaseDetailView, GroupRequiredMixin):
     """View to view details of a project."""
 
     model = models.Project
     template_name = "main/project_detail.html"
+    group_name = "RSE"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add project name and funding table to the context.
@@ -132,11 +153,12 @@ class ProjectDetailView(CustomBaseDetailView):
         return context
 
 
-class FundingDetailView(CustomBaseDetailView):
+class FundingDetailView(CustomBaseDetailView, GroupRequiredMixin):
     """View to view details of project funding."""
 
     model = models.Funding
     template_name = "main/funding_detail.html"
+    group_name = "RSE"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add funding name to the context, so it is easy to retrieve."""
