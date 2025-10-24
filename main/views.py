@@ -79,8 +79,11 @@ class ProjectsListView(LoginRequiredMixin, FilterView):
 
 
 class FundingListView(
-    GroupRequiredMixin, LoginRequiredMixin, SingleTableMixin, ListView
-):  # type: ignore [type-arg]
+    GroupRequiredMixin,
+    LoginRequiredMixin,
+    SingleTableMixin,
+    ListView,  # type: ignore [type-arg]
+):
     """View to display the funding list for all projects."""
 
     model = models.Funding
