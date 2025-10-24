@@ -227,54 +227,54 @@ class TestFundingListView(LoginRequiredMixin, TemplateOkMixin):
         return reverse("main:funding")
 
     @pytest.mark.django_db
-    def test_order_effort(self, auth_client):
+    def test_order_effort(self, rse_auth_client):
         """Test the order_effort method."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:funding")
             order_mock.return_value = Funding.objects.all()
 
             # Test ascending sort
-            auth_client.get(endpoint, {"sort": "effort"})
+            rse_auth_client.get(endpoint, {"sort": "effort"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "effort"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            auth_client.get(endpoint, {"sort": "-effort"})
+            rse_auth_client.get(endpoint, {"sort": "-effort"})
             assert order_mock.call_args.args[2]
 
     @pytest.mark.django_db
-    def test_order_effort_left(self, auth_client):
+    def test_order_effort_left(self, rse_auth_client):
         """Test the order_effort_left method."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:funding")
             order_mock.return_value = Funding.objects.all()
 
             # Test ascending sort
-            auth_client.get(endpoint, {"sort": "effort_left"})
+            rse_auth_client.get(endpoint, {"sort": "effort_left"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "effort_left"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            auth_client.get(endpoint, {"sort": "-effort_left"})
+            rse_auth_client.get(endpoint, {"sort": "-effort_left"})
             assert order_mock.call_args.args[2]
 
     @pytest.mark.django_db
-    def test_order_funding_left(self, auth_client):
+    def test_order_funding_left(self, rse_auth_client):
         """Test the order_funding_left method."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:funding")
             order_mock.return_value = Funding.objects.all()
 
             # Test ascending sort
-            auth_client.get(endpoint, {"sort": "funding_left"})
+            rse_auth_client.get(endpoint, {"sort": "funding_left"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "funding_left"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            auth_client.get(endpoint, {"sort": "-funding_left"})
+            rse_auth_client.get(endpoint, {"sort": "-funding_left"})
             assert order_mock.call_args.args[2]
 
 
@@ -300,13 +300,13 @@ class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
 
         return reverse("main:project_detail", kwargs={"pk": project.pk})
 
-    def test_get(self, auth_client, project):
+    def test_get(self, rse_auth_client, project):
         """Tests the get method and the data provided."""
         from main import tables
 
         endpoint = reverse("main:project_detail", kwargs={"pk": project.pk})
 
-        response = auth_client.get(endpoint)
+        response = rse_auth_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
         assert "form" in response.context
         assert response.context["project_name"] == project.name
@@ -332,13 +332,13 @@ class TestFundingDetailView(LoginRequiredMixin, TemplateOkMixin):
 
         return reverse("main:funding_detail", kwargs={"pk": funding.pk})
 
-    def test_get(self, auth_client, funding):
+    def test_get(self, rse_auth_client, funding):
         """Tests the get method and the data provided."""
         from main import tables
 
         endpoint = reverse("main:funding_detail", kwargs={"pk": funding.pk})
 
-        response = auth_client.get(endpoint)
+        response = rse_auth_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
         assert "form" in response.context
         assert response.context["funding_name"] == str(funding)

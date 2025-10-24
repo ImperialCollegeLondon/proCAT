@@ -332,3 +332,15 @@ def test_format_currency():
     from main.utils import format_currency
 
     assert format_currency(Decimal("23.4567")) == "£23.46"
+
+
+@pytest.mark.django_db
+def test_create_destroy_rse_group():
+    """Roundtrip check of creation and destruction of the HoRSE group."""
+    from main import utils
+
+    assert Group.objects.filter(name="RSE").exists()
+    utils.destroy_RSE_group()
+    assert not Group.objects.filter(name="RSE").exists()
+    utils.create_RSE_group()
+    assert Group.objects.filter(name="RSE").exists()
