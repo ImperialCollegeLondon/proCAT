@@ -83,7 +83,7 @@ iniconfig==2.3.0
     # via pytest
 jinja2==3.1.6
     # via bokeh
-josepy==2.1.0
+josepy==2.2.0
     # via mozilla-django-oidc
 jsbeautifier==1.15.4
     # via
