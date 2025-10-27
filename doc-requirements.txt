@@ -32,7 +32,7 @@ cryptography==45.0.7
     # via
     #   josepy
     #   mozilla-django-oidc
-django==5.2.6
+django==5.2.7
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
