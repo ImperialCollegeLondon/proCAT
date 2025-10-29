@@ -111,7 +111,7 @@ def get_internal_effort_timeseries(
         Pandas Series containing internal effort timeseries data.
     """
     dates = pd.bdate_range(
-        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left", tz=TIME_ZONE
     )
     # filter Projects to ensure dates exist and overlap with timeseries dates
     projects = list(
@@ -152,7 +152,7 @@ def get_team_members_timeseries(
         The number of active team members with capacity above zero over the time period.
     """
     dates = pd.bdate_range(
-        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left", tz=TIME_ZONE
     )
 
     capacities = list(
@@ -196,7 +196,7 @@ def get_capacity_timeseries(
         Pandas series of aggregated capacities with date range as index.
     """
     dates = pd.bdate_range(
-        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left", tz=TIME_ZONE
     )
     # if multiple capacities for a user, end_date is start_date of next capacity object
     # if no subsequent capacity, then end_date is plotting period end_date
@@ -238,7 +238,9 @@ def get_cost_recovery_timeseries(
         Tuple of Pandas series containing cost recovery timeseries data and a list of
         monthly totals.
     """
-    date_range = pd.bdate_range(start=dates[0][0], end=dates[-1][1], inclusive="both")
+    date_range = pd.bdate_range(
+        start=dates[0][0], end=dates[-1][1], inclusive="both", tz=TIME_ZONE
+    )
     # initialize timeseries
     timeseries = pd.Series(0.0, index=date_range)
 
@@ -247,7 +249,9 @@ def get_cost_recovery_timeseries(
 
     for month in dates:
         # record charge total for the month
-        month_dates = pd.bdate_range(start=month[0], end=month[1], inclusive="both")
+        month_dates = pd.bdate_range(
+            start=month[0], end=month[1], inclusive="both", tz=TIME_ZONE
+        )
         n_working_days = round(
             (pd.Timestamp(month[0]).days_in_month / 365) * WORKING_DAYS
         )
