@@ -42,7 +42,7 @@ class PermissionRequiredMixin(LoginRequiredMixin):
         - A `_get_url` method
     """
 
-    def test_permission_denied(self, auth_client):
+    def test_permission_denied(self, client_no_permissions):
         """Test authenticated users missing permissions are blocked."""
-        response = auth_client.get(self._get_url())
+        response = client_no_permissions.get(self._get_url())
         assert response.status_code == HTTPStatus.FORBIDDEN  # TODO: check url

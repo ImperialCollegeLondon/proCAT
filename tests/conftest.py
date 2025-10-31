@@ -88,3 +88,16 @@ def capacity(user):
         value=0.7,
         start_date=timezone.now().date(),
     )
+
+
+@pytest.fixture
+def client_no_permissions(django_user_model):
+    """Return a client with an authenticated user that has no permissions."""
+    from django.test import Client
+
+    user = django_user_model.objects.create_user(
+        username="no_perms_user", email="noperms@example.com", password="testpass123"
+    )
+    client = Client()
+    client.force_login(user)
+    return client

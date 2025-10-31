@@ -3,7 +3,7 @@
 from typing import Any
 
 import bokeh
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.forms import Form, ModelForm
 from django.http import HttpResponse
 from django.urls import reverse_lazy
@@ -64,16 +64,29 @@ class ProjectsListView(LoginRequiredMixin, FilterView):
         return context
 
 
-class FundingListView(LoginRequiredMixin, SingleTableMixin, ListView):  # type: ignore [type-arg]
+class FundingListView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    SingleTableMixin,
+    ListView,  # type: ignore [type-arg]
+):
     """View to display the funding list for all projects."""
+
+    permission_required = "main.view_funding"
+    raise_exception = False
 
     model = models.Funding
     table_class = tables.FundingTable
     template_name = "main/funding.html"
 
 
-class CapacitiesListView(LoginRequiredMixin, SingleTableMixin, FilterView):
+class CapacitiesListView(
+    LoginRequiredMixin, PermissionRequiredMixin, SingleTableMixin, FilterView
+):
     """View to display the list of capacities."""
+
+    permission_required = "main.view_capacity"
+    raise_exception = False
 
     model = models.Capacity
     table_class = tables.CapacityTable
@@ -109,11 +122,13 @@ class CustomBaseDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [typ
         return form
 
 
-class ProjectDetailView(CustomBaseDetailView):
+class ProjectDetailView(PermissionRequiredMixin, CustomBaseDetailView):
     """View to view details of a project."""
 
     model = models.Project
     template_name = "main/project_detail.html"
+    permission_required = "main.view_project"
+    raise_exception = False
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add project name and funding table to the context.
@@ -132,11 +147,13 @@ class ProjectDetailView(CustomBaseDetailView):
         return context
 
 
-class FundingDetailView(CustomBaseDetailView):
+class FundingDetailView(PermissionRequiredMixin, CustomBaseDetailView):
     """View to view details of project funding."""
 
     model = models.Funding
     template_name = "main/funding_detail.html"
+    permission_required = "main.view_funding"
+    raise_exception = False
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add funding name to the context, so it is easy to retrieve."""
