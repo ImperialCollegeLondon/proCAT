@@ -14,7 +14,7 @@ from django.urls import reverse
 
 from main.models import Funding, Project
 
-from .view_utils import LoginRequiredMixin, TemplateOkMixin
+from .view_utils import LoginRequiredMixin, PermissionRequiredMixin, TemplateOkMixin
 
 
 class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
@@ -218,7 +218,7 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
             assert order_mock.call_args.args[2]
 
 
-class TestFundingListView(LoginRequiredMixin, TemplateOkMixin):
+class TestFundingListView(PermissionRequiredMixin, TemplateOkMixin):
     """Test suite for the funding view."""
 
     _template_name = "main/funding.html"
@@ -227,58 +227,60 @@ class TestFundingListView(LoginRequiredMixin, TemplateOkMixin):
         return reverse("main:funding")
 
     @pytest.mark.django_db
-    def test_order_effort(self, rse_auth_client):
+    def test_order_effort(self, admin_client):
         """Test the order_effort method."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:funding")
             order_mock.return_value = Funding.objects.all()
 
             # Test ascending sort
-            rse_auth_client.get(endpoint, {"sort": "effort"})
+            admin_client.get(endpoint, {"sort": "effort"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "effort"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            rse_auth_client.get(endpoint, {"sort": "-effort"})
+            admin_client.get(endpoint, {"sort": "-effort"})
             assert order_mock.call_args.args[2]
 
     @pytest.mark.django_db
-    def test_order_effort_left(self, rse_auth_client):
+    def test_order_effort_left(self, admin_client):
         """Test the order_effort_left method."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:funding")
             order_mock.return_value = Funding.objects.all()
 
             # Test ascending sort
-            rse_auth_client.get(endpoint, {"sort": "effort_left"})
+            admin_client.get(endpoint, {"sort": "effort_left"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "effort_left"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            rse_auth_client.get(endpoint, {"sort": "-effort_left"})
+            admin_client.get(endpoint, {"sort": "-effort_left"})
             assert order_mock.call_args.args[2]
 
     @pytest.mark.django_db
-    def test_order_funding_left(self, rse_auth_client):
+    def test_order_funding_left(self, admin_client):
         """Test the order_funding_left method."""
         with patch("main.tables.order_queryset_by_property") as order_mock:
             endpoint = reverse("main:funding")
             order_mock.return_value = Funding.objects.all()
 
             # Test ascending sort
-            rse_auth_client.get(endpoint, {"sort": "funding_left"})
+            admin_client.get(endpoint, {"sort": "funding_left"})
             order_mock.assert_called()
             assert order_mock.call_args.args[1] == "funding_left"
             assert not order_mock.call_args.args[2]
 
             # Test descending sort
-            rse_auth_client.get(endpoint, {"sort": "-funding_left"})
+            admin_client.get(endpoint, {"sort": "-funding_left"})
             assert order_mock.call_args.args[2]
 
 
-class TestCapacitiesListView(LoginRequiredMixin, TemplateOkMixin):
+class TestCapacitiesListView(
+    PermissionRequiredMixin, LoginRequiredMixin, TemplateOkMixin
+):
     """Test suite for the capacities view."""
 
     _template_name = "main/capacities.html"
@@ -288,7 +290,7 @@ class TestCapacitiesListView(LoginRequiredMixin, TemplateOkMixin):
 
 
 @pytest.mark.usefixtures("project")
-class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
+class TestProjectsDetailView(PermissionRequiredMixin, TemplateOkMixin):
     """Test suite for the projects view."""
 
     _template_name = "main/project_detail.html"
@@ -300,13 +302,13 @@ class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
 
         return reverse("main:project_detail", kwargs={"pk": project.pk})
 
-    def test_get(self, rse_auth_client, project):
+    def test_get(self, admin_client, project):
         """Tests the get method and the data provided."""
         from main import tables
 
         endpoint = reverse("main:project_detail", kwargs={"pk": project.pk})
 
-        response = rse_auth_client.get(endpoint)
+        response = admin_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
         assert "form" in response.context
         assert response.context["project_name"] == project.name
@@ -320,7 +322,7 @@ class TestProjectsDetailView(LoginRequiredMixin, TemplateOkMixin):
 
 
 @pytest.mark.usefixtures("funding")
-class TestFundingDetailView(LoginRequiredMixin, TemplateOkMixin):
+class TestFundingDetailView(PermissionRequiredMixin, TemplateOkMixin):
     """Test suite for the funding view."""
 
     _template_name = "main/funding_detail.html"
@@ -332,13 +334,13 @@ class TestFundingDetailView(LoginRequiredMixin, TemplateOkMixin):
 
         return reverse("main:funding_detail", kwargs={"pk": funding.pk})
 
-    def test_get(self, rse_auth_client, funding):
+    def test_get(self, admin_client, funding):
         """Tests the get method and the data provided."""
         from main import tables
 
         endpoint = reverse("main:funding_detail", kwargs={"pk": funding.pk})
 
-        response = rse_auth_client.get(endpoint)
+        response = admin_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
         assert "form" in response.context
         assert response.context["funding_name"] == str(funding)

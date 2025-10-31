@@ -239,13 +239,3 @@ def get_financial_year_dates() -> tuple[datetime, datetime]:
 def format_currency(value: Decimal) -> str:
     """Format a float value as a GBP currency with two decimal places."""
     return f"£{value:.2f}"
-
-
-def create_RSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
-    """Create RSE group."""
-    Group.objects.get_or_create(name="RSE")[0]
-
-
-def destroy_RSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
-    """Delete RSE group."""
-    Group.objects.filter(name="RSE").delete()
