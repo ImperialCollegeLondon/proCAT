@@ -91,25 +91,13 @@ def capacity(user):
 
 
 @pytest.fixture
-def rse_user(django_user_model):
-    """Provides a Django user with the 'RSE' group assigned."""
+def client_no_permissions(django_user_model):
+    """Return a client with an authenticated user that has no permissions."""
+    from django.test import Client
+
     user = django_user_model.objects.create_user(
-        first_name="rse",
-        last_name="user",
-        email="rse.user@mail.com",
-        password="1234",
-        username="rseuser",
+        username="no_perms_user", email="noperms@example.com", password="testpass123"
     )
-    from django.contrib.auth.models import Group
-
-    group, _ = Group.objects.get_or_create(name="RSE")
-    user.groups.add(group)
-    return user
-
-
-@pytest.fixture
-def rse_auth_client(rse_user) -> Client:
-    """Return an authenticated client for a user with the 'RSE' group."""
     client = Client()
-    client.force_login(rse_user)
+    client.force_login(user)
     return client
