@@ -18,7 +18,7 @@ contourpy==1.3.3
     # via bokeh
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
-cryptography==45.0.7
+cryptography==46.0.3
     # via
     #   josepy
     #   mozilla-django-oidc

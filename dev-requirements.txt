@@ -30,7 +30,7 @@ coverage[toml]==7.10.7
     # via pytest-cov
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
-cryptography==45.0.7
+cryptography==46.0.3
     # via
     #   josepy
     #   mozilla-django-oidc
