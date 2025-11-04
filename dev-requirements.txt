@@ -30,7 +30,7 @@ coverage[toml]==7.10.7
     # via pytest-cov
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
-cryptography==45.0.7
+cryptography==46.0.3
     # via
     #   josepy
     #   mozilla-django-oidc
@@ -38,7 +38,7 @@ cssbeautifier==1.15.4
     # via djlint
 distlib==0.4.0
     # via virtualenv
-django==5.2.6
+django==5.2.7
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -83,7 +83,7 @@ iniconfig==2.3.0
     # via pytest
 jinja2==3.1.6
     # via bokeh
-josepy==2.1.0
+josepy==2.2.0
     # via mozilla-django-oidc
 jsbeautifier==1.15.4
     # via
@@ -120,13 +120,13 @@ pandas==2.3.3
     # via
     #   bokeh
     #   procat (pyproject.toml)
-pandas-stubs==2.3.0.250703
+pandas-stubs==2.3.2.250926
     # via procat (pyproject.toml)
 pathspec==0.12.1
     # via djlint
 pillow==12.0.0
     # via bokeh
-pip-tools==7.5.0
+pip-tools==7.5.1
     # via procat (pyproject.toml)
 platformdirs==4.3.8
     # via virtualenv
