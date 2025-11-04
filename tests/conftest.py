@@ -3,8 +3,16 @@
 from datetime import timedelta
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.test import Client
 from django.utils import timezone
+
+
+@pytest.fixture(autouse=True)
+def use_model_backend(settings):
+    """Ensure the model backend is used for authentication in tests."""
+    settings.AUTHENTICATION_BACKENDS = ("django.contrib.auth.backends.ModelBackend",)
+    settings.LOGIN_URL = "/accounts/login/"
 
 
 @pytest.fixture
@@ -91,13 +99,11 @@ def capacity(user):
 
 
 @pytest.fixture
-def client_no_permissions(django_user_model):
-    """Return a client with an authenticated user that has no permissions."""
-    from django.test import Client
-
-    user = django_user_model.objects.create_user(
-        username="no_perms_user", email="noperms@example.com", password="testpass123"
+def client_no_permissions(client, db):
+    """Provides a client logged in as a user without permissions."""
+    User = get_user_model()
+    user = User.objects.create_user(
+        username="noperms", email="noperms@example.com", password="x"
     )
-    client = Client()
-    client.force_login(user)
+    client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
     return client
