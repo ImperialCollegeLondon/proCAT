@@ -1,6 +1,6 @@
  <!-- markdownlint-disable MD041 -->
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/proCAT/graph/badge.svg?token=A9KNEMYXXN)](https://codecov.io/gh/ImperialCollegeLondon/proCAT)
 
@@ -161,6 +161,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/laura-ellington"><img src="https://avatars.githubusercontent.com/u/184098019?v=4?s=100" width="100px;" alt="laura-ellington"/><br /><sub><b>laura-ellington</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=laura-ellington" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://twitter.com/theyashjani"><img src="https://avatars.githubusercontent.com/u/54172910?v=4?s=100" width="100px;" alt="Yash Jani"/><br /><sub><b>Yash Jani</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=theyashjani" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Tosinibikunle"><img src="https://avatars.githubusercontent.com/u/89074158?v=4?s=100" width="100px;" alt="Tosinibikunle"/><br /><sub><b>Tosinibikunle</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=Tosinibikunle" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
