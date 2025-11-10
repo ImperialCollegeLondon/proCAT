@@ -134,7 +134,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pre-commit==4.3.0
+pre-commit==4.4.0
     # via procat (pyproject.toml)
 pycparser==2.23
     # via cffi
