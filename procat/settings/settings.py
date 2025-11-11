@@ -136,11 +136,6 @@ MIDDLEWARE += [
     "mozilla_django_oidc.middleware.SessionRefresh",
 ]
 
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "main.oidc.ICLOIDCAuthenticationBackend",
-]
-
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 AUTH_USER_MODEL = "main.User"
@@ -149,7 +144,6 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
 
-LOGIN_URL = "/oidc/authenticate/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
@@ -178,6 +172,30 @@ OIDC_OP_USER_ENDPOINT = os.environ.get("OIDC_OP_USER_ENDPOINT")
 OIDC_OP_JWKS_ENDPOINT = os.environ.get("OIDC_OP_JWKS_ENDPOINT")
 OIDC_RP_SCOPES = os.environ.get("OIDC_RP_SCOPES")
 OIDC_RP_SIGN_ALGO = os.environ.get("OIDC_RP_SIGN_ALGO", "RS256")
+
+def is_non_empty(value):
+    return value is not None and str(value).strip() != ""
+
+USE_OIDC = all([
+    is_non_empty(OIDC_RP_CLIENT_ID),
+    is_non_empty(OIDC_RP_CLIENT_SECRET),
+    is_non_empty(OIDC_OP_AUTHORIZATION_ENDPOINT),
+    is_non_empty(OIDC_OP_TOKEN_ENDPOINT),
+    is_non_empty(OIDC_OP_USER_ENDPOINT),
+    is_non_empty(OIDC_OP_JWKS_ENDPOINT),
+])
+
+if USE_OIDC:
+    AUTHENTICATION_BACKENDS = [
+        "django.contrib.auth.backends.ModelBackend",
+        "main.oidc.ICLOIDCAuthenticationBackend",
+    ]
+    LOGIN_URL = "/oidc/authenticate/"
+else:
+    AUTHENTICATION_BACKENDS = [
+        "django.contrib.auth.backends.ModelBackend",
+    ]
+    LOGIN_URL = "/register/"
 
 HUEY_TASK_SCHEDULES = {
     "SYNC_CLOCKIFY_TIME_ENTRIES": {
