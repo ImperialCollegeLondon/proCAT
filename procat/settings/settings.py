@@ -173,17 +173,21 @@ OIDC_OP_JWKS_ENDPOINT = os.environ.get("OIDC_OP_JWKS_ENDPOINT")
 OIDC_RP_SCOPES = os.environ.get("OIDC_RP_SCOPES")
 OIDC_RP_SIGN_ALGO = os.environ.get("OIDC_RP_SIGN_ALGO", "RS256")
 
+
 def is_non_empty(value):
     return value is not None and str(value).strip() != ""
 
-USE_OIDC = all([
-    is_non_empty(OIDC_RP_CLIENT_ID),
-    is_non_empty(OIDC_RP_CLIENT_SECRET),
-    is_non_empty(OIDC_OP_AUTHORIZATION_ENDPOINT),
-    is_non_empty(OIDC_OP_TOKEN_ENDPOINT),
-    is_non_empty(OIDC_OP_USER_ENDPOINT),
-    is_non_empty(OIDC_OP_JWKS_ENDPOINT),
-])
+
+USE_OIDC = all(
+    [
+        is_non_empty(OIDC_RP_CLIENT_ID),
+        is_non_empty(OIDC_RP_CLIENT_SECRET),
+        is_non_empty(OIDC_OP_AUTHORIZATION_ENDPOINT),
+        is_non_empty(OIDC_OP_TOKEN_ENDPOINT),
+        is_non_empty(OIDC_OP_USER_ENDPOINT),
+        is_non_empty(OIDC_OP_JWKS_ENDPOINT),
+    ]
+)
 
 if USE_OIDC:
     AUTHENTICATION_BACKENDS = [
