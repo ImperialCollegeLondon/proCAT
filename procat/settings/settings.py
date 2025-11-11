@@ -174,7 +174,7 @@ OIDC_RP_SCOPES = os.environ.get("OIDC_RP_SCOPES")
 OIDC_RP_SIGN_ALGO = os.environ.get("OIDC_RP_SIGN_ALGO", "RS256")
 
 
-def is_non_empty(value):
+def is_non_empty(value: str | None) -> bool:
     """Return True if the given environment variable is set and non-empty."""
     return value is not None and str(value).strip() != ""
 
