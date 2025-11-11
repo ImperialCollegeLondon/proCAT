@@ -229,12 +229,7 @@ class Project(models.Model):
         Returns:
             The number of weeks left or None if the project is Tentative or Not done.
         """
-        if (
-            self.status != "Tentative"
-            and self.status != "Not done"
-            and self.end_date
-            and self.start_date
-        ):
+        if self.status in ["Active", "Confirmed"] and self.end_date and self.start_date:
             left = (self.end_date - timezone.now().date()).days / 7
             total = (self.end_date - self.start_date).days / 7
             return int(left), round(left / total * 100, 1)

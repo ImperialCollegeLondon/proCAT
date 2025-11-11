@@ -92,6 +92,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "theyashjani",
+      "name": "Yash Jani",
+      "avatar_url": "https://avatars.githubusercontent.com/u/54172910?v=4",
+      "profile": "https://twitter.com/theyashjani",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Tosinibikunle",
+      "name": "Tosinibikunle",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89074158?v=4",
+      "profile": "https://github.com/Tosinibikunle",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -61,7 +61,7 @@ django-filter==25.1
     # via procat (pyproject.toml)
 django-stubs[compatible-mypy]==5.2.2
     # via procat (pyproject.toml)
-django-stubs-ext==5.2.2
+django-stubs-ext==5.2.7
     # via django-stubs
 django-tables2==2.7.5
     # via procat (pyproject.toml)
@@ -134,7 +134,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pre-commit==4.3.0
+pre-commit==4.4.0
     # via procat (pyproject.toml)
 pycparser==2.23
     # via cffi
@@ -144,7 +144,7 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pytest==8.4.2
+pytest==9.0.0
     # via
     #   procat (pyproject.toml)
     #   pytest-cov
