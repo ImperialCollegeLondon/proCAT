@@ -6,7 +6,7 @@
 #
 asgiref==3.9.2
     # via django
-bokeh==3.8.0
+bokeh==3.8.1
     # via procat (pyproject.toml)
 certifi==2025.10.5
     # via requests
