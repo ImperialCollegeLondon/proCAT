@@ -1,9 +1,12 @@
 {% extends "main/base.html" %}
 {% load django_bootstrap5 %}
 {% load django_tables2 %}
+{% load procat_extras %}
 {% block content %}
   <h2>Projects</h2>
-  <a class="btn btn-primary" href="{% url 'main:project_create' %}">+ Create Project</a>
+  {% if request.user|has_group:"HoRSE" %}
+    <a class="btn btn-primary" href="{% url 'main:project_create' %}">+ Create Project</a>
+  {% endif %}
   {% for title, table in tables %}
     <h3 class="mt-4">{{ title }}</h3>
     {% render_table table %}
