@@ -208,7 +208,7 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
         return context
 
 
-class CreateProjectView(CreateView):
+class ProjectCreateView(CreateView):
     """View to create a new project."""
 
     model = models.Project
@@ -224,5 +224,4 @@ class CreateProjectView(CreateView):
         "charging",
         "clockify_id",
     )
-    template_name = "main/project_create.html"
     success_url = reverse_lazy("main:projects")

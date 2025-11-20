@@ -13,7 +13,7 @@ urlpatterns = [
     path("capacities/", views.CapacitiesListView.as_view(), name="capacities"),
     path(
         "projects/create/",
-        views.CreateProjectView.as_view(),
+        views.ProjectCreateView.as_view(),
         name="project_create",
     ),
     path(
