@@ -3,7 +3,7 @@
 {% load django_tables2 %}
 {% block content %}
   <h2>Projects</h2>
-
+  <a class="btn btn-primary" href="{% url 'main:project_create' %}">+ Create Project</a>
   {% for title, table in tables %}
     <h3 class="mt-4">{{ title }}</h3>
     {% render_table table %}
