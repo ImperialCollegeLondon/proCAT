@@ -1,5 +1,6 @@
 {% extends "main/base.html" %}
 {% load django_bootstrap5 %}
+{% load procat_extras %}
 
 {% block content %}
 
@@ -20,7 +21,7 @@
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form form layout='horizontal' %}
-    {% if user.is_superuser %}
+    {% if request.user|has_group:"HoRSE" %}
       <div class="text-center">{% bootstrap_button button_type="submit" content="Save" %}</div>
     {% endif %}
   </form>
