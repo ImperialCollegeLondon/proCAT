@@ -95,11 +95,9 @@ class CreateProjectForm(forms.Form):
         "It should be the actual grant holder, not the main point of contact",
     )
 
-    department = forms.TypedChoiceField(
+    department = forms.ModelChoiceField(
         label="Department",
-        choices=Department.objects.values_list(
-            "name", flat=True
-        ),  # somehow has faculty too
+        queryset=Department.objects.values_list("name"),
         required=True,
         help_text="The department in which the research project is based, primarily.",
     )
@@ -107,16 +105,17 @@ class CreateProjectForm(forms.Form):
         label="Start date",
         required=False,
         help_text="Start date for the project.",
+        widget=forms.widgets.SelectDateWidget(attrs=dict(type="date")),
     )
     end_date = forms.DateField(
         label="End date",
         required=False,
         help_text="End date for the project.",
     )
-    lead = forms.TypedChoiceField(
+    lead = forms.ModelChoiceField(
         label="RSE Lead",
         required=False,
-        choices=get_user_model().objects.values_list("username", flat=True),
+        queryset=get_user_model().objects.values_list("username"),
         help_text="Project lead from the RSE side.",
     )
     status = forms.TypedChoiceField(
