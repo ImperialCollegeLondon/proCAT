@@ -59,6 +59,22 @@ def project(user, department):
 
 
 @pytest.fixture
+def project_create_post(user, department):
+    """Provides a default project object."""
+    return {
+        "name": "Project 123",
+        "nature": "Support",
+        "pi": "John Smith",
+        "department": department.pk,
+        "lead": user.pk,
+        "start_date": timezone.now().date(),
+        "end_date": timezone.now().date() + timedelta(days=42),
+        "status": "Active",
+        "charging": "Actual",
+    }
+
+
+@pytest.fixture
 def analysis_code():
     """Provides a default analysis code object."""
     from main import models

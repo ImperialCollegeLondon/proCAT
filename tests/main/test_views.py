@@ -416,3 +416,29 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         response = views.CostRecoveryView.as_view()(request)
         assert response.headers["Content-Type"] == "text/csv"
         assert f"charges_report_{month}-{year}.csv" in response["Content-Disposition"]
+
+
+@pytest.mark.django_db()
+class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Create view."""
+
+    _template_name = "main/project_form.html"
+
+    def _get_url(self):
+        return reverse("main:project_create")
+
+    def test_post(self, admin_client, project_create_post):
+        """Tests the post method to update the model and ."""
+        post = admin_client.post("/projects/create/", project_create_post)
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+        # Check submission made it to DB
+        new_object = Project.objects.get(name="Project 123")
+        assert new_object.pi == "John Smith"
+
+        # Check submission rendered in projects view
+        response = admin_client.get(reverse("main:projects"))
+        assert response.status_code == HTTPStatus.OK
+        projects = response.context["project_list"].values("name")[0]
+        assert "Project 123" in projects["name"]
