@@ -208,8 +208,11 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
         return context
 
 
-class ProjectCreateView(CreateView):
+class ProjectCreateView(PermissionRequiredMixin, CreateView):
     """View to create a new project."""
+
+    permission_required = "main.create_project"
+    raise_exception = False
 
     model = models.Project
     fields = (
