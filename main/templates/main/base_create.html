@@ -1,16 +1,9 @@
 {% extends "main/base.html" %}
 {% load django_bootstrap5 %}
-{% load procat_extras %}
 
 {% block content %}
 
   <style>p {text-align: justify;}</style>
-
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-{{ bokeh_version }}.min.js"></script>
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{ bokeh_version }}.min.js"></script>
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{ bokeh_version }}.min.js"></script>
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-{{ bokeh_version }}.min.js"></script>
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-{{ bokeh_version }}.min.js"></script>
 
 
   {% block create %}
@@ -21,7 +14,7 @@
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form form layout='horizontal' %}
-    {% if request.user|has_group:"HoRSE" %}
+    {% if perms.main.create_project %}
       <div class="text-center">{% bootstrap_button button_type="submit" content="Save" %}</div>
     {% endif %}
   </form>
