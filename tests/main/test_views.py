@@ -463,3 +463,63 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
         assert response.status_code == HTTPStatus.OK
         projects = response.context["project_list"].values("name")[0]
         assert "Project 123" in projects["name"]
+
+
+class TestProjectUpdateView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Create view."""
+
+    _template_name = "main/project_form.html"
+
+    def _get_url(self):
+        return reverse("main:project_create")
+
+    def test_post(self, admin_client, project, funding):
+        """Tests the post method to update the model and ."""
+        # Create the (full) initial db entry and link a funding source
+        project.nature = "Support"
+        project.pi = "John Smith"
+        project.charging = "Actual"
+        project.notifications_effort = {}
+        project.notifications_weeks = {}
+        project.clockify_id = ""
+        assert project.name == "ProCAT"
+
+        # update values (a form submission requires all fields sent)
+        expected_project_update = {
+            "name": "Project 123",
+            "nature": project.nature,
+            "pi": project.pi,
+            "department": project.department.pk,
+            "lead": project.lead.pk,
+            "start_date": project.start_date,
+            "end_date": project.end_date,
+            "status": project.status,
+            "charging": project.charging,
+            "notifications_effort": project.notifications_effort,
+            "notifications_weeks": project.notifications_weeks,
+            "clockify_id": project.clockify_id,
+        }
+
+        post = admin_client.post(
+            reverse("main:project_update", kwargs={"pk": project.pk}),
+            expected_project_update,
+        )
+
+        # Debug: print form errors if validation fails
+        if post.status_code == HTTPStatus.OK:
+            if "form" in post.context:
+                print("Form errors:", post.context["form"].errors)
+                print("Form data:", expected_project_update)
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+
+        # Check submission made it to DB
+        project.refresh_from_db()
+        assert project.name == expected_project_update["name"]
+
+        # Check submission rendered in project detail view and # main projects view
+        for url in [post.url, reverse("main:projects")]:
+            response = admin_client.get(url)
+            assert response.status_code == HTTPStatus.OK
+            assert expected_project_update["name"] in response.content.decode()
