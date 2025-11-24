@@ -243,4 +243,4 @@ class ProjectUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [t
         str
             A return URL.
         """
-        return reverse_lazy("main:project_detail", args=[self.object.pk])  # type: return-value [type-arg]
+        return reverse_lazy("main:project_detail", kwargs={"pk": self.object.pk})  # type: return-value [type-arg]
