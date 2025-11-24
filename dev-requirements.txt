@@ -18,7 +18,7 @@ cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.4.3
     # via requests
-click==8.3.0
+click==8.3.1
     # via
     #   djlint
     #   pip-tools
