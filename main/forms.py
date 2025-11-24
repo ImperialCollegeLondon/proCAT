@@ -59,7 +59,7 @@ class CostRecoveryForm(forms.Form):
     )
 
 
-class ProjectForm(forms.ModelForm):
+class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
     """Form to create and edit Project instances."""
 
     class Meta:
