@@ -218,3 +218,29 @@ class ProjectCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [t
     form_class = forms.ProjectForm
     template_name = "main/project_form.html"
     success_url = reverse_lazy("main:projects")
+
+
+class ProjectUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [type-arg]
+    """Detail view based on a read-only form view.
+
+    While there is a generic Detail View, it is not rendered nicely easily as the
+    bootstrap theme needs to be applied on a field by field basis. So we use a form view
+    instead, which can easily be styled, and make the form read only.
+    """
+
+    model = models.Project
+    template_name = "main/project_update.html"
+    permission_required = "main.change_project"
+    raise_exception = False
+
+    fields = "__all__"  # type: ignore [assignment]
+
+    def get_success_url(self) -> str:  # type: ignore [type-arg]
+        """Django magic function to obtain a dynamic success URL.
+
+        Returns:
+        -------
+        str
+            A return URL.
+        """
+        return reverse_lazy("main:project_detail", args=[self.object.pk])  # type: return-value [type-arg]
