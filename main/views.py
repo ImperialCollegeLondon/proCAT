@@ -215,16 +215,6 @@ class ProjectCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [t
     raise_exception = False
 
     model = models.Project
-    fields = (
-        "name",
-        "nature",
-        "pi",
-        "department",
-        "start_date",
-        "end_date",
-        "lead",
-        "status",
-        "charging",
-        "clockify_id",
-    )
+    form_class = forms.ProjectForm
+    template_name = "main/project_form.html"
     success_url = reverse_lazy("main:projects")
