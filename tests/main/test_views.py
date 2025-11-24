@@ -5,12 +5,14 @@ This test module includes tests for main views of the app ensuring that:
   - The correct status codes are returned.
 """
 
+from datetime import timedelta
 from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
 from django.test import RequestFactory
 from django.urls import reverse
+from django.utils import timezone
 
 from main.models import Funding, Project
 
@@ -427,15 +429,34 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
     def _get_url(self):
         return reverse("main:project_create")
 
-    def test_post(self, admin_client, project_create_post):
+    def test_post(self, admin_client, department, user):
         """Tests the post method to update the model and ."""
-        post = admin_client.post("/projects/create/", project_create_post)
+        expected_project_entry = {
+            "name": "Project 123",
+            "nature": "Support",
+            "pi": "John Smith",
+            "department": department.pk,
+            "lead": user.pk,
+            "start_date": timezone.now().date(),
+            "end_date": timezone.now().date() + timedelta(days=42),
+            "status": "Active",
+            "charging": "Actual",
+        }
+
+        post = admin_client.post("/projects/create/", expected_project_entry)
 
         # Check we got redirect URL (not a refresh 200)
         assert post.status_code == HTTPStatus.FOUND
         # Check submission made it to DB
-        new_object = Project.objects.get(name="Project 123")
-        assert new_object.pi == "John Smith"
+        new_object = Project.objects.get(name=expected_project_entry["name"])
+        assert new_object.nature == expected_project_entry["nature"]
+        assert new_object.pi == expected_project_entry["pi"]
+        assert new_object.lead == user
+        assert new_object.department == department
+        assert new_object.start_date == expected_project_entry["start_date"]
+        assert new_object.end_date == expected_project_entry["end_date"]
+        assert new_object.status == expected_project_entry["status"]
+        assert new_object.charging == expected_project_entry["charging"]
 
         # Check submission rendered in projects view
         response = admin_client.get(reverse("main:projects"))
