@@ -465,13 +465,18 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
         assert "Project 123" in projects["name"]
 
 
+@pytest.mark.usefixtures("project")
 class TestProjectUpdateView(PermissionRequiredMixin, TemplateOkMixin):
     """Test suite for the Project Update view."""
 
     _template_name = "main/project_update.html"
 
     def _get_url(self):
-        return reverse("main:project_update", kwargs={"pk": 1})
+        from main import models
+
+        project = models.Project.objects.get(name="ProCAT")
+
+        return reverse("main:project_update", kwargs={"pk": project.pk})
 
     def test_post(self, admin_client, project, funding):
         """Tests the post method to update the model and render the updated object."""
