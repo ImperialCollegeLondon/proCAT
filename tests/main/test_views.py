@@ -430,7 +430,7 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
         return reverse("main:project_create")
 
     def test_post(self, admin_client, department, user):
-        """Tests the post method to update the model and ."""
+        """Tests the post method to update the model and render the created object."""
         expected_project_entry = {
             "name": "Project 123",
             "nature": "Support",
@@ -466,15 +466,15 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
 
 
 class TestProjectUpdateView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the Project Create view."""
+    """Test suite for the Project Update view."""
 
-    _template_name = "main/project_form.html"
+    _template_name = "main/project_update.html"
 
     def _get_url(self):
-        return reverse("main:project_create")
+        return reverse("main:project_update", kwargs={"pk": 1})
 
     def test_post(self, admin_client, project, funding):
-        """Tests the post method to update the model and ."""
+        """Tests the post method to update the model and render the updated object."""
         # Create the (full) initial db entry and link a funding source
         project.nature = "Support"
         project.pi = "John Smith"
@@ -504,12 +504,6 @@ class TestProjectUpdateView(PermissionRequiredMixin, TemplateOkMixin):
             reverse("main:project_update", kwargs={"pk": project.pk}),
             expected_project_update,
         )
-
-        # Debug: print form errors if validation fails
-        if post.status_code == HTTPStatus.OK:
-            if "form" in post.context:
-                print("Form errors:", post.context["form"].errors)
-                print("Form data:", expected_project_update)
 
         # Check we got redirect URL (not a refresh 200)
         assert post.status_code == HTTPStatus.FOUND
