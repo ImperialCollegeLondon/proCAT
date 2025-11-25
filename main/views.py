@@ -230,12 +230,6 @@ class ProjectUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [t
 
     fields = "__all__"  # type: ignore [assignment]
 
-    def get_success_url(self) -> str:  # type: ignore [type-arg]
-        """Django magic function to obtain a dynamic success URL.
-
-        Returns:
-        -------
-        str
-            A return URL.
-        """
-        return reverse_lazy("main:project_detail", kwargs={"pk": self.object.pk})  # type: return-value [type-arg]
+    def get_success_url(self):  # type: ignore [no-untyped-def]
+        """Django magic function to obtain a dynamic success URL."""
+        return reverse_lazy("main:project_detail", kwargs={"pk": self.object.pk})
