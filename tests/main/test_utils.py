@@ -112,7 +112,31 @@ def test_get_current_and_last_month_start():
 
 
 @pytest.mark.django_db
-def test_get_budget_status():
+@pytest.mark.parametrize(
+    "status,funds_ran_out_not_expired_length,funding_not_expired_array,funding_expired_array",
+    (
+        pytest.param(
+            "Active",
+            1,
+            (False, False, True),
+            (False, True, False),
+            id="projects are active (expect budget returns)",
+        ),
+        pytest.param(
+            "Confirmed",
+            0,
+            (False, False, False),
+            (False, False, False),
+            id="projects are not active (expect no budget returns)",
+        ),
+    ),
+)
+def test_get_budget_status(
+    status,
+    funds_ran_out_not_expired_length,
+    funding_not_expired_array,
+    funding_expired_array,
+):
     """Test get_budget_status function."""
     from main.models import Department, Funding, MonthlyCharge, Project
     from main.utils import get_budget_status
@@ -123,7 +147,9 @@ def test_get_budget_status():
     department = Department.objects.create(name="Test Department")
 
     # Create a project
-    project = Project.objects.create(name="Test Project", department=department)
+    project = Project.objects.create(
+        name="Test Project", department=department, status=status
+    )
 
     # Create some funding entries
     funding1 = Funding.objects.create(
@@ -156,14 +182,25 @@ def test_get_budget_status():
     )
 
     # Check the results
-    assert len(funds_ran_out_not_expired) == 1
-    assert funds_ran_out_not_expired[0] == funding3
-    assert funding2 not in funds_ran_out_not_expired
+    assert len(funds_ran_out_not_expired) == funds_ran_out_not_expired_length
 
-    # Check funding expired but has budget
-    assert funding2 in funding_expired_budget_left
-    assert funding1 not in funding_expired_budget_left
-    assert funding3 not in funding_expired_budget_left
+    # Compare with truth array which should be present
+    for (
+        truth,
+        fund,
+    ) in zip(funding_not_expired_array, [funding1, funding2, funding3]):
+        if truth:
+            assert fund in funds_ran_out_not_expired
+
+    # Check funding expired but has budget using truth array
+    for (
+        truth,
+        fund,
+    ) in zip(funding_expired_array, [funding1, funding2, funding3]):
+        if truth:
+            assert fund in funding_expired_budget_left
+        else:
+            assert fund not in funding_expired_budget_left
 
 
 @pytest.mark.django_db
