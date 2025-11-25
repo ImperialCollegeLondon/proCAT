@@ -123,7 +123,9 @@ def test_get_budget_status():
     department = Department.objects.create(name="Test Department")
 
     # Create a project
-    project = Project.objects.create(name="Test Project", department=department)
+    project = Project.objects.create(
+        name="Test Project", department=department, status="Active"
+    )
 
     # Create some funding entries
     funding1 = Funding.objects.create(
