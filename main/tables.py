@@ -222,10 +222,10 @@ class FundingTable(tables.Table):
 
         model = Funding
         fields = (
+            "project_code",
             "project",
             "funding_body",
             "source",
-            "project_code",
             "expiry_date",
             "budget",
             "effort",
