@@ -18,7 +18,7 @@ cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.4.3
     # via requests
-click==8.3.0
+click==8.3.1
     # via
     #   djlint
     #   pip-tools
@@ -63,7 +63,7 @@ django-stubs[compatible-mypy]==5.2.2
     # via procat (pyproject.toml)
 django-stubs-ext==5.2.7
     # via django-stubs
-django-tables2==2.7.5
+django-tables2==2.8.0
     # via procat (pyproject.toml)
 djlint==1.36.4
     # via procat (pyproject.toml)
@@ -171,7 +171,7 @@ requests==2.32.5
     # via
     #   mozilla-django-oidc
     #   procat (pyproject.toml)
-ruff==0.13.2
+ruff==0.14.6
     # via procat (pyproject.toml)
 six==1.17.0
     # via
