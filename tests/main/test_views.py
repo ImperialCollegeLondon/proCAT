@@ -430,7 +430,7 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
         return reverse("main:project_create")
 
     def test_post(self, admin_client, department, user):
-        """Tests the post method to update the model and ."""
+        """Tests the post method to update the model and render the created object."""
         expected_project_entry = {
             "name": "Project 123",
             "nature": "Support",
