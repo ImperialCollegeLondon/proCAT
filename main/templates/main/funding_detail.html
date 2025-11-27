@@ -3,6 +3,9 @@
 {% load django_tables2 %}
 {% block content %}
   <h2>{{ funding_name }}</h2>
+  {% if perms.main.create_funding %}
+    <a class="btn btn-primary" href="{{ request.path }}update">✎ Update Funding</a>
+  {% endif %}
   <!-- Object details -->
   <div class="row">
     <div class="col">

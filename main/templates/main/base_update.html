@@ -5,6 +5,7 @@
 
   <style>p {text-align: justify;}</style>
 
+<<<<<<< HEAD
   {% block update %}
   {% endblock update %}
 
@@ -13,6 +14,21 @@
     <div class="text-left">{% bootstrap_button button_type="submit" content="✎ Update" %}</div>
     <p>&nbsp;</p>
     {% bootstrap_form form layout='horizontal' %}
+=======
+
+  {% block create %}
+  {% endblock create %}
+
+  <br>
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form layout='horizontal' %}
+    <!-- Funding table -->
+    {% if perms.main.create_funding %}
+      <div class="text-center">{% bootstrap_button button_type="submit" content="Update" %}</div>
+    {% endif %}
+>>>>>>> 7f20817 (create update funding view)
   </form>
 
 {% endblock content %}
