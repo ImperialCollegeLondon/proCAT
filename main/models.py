@@ -824,7 +824,7 @@ class FullTimeEquivalent(models.Model):
         if self.end_date <= self.start_date:
             raise ValidationError("The end date must be after the start date.")
 
-        if self.value >= 0:
+        if self.value < 0:
             raise ValidationError(
                 "The ETF value must be greater than or equal to zero."
             )
