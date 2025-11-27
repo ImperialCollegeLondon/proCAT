@@ -1,9 +1,13 @@
 """Forms needed by ProCAT."""
 
+from typing import ClassVar
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
+
+from . import models
 
 
 class CustomUserCreationForm(UserCreationForm):  # type: ignore [type-arg]
@@ -53,3 +57,26 @@ class CostRecoveryForm(forms.Form):
         coerce=int,
         help_text="Year for which to generate the charges report.",
     )
+
+
+class FundingForm(forms.ModelForm):  # type: ignore [type-arg]
+    """Form to create and edit funding instances."""
+
+    class Meta:
+        """Meta class for the form."""
+
+        model = models.Funding
+        fields = (
+            "project",
+            "source",
+            "funding_body",
+            "cost_centre",
+            "activity",
+            "analysis_code",
+            "expiry_date",
+            "budget",
+            "daily_rate",
+        )
+        widgets: ClassVar = {
+            "expiry_date": forms.DateInput(attrs={"type": "date"}),
+        }

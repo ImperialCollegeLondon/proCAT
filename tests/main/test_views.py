@@ -5,12 +5,14 @@ This test module includes tests for main views of the app ensuring that:
   - The correct status codes are returned.
 """
 
+from datetime import timedelta
 from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
 from django.test import RequestFactory
 from django.urls import reverse
+from django.utils import timezone
 
 from main.models import Funding, Project
 
@@ -416,3 +418,48 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         response = views.CostRecoveryView.as_view()(request)
         assert response.headers["Content-Type"] == "text/csv"
         assert f"charges_report_{month}-{year}.csv" in response["Content-Disposition"]
+
+
+class TestFundingCreateView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Funding Create view."""
+
+    _template_name = "main/funding_form.html"
+
+    def _get_url(self):
+        return reverse("main:funding_create")
+
+    def test_post(self, admin_client, project, analysis_code):
+        """Tests the post method to create a Funding record."""
+        expected_funding_entry = {
+            "project": project.pk,
+            "source": "External",
+            "funding_body": "UKRI",
+            "cost_centre": "CC123",
+            "activity": "P12345",
+            "analysis_code": analysis_code.pk,
+            "expiry_date": timezone.now().date() + timedelta(days=365),
+            "budget": "100000.00",
+            "daily_rate": "400.00",
+        }
+
+        post = admin_client.post(self._get_url(), expected_funding_entry)
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+
+        # Check submission made it to DB
+        new_object = Funding.objects.get(project=project)
+        assert new_object.source == expected_funding_entry["source"]
+        assert new_object.funding_body == expected_funding_entry["funding_body"]
+        assert new_object.cost_centre == expected_funding_entry["cost_centre"]
+        assert new_object.activity == expected_funding_entry["activity"]
+        assert new_object.analysis_code == analysis_code
+        assert new_object.expiry_date == expected_funding_entry["expiry_date"]
+        assert str(new_object.budget) == expected_funding_entry["budget"]
+        assert str(new_object.daily_rate) == expected_funding_entry["daily_rate"]
+
+        # Check submission rendered in funding list view
+        response = admin_client.get(reverse("main:funding"))
+        assert response.status_code == HTTPStatus.OK
+        funding_list = response.context["funding_list"].values("project")[0]
+        assert project.pk == funding_list["project"]
