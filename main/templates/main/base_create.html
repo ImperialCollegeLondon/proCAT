@@ -1,0 +1,22 @@
+{% extends "main/base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+
+  <style>p {text-align: justify;}</style>
+
+
+  {% block create %}
+  {% endblock create %}
+
+  <br>
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form layout='horizontal' %}
+    {% if perms.main.create_project %}
+      <div class="text-center">{% bootstrap_button button_type="submit" content="Save" %}</div>
+    {% endif %}
+  </form>
+
+{% endblock content %}
