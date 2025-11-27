@@ -17,6 +17,11 @@ urlpatterns = [
         name="funding_create",
     ),
     path(
+        "funding/<slug:pk>/update",
+        views.FundingUpdateView.as_view(),
+        name="funding_update",
+    ),
+    path(
         "projects/<slug:pk>/", views.ProjectDetailView.as_view(), name="project_detail"
     ),
     path(

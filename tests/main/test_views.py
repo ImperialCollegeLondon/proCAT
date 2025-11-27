@@ -463,3 +463,59 @@ class TestFundingCreateView(PermissionRequiredMixin, TemplateOkMixin):
         assert response.status_code == HTTPStatus.OK
         funding_list = response.context["funding_list"].values("project")[0]
         assert project.pk == funding_list["project"]
+
+
+@pytest.mark.usefixtures("funding")
+class TestFundingUpdateView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Funding Update view."""
+
+    _template_name = "main/funding_update.html"
+
+    def _get_url(self):
+        from main import models
+
+        funding = models.Funding.objects.first()
+        return reverse("main:funding_update", kwargs={"pk": funding.pk})
+
+    def test_post(self, admin_client, funding, analysis_code):
+        """Tests the post method to update the funding record and render the updated object."""  # noqa: E501
+        # Ensure we have an initial funding entry
+        assert funding.project is not None
+        assert funding.source in ("Internal", "External")
+
+        # update values (a form submission requires all fields sent)
+        expected_funding_update = {
+            "project": funding.project.pk,
+            "source": "External",
+            "funding_body": "EPSRC",
+            "cost_centre": "CC999",
+            "activity": "F12345",
+            "analysis_code": analysis_code.pk,
+            "expiry_date": timezone.now().date() + timedelta(days=180),
+            "budget": "250000.00",
+            "daily_rate": "450.00",
+        }
+
+        post = admin_client.post(
+            reverse("main:funding_update", kwargs={"pk": funding.pk}),
+            expected_funding_update,
+        )
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+
+        # Check submission made it to DB
+        funding.refresh_from_db()
+        assert funding.funding_body == expected_funding_update["funding_body"]
+        assert funding.cost_centre == expected_funding_update["cost_centre"]
+        assert funding.activity == expected_funding_update["activity"]
+        assert funding.analysis_code.pk == expected_funding_update["analysis_code"]
+        assert funding.expiry_date == expected_funding_update["expiry_date"]
+        assert str(funding.budget) == expected_funding_update["budget"]
+        assert str(funding.daily_rate) == expected_funding_update["daily_rate"]
+
+        # Check submission rendered in funding detail view and funding list view
+        for url in [post.url, reverse("main:funding")]:
+            response = admin_client.get(url)
+            assert response.status_code == HTTPStatus.OK
+            assert expected_funding_update["funding_body"] in response.content.decode()
