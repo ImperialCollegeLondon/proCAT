@@ -837,3 +837,38 @@ class FullTimeEquivalent(models.Model):
             raise ValidationError(
                 "The ETF value must be greater than or equal to zero."
             )
+
+
+class ProjectPhase(FullTimeEquivalent):
+    """Phases associated with a project."""
+
+    project = models.ForeignKey(
+        Project, related_name="phases", on_delete=models.PROTECT
+    )
+
+    def __str__(self) -> str:
+        """String representation of the ProjectPhase object."""
+        return f"{self.project.name} - {self.start_date} -> {self.end_date}"
+
+    def save(self, **kwargs: Any) -> None:  # type: ignore
+        """Saves the object to the database.
+
+        This overwrites models.Model.save() to keep the days constant if the start or
+        end date changes, modifying the FTE value. Except if `value` has also changed in
+        the same modification.
+        """
+        update_fields = kwargs.get("update_fields")
+        # collects updated fields if there are any and checks for date changes
+        if update_fields is not None and (
+            "start_date" in update_fields or "end_date" in update_fields
+        ):
+            if "value" not in update_fields:  # if date change and no value change
+                # get old date (from DB)
+                old_days = ProjectPhase.objects.get(pk=self.pk).days
+                # update the value keeping the days constant by updating FTE value
+                self.value = old_days / (
+                    (self.end_date - self.start_date).days * WORKING_DAYS / 365
+                )
+                kwargs["update_fields"] = {"value"}.union(update_fields)
+
+        super().save(**kwargs)
