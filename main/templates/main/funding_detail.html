@@ -3,9 +3,14 @@
 {% load django_tables2 %}
 {% block content %}
   <h2>{{ funding_name }}</h2>
-  {% if perms.main.create_funding %}
-    <a class="btn btn-primary" href="{{ request.path }}update">✎ Update Funding</a>
-  {% endif %}
+  <div class="d-flex gap-2">
+    {% if perms.main.change_funding %}
+      <a class="btn btn-primary"
+         href="{% url 'main:funding_update' funding.pk %}">Update Funding</a>
+    {% endif %}
+    <a href="{% url 'main:funding' %}" class="btn btn-secondary">All Funding</a>
+  </div>
+
   <!-- Object details -->
   <div class="row">
     <div class="col">
