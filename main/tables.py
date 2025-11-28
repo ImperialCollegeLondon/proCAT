@@ -151,6 +151,10 @@ class ProjectTable(tables.Table):
 class FundingTable(tables.Table):
     """Table for the Funding listing."""
 
+    funding_body = tables.Column(
+        linkify=("main:funding_detail", {"pk": tables.A("pk")})
+    )
+
     project = tables.Column(
         linkify=("main:project_detail", {"pk": tables.A("project.pk")})
     )
