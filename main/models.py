@@ -1,6 +1,6 @@
 """Models module for main app."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -9,7 +9,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Q, Sum
+from django.db.models import Sum
 from django.utils import timezone
 
 from procat.settings.settings import (
@@ -17,8 +17,6 @@ from procat.settings.settings import (
     WEEKS_LEFT_THRESHOLD,
     WORKING_DAYS,
 )
-
-from .models_utils import Warning
 
 
 class User(AbstractUser):
@@ -93,7 +91,7 @@ class AnalysisCode(models.Model):
         return f"{self.code} - {self.description}"
 
 
-class Project(Warning, models.Model):
+class Project(models.Model):
     """Software project details."""
 
     _NATURE = (("Support", "Support"), ("Standard", "Standard"))
@@ -196,12 +194,6 @@ class Project(Warning, models.Model):
     def __str__(self) -> str:
         """String representation of the Project object."""
         return self.name
-
-    def _warn_no_funding(self) -> None | str:
-        """Warns if there is no funding associated to the project."""
-        if not self.funding_source.exists():
-            return "No funding defined for the project."
-        return None
 
     def clean(self) -> None:
         """Ensure all fields have a value unless status is 'Tentative' or 'Not done'.
@@ -798,6 +790,7 @@ class FullTimeEquivalent(models.Model):
         """Creates an FTE object given a number of days time period."""
         # get date difference in fractional days
         date_difference = (end_date - start_date).days
+        print(date_difference)
         # use WORKING_DAYS to estimate day_difference minus weekends & holidays
         day_difference = date_difference * WORKING_DAYS / 365
         # FTE will then be the # of days work / the (weighted) time period in days
@@ -815,7 +808,7 @@ class FullTimeEquivalent(models.Model):
 
         return round(self.value * date_difference * WORKING_DAYS / 365)
 
-    def trace(self, timerange: pd.DatetimeIndex | None = None) -> "pd.Series[float]":
+    def trace(self, timerange: pd.DatetimeIndex | None = None) -> pd.DataFrame:
         """Convert the FTE to a dataframe.
 
         If timerange is provided, those dates are used, otherwise a datetime index is
@@ -826,7 +819,13 @@ class FullTimeEquivalent(models.Model):
         else:
             idx = pd.date_range(start=self.start_date, end=self.end_date)
 
-        return pd.Series(self.value, index=idx)
+        # remove private attributes
+        object_attributes = self.__dict__.copy()
+        for key in self.__dict__.keys():
+            if key.startswith("_"):
+                object_attributes.pop(key)
+
+        return pd.DataFrame(object_attributes, index=idx)
 
     def clean(self) -> None:
         """Ensure start date comes before end date and that value 0 or positive."""
@@ -836,7 +835,7 @@ class FullTimeEquivalent(models.Model):
 
         if self.value < 0:
             raise ValidationError(
-                "The FTE value must be greater than or equal to zero."
+                "The ETF value must be greater than or equal to zero."
             )
 
 
@@ -858,105 +857,18 @@ class ProjectPhase(FullTimeEquivalent):
         end date changes, modifying the FTE value. Except if `value` has also changed in
         the same modification.
         """
-        update_fields = kwargs.get("update_fields", {})
-
-        # If value has changed, then we don't do anything extra
-        if "value" in update_fields:
-            pass
-
-        # If dates change, we update the value so the days remain constant
-        elif "start_date" in update_fields or "end_date" in update_fields:
-            # get old date (from DB)
-            old_days = ProjectPhase.objects.get(pk=self.pk).days
-            # update the value keeping the days constant by updating FTE value
-            self.value = old_days / (
-                (self.end_date - self.start_date).days * WORKING_DAYS / 365
-            )
-            kwargs["update_fields"] = {"value"}.union(update_fields)
+        update_fields = kwargs.get("update_fields")
+        # collects updated fields if there are any and checks for date changes
+        if update_fields is not None and (
+            "start_date" in update_fields or "end_date" in update_fields
+        ):
+            if "value" not in update_fields:  # if date change and no value change
+                # get old date (from DB)
+                old_days = ProjectPhase.objects.get(pk=self.pk).days
+                # update the value keeping the days constant by updating FTE value
+                self.value = old_days / (
+                    (self.end_date - self.start_date).days * WORKING_DAYS / 365
+                )
+                kwargs["update_fields"] = {"value"}.union(update_fields)
 
         super().save(**kwargs)
-
-    def check_phase_in_project(self) -> None:
-        """Ensure the start phase dates are within the project dates."""
-        assert self.project.start_date is not None
-        assert self.project.end_date is not None
-        if (
-            self.project.start_date > self.start_date
-            or self.project.end_date < self.end_date
-        ):
-            raise ValidationError(
-                "Phase period must be within the project period: "
-                f"{self.project.start_date} -> {self.project.end_date}"
-            )
-
-    def check_overlapping_phases(self) -> None:
-        """Check the phase doesn't overlap with another phase (by 1 day)."""
-        # check start within Phases_starts ≤ Phase_new_start ≤ Phases_ends
-        overlapping_start = ProjectPhase.objects.filter(
-            project=self.project,
-            start_date__lte=self.start_date,
-            end_date__gte=self.start_date,
-        )
-        # check end within phase Phases_starts ≤ Phase_new_end ≤ Phases_ends
-        overlapping_end = ProjectPhase.objects.filter(
-            project=self.project,
-            start_date__lte=self.end_date,
-            end_date__gte=self.end_date,
-        )
-        # combine querysets
-        overlapping = (overlapping_start | overlapping_end).distinct()
-
-        # Exclude self if this is an update (not a new instance)
-        if self.pk:
-            overlapping = overlapping.exclude(pk=self.pk)
-
-        if overlapping.exists():
-            first_conflict = overlapping.first()
-            raise ValidationError(
-                "Phase period must not overlap with other phase periods for the same "
-                f"project: {first_conflict.start_date} -> "  # type: ignore [union-attr]
-                f"{first_conflict.end_date} vs. {self.start_date} -> {self.end_date}"  # type: ignore [union-attr]
-            )
-
-    def check_phase_alignment(self) -> None:
-        """Ensures phases are aligned but separated by 1 day."""
-        touching = ProjectPhase.objects.filter(
-            Q(project=self.project)
-            & (
-                Q(start_date=self.end_date + timedelta(days=1))
-                | Q(end_date=self.start_date - timedelta(days=1))
-            )
-        )
-
-        if not (
-            touching.exists()
-            or self.start_date == self.project.start_date
-            or self.end_date == self.project.end_date
-        ):
-            raise ValidationError(
-                "Phase period must align with the start or end of a project or phase."
-            )
-
-    def check_project_funding(self) -> None:
-        """Check the project has funding before the phase can be added."""
-        if not self.project.funding_source.exists():
-            raise ValidationError(
-                "Project must have associated funding before phases can be added."
-            )
-
-    def clean(self) -> None:
-        """Ensures that phase dates are sensible.
-
-        Ensures start is before the end date (from FTE clean).
-        Ensures phase within project period.
-        Ensures the phase isn't covered by any other phases.
-        Ensures at least phase start or end date aligns with other phases or project
-            dates.
-        Ensures project has funding before phase added.
-        """
-        super().clean()
-
-        self.check_phase_in_project()
-        self.check_overlapping_phases()
-        self.check_phase_alignment()
-        self.check_project_funding()
