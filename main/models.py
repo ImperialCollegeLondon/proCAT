@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
 import pandas as pd
 from django.contrib.auth.models import AbstractUser
@@ -779,17 +780,25 @@ class FullTimeEquivalent(models.Model):
     )
 
     @classmethod
-    def from_days(
-        cls, days: int, start_date: datetime, end_date: datetime
-    ) -> None:  # ignore: [attr-defined]
+    def from_days(  # type: ignore[explicit-any]
+        cls,
+        days: int,
+        start_date: datetime,
+        end_date: datetime,
+        **kwargs: Any,
+    ) -> None:
         """Creates an FTE object given a number of days time period."""
         # get date difference in fractional days
         date_difference = (end_date - start_date).days
+        print(date_difference)
         # use WORKING_DAYS to estimate day_difference minus weekends & holidays
         day_difference = date_difference * WORKING_DAYS / 365
         # FTE will then be the # of days work / the (weighted) time period in days
         cls.objects.create(  # type: ignore[attr-defined]
-            value=days / day_difference, start_date=start_date, end_date=end_date
+            value=days / day_difference,
+            start_date=start_date,
+            end_date=end_date,
+            **kwargs,
         )
 
     @property
