@@ -826,3 +826,153 @@ class TestMonthlyCharge:
             description="A custom description.",
         )
         monthly_charge.clean()
+
+
+class TestProjectPhase:
+    """Tests for the Project Phase model."""
+
+    def test_model_str(self, project):
+        """Test the object string for the monthly charge model."""
+        from main import models
+
+        project_phase = models.ProjectPhase(
+            project=project,
+            value=1,
+            start_date=datetime(2025, 1, 1).date(),
+            end_date=datetime(2025, 1, 31).date(),
+        )
+        project_phase.clean()
+        assert str(project_phase) == (
+            f"{project.name} - {project_phase.start_date} -> {project_phase.end_date}"
+        )
+
+    @pytest.mark.django_db
+    @pytest.mark.parametrize(
+        "days,start_date,end_date,value,validation_error",
+        (
+            pytest.param(
+                220,
+                datetime(2025, 1, 1).date(),
+                datetime(2026, 1, 1).date(),
+                1,
+                None,
+                id="1 year, v=1",
+            ),
+            pytest.param(
+                55,
+                datetime(2025, 1, 1).date(),
+                datetime(2025, 7, 1).date(),
+                55 / (181 * 220 / 365),
+                None,
+                id="6 months, v≈0.5",
+            ),
+            pytest.param(
+                -220,
+                datetime(2025, 1, 1).date(),
+                datetime(2025, 6, 1).date(),
+                None,
+                "The ETF value must be greater than or equal to zero.",
+                id="ETF < 0",
+            ),
+            pytest.param(
+                220,
+                datetime(2026, 1, 1).date(),
+                datetime(2025, 1, 1).date(),
+                None,
+                "The end date must be after the start date.",
+                id="End before start",
+            ),
+        ),
+    )
+    def test_from_days(
+        self, project, days, start_date, end_date, value, validation_error
+    ):
+        """Test the from_days function and that value is calculated correctly."""
+        from main import models
+
+        models.ProjectPhase.from_days(days, start_date, end_date, project=project)
+        phase = models.ProjectPhase.objects.last()
+
+        if validation_error is not None:
+            with pytest.raises(ValidationError, match=validation_error):
+                phase.clean()
+
+        else:
+            phase.clean()
+            assert phase.value == value
+
+    @pytest.mark.parametrize(
+        "value,start_date,end_date,expected_days",
+        (
+            pytest.param(
+                1,
+                datetime(2025, 1, 1).date(),
+                datetime(2026, 1, 1).date(),
+                220,
+                id="1 year @ 1 FTE",
+            ),
+            pytest.param(
+                0.5,
+                datetime(2025, 1, 1).date(),
+                datetime(2026, 1, 1).date(),
+                110,
+                id="181 days @ 0.5 FTE",
+            ),
+            pytest.param(
+                2.3,
+                datetime(2025, 7, 1).date(),
+                datetime(2026, 8, 16).date(),
+                570,
+                id="1 year & 46 days @ 2.3 FTE",
+            ),
+        ),
+    )
+    def test_days(self, phase, value, start_date, end_date, expected_days):
+        """Test the calculation of working days in the project phase."""
+        phase.value = value
+        phase.start_date = start_date
+        phase.end_date = end_date
+
+        assert phase.days == expected_days
+
+    # @pytest.mark.django_db
+    @pytest.mark.parametrize(
+        "value,start_date,end_date,validation_error",
+        (
+            pytest.param(
+                1,
+                datetime(2025, 1, 1).date(),
+                datetime(2026, 1, 1).date(),
+                None,
+                id="1 year, v=1",
+            ),
+            pytest.param(
+                -1.4,
+                datetime(2025, 1, 1).date(),
+                datetime(2025, 6, 1).date(),
+                "The ETF value must be greater than or equal to zero.",
+                id="ETF < 0",
+            ),
+            pytest.param(
+                1,
+                datetime(2026, 1, 1).date(),
+                datetime(2025, 1, 1).date(),
+                "The end date must be after the start date.",
+                id="End before start",
+            ),
+        ),
+    )
+    def test_clean(self, project, value, start_date, end_date, validation_error):
+        """Test the clean method."""
+        from main import models
+
+        phase = models.ProjectPhase(
+            project=project, value=value, start_date=start_date, end_date=end_date
+        )
+
+        if validation_error is not None:
+            with pytest.raises(
+                ValidationError,
+                match=validation_error,
+            ):
+                phase.clean()

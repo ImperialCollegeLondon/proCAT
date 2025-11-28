@@ -1,6 +1,6 @@
 """Pytest configuration file."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -96,6 +96,19 @@ def capacity(user):
         value=0.7,
         start_date=timezone.now().date(),
     )
+
+
+@pytest.fixture
+def phase(project):
+    """Provides a default ProjectPhase object."""
+    from main import models
+
+    return models.ProjectPhase.objects.get_or_create(
+        project=project,
+        value=1,
+        start_date=datetime(2025, 1, 1).date(),
+        end_date=datetime(2025, 7, 1).date(),
+    )[0]
 
 
 @pytest.fixture
