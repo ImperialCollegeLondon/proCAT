@@ -798,7 +798,6 @@ class FullTimeEquivalent(models.Model):
         """Creates an FTE object given a number of days time period."""
         # get date difference in fractional days
         date_difference = (end_date - start_date).days
-        print(date_difference)
         # use WORKING_DAYS to estimate day_difference minus weekends & holidays
         day_difference = date_difference * WORKING_DAYS / 365
         # FTE will then be the # of days work / the (weighted) time period in days
