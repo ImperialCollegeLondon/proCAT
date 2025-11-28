@@ -1,0 +1,11 @@
+{% extends "main/base.html" %}
+{% load django_bootstrap5 %}
+{% load django_tables2 %}
+{% block content %}
+  <h2>Project Phases</h2>
+
+  {% for title, table in tables %}
+    <h3 class="mt-4">{{ title }}</h3>
+    {% render_table table %}
+  {% endfor %}
+{% endblock content %}
