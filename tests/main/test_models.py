@@ -831,19 +831,20 @@ class TestMonthlyCharge:
 class TestProjectPhase:
     """Tests for the Project Phase model."""
 
-    def test_model_str(self, project):
+    def test_model_str(self, project_static):
         """Test the object string for the monthly charge model."""
         from main import models
 
         project_phase = models.ProjectPhase(
-            project=project,
+            project=project_static,
             value=1,
             start_date=datetime(2025, 1, 1).date(),
-            end_date=datetime(2025, 1, 31).date(),
+            end_date=datetime(2025, 1, 3).date(),
         )
         project_phase.clean()
         assert str(project_phase) == (
-            f"{project.name} - {project_phase.start_date} -> {project_phase.end_date}"
+            f"{project_static.name} - {project_phase.start_date} -> "
+            "{project_phase.end_date}"
         )
 
     @pytest.mark.django_db
@@ -885,12 +886,14 @@ class TestProjectPhase:
         ),
     )
     def test_from_days(
-        self, project, days, start_date, end_date, value, validation_error
+        self, project_static, days, start_date, end_date, value, validation_error
     ):
         """Test the from_days function and that value is calculated correctly."""
         from main import models
 
-        models.ProjectPhase.from_days(days, start_date, end_date, project=project)
+        models.ProjectPhase.from_days(
+            days, start_date, end_date, project=project_static
+        )
         phase = models.ProjectPhase.objects.last()
 
         if validation_error is not None:
@@ -935,7 +938,6 @@ class TestProjectPhase:
 
         assert phase.days == expected_days
 
-    # @pytest.mark.django_db
     @pytest.mark.parametrize(
         "value,start_date,end_date,validation_error",
         (
@@ -944,14 +946,14 @@ class TestProjectPhase:
                 datetime(2025, 1, 1).date(),
                 datetime(2026, 1, 1).date(),
                 None,
-                id="1 year, v=1",
+                id="1 year, v=1, touching proj start",
             ),
             pytest.param(
                 -1.4,
                 datetime(2025, 1, 1).date(),
                 datetime(2025, 6, 1).date(),
                 "The ETF value must be greater than or equal to zero.",
-                id="ETF < 0",
+                id="ETF less than 0",
             ),
             pytest.param(
                 1,
@@ -960,14 +962,50 @@ class TestProjectPhase:
                 "The end date must be after the start date.",
                 id="End before start",
             ),
+            pytest.param(
+                1,
+                datetime(2024, 12, 30).date(),
+                datetime(2026, 1, 1).date(),
+                "Phase period must be within the project period: 2025-01-01 ->"
+                " 2027-06-30",
+                id="Phase not within project period",
+            ),
+            pytest.param(
+                1,
+                datetime(2027, 3, 8).date(),
+                datetime(2027, 4, 10).date(),
+                "Phase period must not overlap with other phase periods for the same "
+                "project: 2027-03-10 -> "
+                "2027-04-10 vs. 2027-03-08 -> 2027-04-10",
+                id="Overlaps with another phase",
+            ),
+            pytest.param(
+                1,
+                datetime(2025, 1, 2).date(),
+                datetime(2025, 1, 6).date(),
+                "Phase period must align with the start or end of a project or phase.",
+                id="Not touching any start/end date.",
+            ),
+            pytest.param(
+                1,
+                datetime(2027, 1, 1).date(),
+                datetime(2027, 3, 10).date(),
+                None,
+                id="Touching phase start",
+            ),
         ),
     )
-    def test_clean(self, project, value, start_date, end_date, validation_error):
+    def test_clean(
+        self, project_static, phase, value, start_date, end_date, validation_error
+    ):
         """Test the clean method."""
         from main import models
 
         phase = models.ProjectPhase(
-            project=project, value=value, start_date=start_date, end_date=end_date
+            project=project_static,
+            value=value,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         if validation_error is not None:
@@ -976,3 +1014,20 @@ class TestProjectPhase:
                 match=validation_error,
             ):
                 phase.clean()
+
+    def test_clean_no_funding(self, project):
+        """Test the clean method."""
+        from main import models
+
+        phase = models.ProjectPhase(
+            project=project,
+            value=1,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=12),
+        )
+
+        with pytest.raises(
+            ValidationError,
+            match="Project must have associated funding before phases can be added.",
+        ):
+            phase.clean()
