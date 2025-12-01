@@ -18,6 +18,8 @@ from procat.settings.settings import (
     WORKING_DAYS,
 )
 
+from .models_utils import Warning
+
 
 class User(AbstractUser):
     """Custom user model."""
@@ -91,7 +93,7 @@ class AnalysisCode(models.Model):
         return f"{self.code} - {self.description}"
 
 
-class Project(models.Model):
+class Project(Warning, models.Model):
     """Software project details."""
 
     _NATURE = (("Support", "Support"), ("Standard", "Standard"))
@@ -194,6 +196,12 @@ class Project(models.Model):
     def __str__(self) -> str:
         """String representation of the Project object."""
         return self.name
+
+    def _warn_no_funding(self) -> None | str:
+        """Warns if there is no funding associated to the project."""
+        if not self.funding_source.exists():
+            return "No funding defined for the project."
+        return None
 
     def clean(self) -> None:
         """Ensure all fields have a value unless status is 'Tentative' or 'Not done'.
