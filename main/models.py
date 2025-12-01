@@ -836,5 +836,5 @@ class FullTimeEquivalent(models.Model):
 
         if self.value < 0:
             raise ValidationError(
-                "The ETF value must be greater than or equal to zero."
+                "The FTE value must be greater than or equal to zero."
             )
