@@ -206,3 +206,15 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
         context.update(plots.html_components_from_plot(layout))
         context["bokeh_version"] = bokeh.__version__
         return context
+
+
+class ProjectCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [type-arg]
+    """View to create a new project."""
+
+    permission_required = "main.create_project"
+    raise_exception = False
+
+    model = models.Project
+    form_class = forms.ProjectForm
+    template_name = "main/project_form.html"
+    success_url = reverse_lazy("main:projects")
