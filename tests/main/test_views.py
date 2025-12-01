@@ -463,6 +463,8 @@ class TestFundingCreateView(PermissionRequiredMixin, TemplateOkMixin):
         assert response.status_code == HTTPStatus.OK
         funding_list = response.context["funding_list"].values("project")[0]
         assert project.pk == funding_list["project"]
+
+
 @pytest.mark.django_db()
 class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
     """Test suite for the Project Create view."""

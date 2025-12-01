@@ -27,9 +27,9 @@
     </form>
 
   {% endblock content %}
-    {% if perms.main.create_project %}
-      <div class="text-center">{% bootstrap_button button_type="submit" content="Save" %}</div>
-    {% endif %}
-  </form>
+  {% if perms.main.create_project %}
+    <div class="text-center">{% bootstrap_button button_type="submit" content="Save" %}</div>
+  {% endif %}
+</form>
 
 {% endblock content %}
