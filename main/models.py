@@ -818,13 +818,7 @@ class FullTimeEquivalent(models.Model):
         else:
             idx = pd.date_range(start=self.start_date, end=self.end_date)
 
-        # remove private attributes
-        object_attributes = self.__dict__.copy()
-        for key in self.__dict__.keys():
-            if key.startswith("_"):
-                object_attributes.pop(key)
-
-        return pd.DataFrame(object_attributes, index=idx)
+        return pd.Series(self.value, index=idx)
 
     def clean(self) -> None:
         """Ensure start date comes before end date and that value 0 or positive."""
