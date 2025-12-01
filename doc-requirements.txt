@@ -18,7 +18,7 @@ cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.3
     # via requests
-click==8.3.0
+click==8.3.1
     # via mkdocs
 colorama==0.4.6
     # via
@@ -32,7 +32,7 @@ cryptography==46.0.3
     # via
     #   josepy
     #   mozilla-django-oidc
-django==5.2.7
+django==5.2.8
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -51,7 +51,7 @@ django-crispy-forms==2.4
     #   procat (pyproject.toml)
 django-filter==25.1
     # via procat (pyproject.toml)
-django-tables2==2.7.5
+django-tables2==2.8.0
     # via procat (pyproject.toml)
 ghp-import==2.1.0
     # via mkdocs
@@ -99,7 +99,7 @@ mkdocs-autorefs==1.4.3
     # via
     #   mkdocstrings
     #   mkdocstrings-python
-mkdocs-gen-files==0.5.0
+mkdocs-gen-files==0.6.0
     # via procat (pyproject.toml)
 mkdocs-get-deps==0.2.0
     # via mkdocs
