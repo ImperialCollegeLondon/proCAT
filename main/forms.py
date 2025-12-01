@@ -8,7 +8,6 @@ from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 
 from . import models
-from .models import Department
 
 
 class CustomUserCreationForm(UserCreationForm):  # type: ignore [type-arg]
