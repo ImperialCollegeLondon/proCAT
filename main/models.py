@@ -885,8 +885,8 @@ class ProjectPhase(FullTimeEquivalent):
         """
         super().clean()
         if (
-            self.project.start_date > self.start_date
-            or self.project.end_date < self.end_date
+            self.project.start_date > self.start_date  # type: ignore [operator]
+            or self.project.end_date < self.end_date  # type: ignore [operator]
         ):
             raise ValidationError(
                 "Phase period must be within the project period: "
@@ -908,8 +908,8 @@ class ProjectPhase(FullTimeEquivalent):
             first_conflict = overlapping.first()
             raise ValidationError(
                 "Phase period must not overlap with other phase periods for the same "
-                f"project: {first_conflict.start_date} -> "
-                f"{first_conflict.end_date} vs. {self.start_date} -> {self.end_date}"
+                f"project: {first_conflict.start_date} -> "  # type: ignore [union-attr]
+                f"{first_conflict.end_date} vs. {self.start_date} -> {self.end_date}"  # type: ignore [union-attr]
             )
 
         #  Ensure phase start / end date aligns with project or phase start / end dates
