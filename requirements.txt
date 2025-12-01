@@ -22,7 +22,7 @@ cryptography==46.0.3
     # via
     #   josepy
     #   mozilla-django-oidc
-django==5.2.7
+django==5.2.8
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -41,7 +41,7 @@ django-crispy-forms==2.4
     #   procat (pyproject.toml)
 django-filter==25.1
     # via procat (pyproject.toml)
-django-tables2==2.7.5
+django-tables2==2.8.0
     # via procat (pyproject.toml)
 huey==2.5.3
     # via procat (pyproject.toml)
