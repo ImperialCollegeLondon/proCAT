@@ -807,7 +807,7 @@ class FullTimeEquivalent(models.Model):
 
         return round(self.value * date_difference * WORKING_DAYS / 365)
 
-    def trace(self, timerange: pd.DatetimeIndex | None = None) -> pd.DataFrame:
+    def trace(self, timerange: pd.DatetimeIndex | None = None) -> "pd.Series[float]":
         """Convert the FTE to a dataframe.
 
         If timerange is provided, those dates are used, otherwise a datetime index is
