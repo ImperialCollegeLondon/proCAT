@@ -9,7 +9,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from procat.settings.settings import (
@@ -872,3 +872,63 @@ class ProjectPhase(FullTimeEquivalent):
                 kwargs["update_fields"] = {"value"}.union(update_fields)
 
         super().save(**kwargs)
+
+    def clean(self) -> None:
+        """Ensures that phase dates are sensible.
+
+        Ensures start is before the end date.
+        Ensures phase within project period.
+        Ensures the phase isn't covered by any other phases.
+        Ensures at least phase start or end date aligns with other phases or project
+            dates.
+        Ensures project has funding before phase added.
+        """
+        super().clean()
+        if (
+            self.project.start_date > self.start_date
+            or self.project.end_date < self.end_date
+        ):
+            raise ValidationError(
+                "Phase period must be within the project period: "
+                f"{self.project.start_date} -> {self.project.end_date}"
+            )
+
+        # Check for overlapping phases
+        overlapping = ProjectPhase.objects.filter(
+            project=self.project,
+            start_date__lt=self.end_date,  # Starts that are before the new end
+            end_date__gt=self.start_date,  # Ends that are after the new start
+        )
+
+        # Exclude self if this is an update (not a new instance)
+        if self.pk:
+            overlapping = overlapping.exclude(pk=self.pk)
+
+        if overlapping.exists():
+            first_conflict = overlapping.first()
+            raise ValidationError(
+                "Phase period must not overlap with other phase periods for the same "
+                f"project: {first_conflict.start_date} -> "
+                f"{first_conflict.end_date} vs. {self.start_date} -> {self.end_date}"
+            )
+
+        #  Ensure phase start / end date aligns with project or phase start / end dates
+        touching = ProjectPhase.objects.filter(
+            Q(start_date=self.end_date)
+            | Q(end_date=self.start_date) & Q(project=self.project)
+        )
+
+        if not (
+            touching.exists()
+            or self.start_date == self.project.start_date
+            or self.end_date == self.project.end_date
+        ):
+            raise ValidationError(
+                "Phase period must align with the start or end of a project or phase."
+            )
+
+        # Ensure funding is associated with project before being assigned a phase
+        if not self.project.funding_source.exists():
+            raise ValidationError(
+                "Project must have associated funding before phases can be added."
+            )
