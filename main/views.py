@@ -218,3 +218,23 @@ class FundingCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [t
     form_class = forms.FundingForm
     template_name = "main/funding_form.html"
     success_url = reverse_lazy("main:funding")
+
+
+class CreateProjectView(CreateView):
+    """View to create a new project."""
+
+    model = models.Project
+    fields = (
+        "name",
+        "nature",
+        "pi",
+        "department",
+        "start_date",
+        "end_date",
+        "lead",
+        "status",
+        "charging",
+        "clockify_id",
+    )
+    template_name = "main/project_create.html"
+    success_url = reverse_lazy("main:projects")
