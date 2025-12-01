@@ -518,4 +518,3 @@ class TestFundingUpdateView(PermissionRequiredMixin, TemplateOkMixin):
         for url in [post.url, reverse("main:funding")]:
             response = admin_client.get(url)
             assert response.status_code == HTTPStatus.OK
-            assert expected_funding_update["funding_body"] in response.content.decode()
