@@ -219,7 +219,7 @@ class ProjectCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [t
     template_name = "main/project_form.html"
     success_url = reverse_lazy("main:projects")
 
-    def get_form(self, form_class=None) -> ModelForm:  #  type: ignore [no-untyped-def]
+    def get_form(self, form_class=None) -> ModelForm:  #  type: ignore
         """Overrides the CreateView get_form method to remove unnecessary fields."""
         form = super().get_form(form_class)
         form.fields.pop("notifications_effort", None)
