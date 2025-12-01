@@ -227,8 +227,7 @@ class ProjectUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [t
     template_name = "main/project_update.html"
     permission_required = "main.change_project"
     raise_exception = False
-
-    fields = "__all__"  # type: ignore [assignment]
+    form_class = forms.ProjectForm
 
     def get_success_url(self):  # type: ignore [no-untyped-def]
         """Django magic function to obtain a dynamic success URL."""
