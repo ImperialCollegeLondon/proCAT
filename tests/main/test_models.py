@@ -844,7 +844,7 @@ class TestProjectPhase:
         project_phase.clean()
         assert str(project_phase) == (
             f"{project_static.name} - {project_phase.start_date} -> "
-            "{project_phase.end_date}"
+            f"{project_phase.end_date}"
         )
 
     @pytest.mark.django_db
