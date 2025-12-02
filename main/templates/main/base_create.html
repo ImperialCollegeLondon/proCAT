@@ -20,16 +20,11 @@
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form form layout='horizontal' %}
-    {% if perms.main.create_funding %}
+    {% if perms.main.create_funding or perms.main.create_project %}
       {% if user.is_superuser %}
         <div class="text-center">{% bootstrap_button button_type="submit" content="Save" %}</div>
       {% endif %}
-    </form>
-
-  {% endblock content %}
-  {% if perms.main.create_project %}
-    <div class="text-center">{% bootstrap_button button_type="submit" content="Save" %}</div>
-  {% endif %}
-</form>
+    {% endif %}
+  </form>
 
 {% endblock content %}
