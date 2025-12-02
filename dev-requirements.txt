@@ -38,7 +38,7 @@ cssbeautifier==1.15.4
     # via djlint
 distlib==0.4.0
     # via virtualenv
-django==5.2.7
+django==5.2.8
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -171,7 +171,7 @@ requests==2.32.5
     # via
     #   mozilla-django-oidc
     #   procat (pyproject.toml)
-ruff==0.14.6
+ruff==0.14.7
     # via procat (pyproject.toml)
 six==1.17.0
     # via

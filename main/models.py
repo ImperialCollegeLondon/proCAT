@@ -18,6 +18,8 @@ from procat.settings.settings import (
     WORKING_DAYS,
 )
 
+from .models_utils import Warning
+
 
 class User(AbstractUser):
     """Custom user model."""
@@ -91,7 +93,7 @@ class AnalysisCode(models.Model):
         return f"{self.code} - {self.description}"
 
 
-class Project(models.Model):
+class Project(Warning, models.Model):
     """Software project details."""
 
     _NATURE = (("Support", "Support"), ("Standard", "Standard"))
@@ -194,6 +196,12 @@ class Project(models.Model):
     def __str__(self) -> str:
         """String representation of the Project object."""
         return self.name
+
+    def _warn_no_funding(self) -> None | str:
+        """Warns if there is no funding associated to the project."""
+        if not self.funding_source.exists():
+            return "No funding defined for the project."
+        return None
 
     def clean(self) -> None:
         """Ensure all fields have a value unless status is 'Tentative' or 'Not done'.
@@ -790,7 +798,6 @@ class FullTimeEquivalent(models.Model):
         """Creates an FTE object given a number of days time period."""
         # get date difference in fractional days
         date_difference = (end_date - start_date).days
-        print(date_difference)
         # use WORKING_DAYS to estimate day_difference minus weekends & holidays
         day_difference = date_difference * WORKING_DAYS / 365
         # FTE will then be the # of days work / the (weighted) time period in days
@@ -808,7 +815,7 @@ class FullTimeEquivalent(models.Model):
 
         return round(self.value * date_difference * WORKING_DAYS / 365)
 
-    def trace(self, timerange: pd.DatetimeIndex | None = None) -> pd.DataFrame:
+    def trace(self, timerange: pd.DatetimeIndex | None = None) -> "pd.Series[float]":
         """Convert the FTE to a dataframe.
 
         If timerange is provided, those dates are used, otherwise a datetime index is
@@ -819,13 +826,7 @@ class FullTimeEquivalent(models.Model):
         else:
             idx = pd.date_range(start=self.start_date, end=self.end_date)
 
-        # remove private attributes
-        object_attributes = self.__dict__.copy()
-        for key in self.__dict__.keys():
-            if key.startswith("_"):
-                object_attributes.pop(key)
-
-        return pd.DataFrame(object_attributes, index=idx)
+        return pd.Series(self.value, index=idx)
 
     def clean(self) -> None:
         """Ensure start date comes before end date and that value 0 or positive."""
@@ -835,7 +836,7 @@ class FullTimeEquivalent(models.Model):
 
         if self.value < 0:
             raise ValidationError(
-                "The ETF value must be greater than or equal to zero."
+                "The FTE value must be greater than or equal to zero."
             )
 
 

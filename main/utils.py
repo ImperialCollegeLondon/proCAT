@@ -128,12 +128,16 @@ def get_budget_status(
     if date is None:
         date = timezone.now().date()
 
-    funds_ran_out_not_expired = list(Funding.objects.filter(expiry_date__gt=date))
+    funds_ran_out_not_expired = list(
+        Funding.objects.filter(expiry_date__gt=date, project__status="Active")
+    )
     funds_ran_out_not_expired = [
         fund for fund in funds_ran_out_not_expired if fund.funding_left <= 0
     ]
 
-    funding_expired_budget_left = list(Funding.objects.filter(expiry_date__lt=date))
+    funding_expired_budget_left = list(
+        Funding.objects.filter(expiry_date__lt=date, project__status="Active")
+    )
     funding_expired_budget_left = [
         fund for fund in funding_expired_budget_left if fund.funding_left > 0
     ]
