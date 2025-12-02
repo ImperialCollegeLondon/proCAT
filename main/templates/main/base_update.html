@@ -5,12 +5,12 @@
 
   <style>p {text-align: justify;}</style>
 
-  {% block create %}
-  {% endblock create %}
+  {% block update %}
+  {% endblock update %}
 
   <form method="post">
     {% csrf_token %}
-    <div class="text-left">{% bootstrap_button button_type="submit" content="🖫 Save" %}</div>
+    <div class="text-left">{% bootstrap_button button_type="submit" content="✎ Update" %}</div>
     <p>&nbsp;</p>
     {% bootstrap_form form layout='horizontal' %}
   </form>
