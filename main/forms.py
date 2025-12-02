@@ -66,7 +66,7 @@ class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
         """Meta class for the form."""
 
         model = models.Project
-        fields = "__all__"
+        exclude = ("notifications_effort", "notifications_weeks")
         widgets: ClassVar = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
