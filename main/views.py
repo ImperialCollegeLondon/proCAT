@@ -218,3 +218,29 @@ class FundingCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [t
     form_class = forms.FundingForm
     template_name = "main/funding_form.html"
     success_url = reverse_lazy("main:funding")
+
+
+class ProjectCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [type-arg]
+    """View to create a new project."""
+
+    permission_required = "main.create_project"
+    raise_exception = False
+
+    model = models.Project
+    form_class = forms.ProjectForm
+    template_name = "main/project_form.html"
+    success_url = reverse_lazy("main:projects")
+
+
+class ProjectUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [type-arg]
+    """Update view based on a form from the Project model."""
+
+    model = models.Project
+    template_name = "main/project_update.html"
+    permission_required = "main.change_project"
+    raise_exception = False
+    form_class = forms.ProjectForm
+
+    def get_success_url(self):  # type: ignore [no-untyped-def]
+        """Django magic function to obtain a dynamic success URL."""
+        return reverse_lazy("main:project_detail", kwargs={"pk": self.object.pk})

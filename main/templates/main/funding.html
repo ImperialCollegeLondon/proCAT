@@ -6,8 +6,5 @@
   {% if perms.main.create_funding %}
     <a class="btn btn-primary" href="{% url 'main:funding_create' %}">+ Create Funding</a>
   {% endif %}
-  {% for title, table in tables %}
-    <h3 class="mt-4">{{ title }}</h3>
-    {% render_table table %}
-  {% endfor %}
+  {% render_table table %}
 {% endblock content %}

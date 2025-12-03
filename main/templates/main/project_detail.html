@@ -3,6 +3,9 @@
 {% load django_tables2 %}
 {% block content %}
   <h2>{{ project_name }}</h2>
+  {% if perms.main.create_project %}
+    <a class="btn btn-primary" href="{{ request.path }}update">✎ Update Project</a>
+  {% endif %}
   <!-- Object details -->
   <div class="row">
     <div class="col">
@@ -10,10 +13,10 @@
       {% bootstrap_form form layout='horizontal' %}
     </div>
   </div>
+  <!-- Funding table -->
+  <h2>Funding sources:</h2>
   <div class="text-start">
     <a href="{% url 'main:funding_create' %}" class="btn btn-primary">Create Funding</a>
   </div>
-  <!-- Funding table -->
-  <h2>Funding sources:</h2>
   {% render_table funding_table %}
 {% endblock content %}

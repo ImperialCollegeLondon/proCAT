@@ -66,17 +66,21 @@ class FundingForm(forms.ModelForm):  # type: ignore [type-arg]
         """Meta class for the form."""
 
         model = models.Funding
-        fields = (
-            "project",
-            "source",
-            "funding_body",
-            "cost_centre",
-            "activity",
-            "analysis_code",
-            "expiry_date",
-            "budget",
-            "daily_rate",
-        )
+        fields = "__all__"
         widgets: ClassVar = {
             "expiry_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
+    """Form to create and edit Project instances."""
+
+    class Meta:
+        """Meta class for the form."""
+
+        model = models.Project
+        exclude = ("notifications_effort", "notifications_weeks")
+        widgets: ClassVar = {
+            "start_date": forms.DateInput(attrs={"type": "date"}),
+            "end_date": forms.DateInput(attrs={"type": "date"}),
         }

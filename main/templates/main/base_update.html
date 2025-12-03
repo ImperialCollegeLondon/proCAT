@@ -1,0 +1,18 @@
+{% extends "main/base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+
+  <style>p {text-align: justify;}</style>
+
+  {% block update %}
+  {% endblock update %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="text-left">{% bootstrap_button button_type="submit" content="✎ Update" %}</div>
+    <p>&nbsp;</p>
+    {% bootstrap_form form layout='horizontal' %}
+  </form>
+
+{% endblock content %}

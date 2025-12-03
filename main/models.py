@@ -1,7 +1,10 @@
 """Models module for main app."""
 
+from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
+import pandas as pd
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -14,6 +17,8 @@ from procat.settings.settings import (
     WEEKS_LEFT_THRESHOLD,
     WORKING_DAYS,
 )
+
+from .models_utils import Warning
 
 
 class User(AbstractUser):
@@ -88,7 +93,7 @@ class AnalysisCode(models.Model):
         return f"{self.code} - {self.description}"
 
 
-class Project(models.Model):
+class Project(Warning, models.Model):
     """Software project details."""
 
     _NATURE = (("Support", "Support"), ("Standard", "Standard"))
@@ -191,6 +196,12 @@ class Project(models.Model):
     def __str__(self) -> str:
         """String representation of the Project object."""
         return self.name
+
+    def _warn_no_funding(self) -> None | str:
+        """Warns if there is no funding associated to the project."""
+        if not self.funding_source.exists():
+            return "No funding defined for the project."
+        return None
 
     def clean(self) -> None:
         """Ensure all fields have a value unless status is 'Tentative' or 'Not done'.
@@ -745,3 +756,85 @@ class TimeEntry(models.Model):
     def __str__(self) -> str:
         """String representation of the Time Entry object."""
         return f"{self.user} - {self.project} - {self.start_time} to {self.end_time}"
+
+
+class FullTimeEquivalent(models.Model):
+    """Full-time-equivalent model for user and projects."""
+
+    class Meta:
+        """Model metadata."""
+
+        abstract = True
+
+    value = models.FloatField(
+        "FTE value",
+        blank=False,
+        null=False,
+        help_text="The full-time-equivalent value over the specified period.",
+    )
+
+    start_date = models.DateField(
+        "Start date",
+        null=False,
+        blank=False,
+        help_text="The date when the FTE begins.",
+    )
+
+    end_date = models.DateField(
+        "End date",
+        null=False,
+        blank=False,
+        help_text="The date when the FTE ends.",
+    )
+
+    @classmethod
+    def from_days(  # type: ignore[explicit-any]
+        cls,
+        days: int,
+        start_date: datetime,
+        end_date: datetime,
+        **kwargs: Any,
+    ) -> None:
+        """Creates an FTE object given a number of days time period."""
+        # get date difference in fractional days
+        date_difference = (end_date - start_date).days
+        # use WORKING_DAYS to estimate day_difference minus weekends & holidays
+        day_difference = date_difference * WORKING_DAYS / 365
+        # FTE will then be the # of days work / the (weighted) time period in days
+        cls.objects.create(  # type: ignore[attr-defined]
+            value=days / day_difference,
+            start_date=start_date,
+            end_date=end_date,
+            **kwargs,
+        )
+
+    @property
+    def days(self) -> int:
+        """Convert FTE to days using the working days in a year in the settings."""
+        date_difference = (self.end_date - self.start_date).days
+
+        return round(self.value * date_difference * WORKING_DAYS / 365)
+
+    def trace(self, timerange: pd.DatetimeIndex | None = None) -> "pd.Series[float]":
+        """Convert the FTE to a dataframe.
+
+        If timerange is provided, those dates are used, otherwise a datetime index is
+        created using the start and end dates of the FTE object.
+        """
+        if timerange:
+            idx = timerange.copy()
+        else:
+            idx = pd.date_range(start=self.start_date, end=self.end_date)
+
+        return pd.Series(self.value, index=idx)
+
+    def clean(self) -> None:
+        """Ensure start date comes before end date and that value 0 or positive."""
+        super().clean()
+        if self.end_date <= self.start_date:
+            raise ValidationError("The end date must be after the start date.")
+
+        if self.value < 0:
+            raise ValidationError(
+                "The FTE value must be greater than or equal to zero."
+            )
