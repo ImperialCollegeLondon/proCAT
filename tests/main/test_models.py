@@ -872,8 +872,8 @@ class TestProjectPhase:
                 datetime(2025, 1, 1).date(),
                 datetime(2025, 6, 1).date(),
                 None,
-                "The ETF value must be greater than or equal to zero.",
-                id="ETF < 0",
+                "The FTE value must be greater than or equal to zero.",
+                id="FTE < 0",
             ),
             pytest.param(
                 220,
@@ -952,8 +952,8 @@ class TestProjectPhase:
                 -1.4,
                 datetime(2025, 1, 1).date(),
                 datetime(2025, 6, 1).date(),
-                "The ETF value must be greater than or equal to zero.",
-                id="ETF less than 0",
+                "The FTE value must be greater than or equal to zero.",
+                id="FTE less than 0",
             ),
             pytest.param(
                 1,
