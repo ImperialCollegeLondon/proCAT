@@ -60,7 +60,7 @@ def project(user, department):
 
 @pytest.fixture
 def project_static(user, department, analysis_code):
-    """Provides a default project object."""
+    """Provides a statically dated project object with funding."""
     from main import models
 
     project = models.Project.objects.get_or_create(
@@ -129,7 +129,7 @@ def capacity(user):
 
 @pytest.fixture
 def phase(project_static):
-    """Provides a default ProjectPhase object."""
+    """Provides a default ProjectPhase object alongside others."""
     from main import models
 
     models.ProjectPhase.objects.get_or_create(
@@ -144,8 +144,8 @@ def phase(project_static):
     return models.ProjectPhase.objects.get_or_create(
         project=project_static,
         value=1,
-        start_date=datetime(2027, 3, 10).date(),
-        end_date=datetime(2027, 4, 10).date(),
+        start_date=datetime(2027, 2, 10).date(),
+        end_date=datetime(2027, 3, 9).date(),
     )[0]
 
 

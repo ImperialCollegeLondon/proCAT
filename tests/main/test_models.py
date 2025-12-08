@@ -946,7 +946,28 @@ class TestProjectPhase:
                 datetime(2025, 1, 1).date(),
                 datetime(2026, 1, 1).date(),
                 None,
-                id="1 year, v=1, touching proj start",
+                id="No err - touching project start",
+            ),
+            pytest.param(
+                1,
+                datetime(2027, 3, 20).date(),
+                datetime(2027, 4, 9).date(),
+                None,
+                id="No err - touching a phase start (2027-04-10)",
+            ),
+            pytest.param(
+                1,
+                datetime(2025, 3, 10).date(),
+                datetime(2026, 4, 6).date(),
+                None,
+                id="No err - touching a phase end (2027-03-09)",
+            ),
+            pytest.param(
+                1,
+                datetime(2025, 3, 10).date(),
+                datetime(2026, 4, 9).date(),
+                None,
+                id="No err - touching a phase start and end (2027-04-10)->(2027-03-09)",
             ),
             pytest.param(
                 -1.4,
@@ -972,26 +993,46 @@ class TestProjectPhase:
             ),
             pytest.param(
                 1,
-                datetime(2027, 3, 8).date(),
+                datetime(2027, 3, 28).date(),
                 datetime(2027, 4, 10).date(),
                 "Phase period must not overlap with other phase periods for the same "
-                "project: 2027-03-10 -> "
-                "2027-04-10 vs. 2027-03-08 -> 2027-04-10",
-                id="Overlaps with another phase",
+                "project: 2027-04-10 -> "
+                "2027-06-30 vs. 2027-03-28 -> 2027-04-10",
+                id="Overlaps with another phase - start date",
+            ),
+            pytest.param(
+                1,
+                datetime(2027, 3, 9).date(),
+                datetime(2027, 4, 2).date(),
+                "Phase period must not overlap with other phase periods for the same "
+                "project: 2027-02-10 -> "
+                "2027-03-09 vs. 2027-03-09 -> 2027-04-02",
+                id="Overlaps with another phase - end date",
+            ),
+            pytest.param(
+                1,
+                datetime(2027, 2, 27).date(),
+                datetime(2027, 4, 2).date(),
+                "Phase period must not overlap with other phase periods for the same "
+                "project: 2027-02-10 -> "
+                "2027-03-09 vs. 2027-02-27 -> 2027-04-02",
+                id="Overlaps with another phase - start in phase",
+            ),
+            pytest.param(
+                1,
+                datetime(2027, 3, 28).date(),
+                datetime(2027, 5, 10).date(),
+                "Phase period must not overlap with other phase periods for the same "
+                "project: 2027-04-10 -> "
+                "2027-06-30 vs. 2027-03-28 -> 2027-05-10",
+                id="Overlaps with another phase - end in phase",
             ),
             pytest.param(
                 1,
                 datetime(2025, 1, 2).date(),
                 datetime(2025, 1, 6).date(),
                 "Phase period must align with the start or end of a project or phase.",
-                id="Not touching any start/end date.",
-            ),
-            pytest.param(
-                1,
-                datetime(2027, 1, 1).date(),
-                datetime(2027, 3, 10).date(),
-                None,
-                id="Touching phase start",
+                id="Not touching any start/end date",
             ),
         ),
     )
