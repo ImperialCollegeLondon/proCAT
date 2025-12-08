@@ -35,7 +35,7 @@ django-admin-rangefilter==0.13.3
     # via procat (pyproject.toml)
 django-bootstrap5==25.2
     # via procat (pyproject.toml)
-django-crispy-forms==2.4
+django-crispy-forms==2.5
     # via
     #   crispy-bootstrap5
     #   procat (pyproject.toml)
