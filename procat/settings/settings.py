@@ -138,7 +138,7 @@ MIDDLEWARE += [
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    # "main.oidc.ICLOIDCAuthenticationBackend",
+    "main.oidc.ICLOIDCAuthenticationBackend",
 ]
 
 STATIC_ROOT = BASE_DIR / "staticfiles"

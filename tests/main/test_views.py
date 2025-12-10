@@ -567,3 +567,56 @@ class TestProjectUpdateView(PermissionRequiredMixin, TemplateOkMixin):
             response = admin_client.get(url)
             assert response.status_code == HTTPStatus.OK
             assert expected_project_update["name"] in response.content.decode()
+
+
+@pytest.mark.usefixtures("funding")
+class TestFundingUpdateView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Funding Update view."""
+
+    _template_name = "main/funding_update.html"
+
+    def _get_url(self):
+        from main import models
+
+        funding = models.Funding.objects.first()
+
+        return reverse("main:funding_update", kwargs={"pk": funding.pk})
+
+    def test_post(self, admin_client, funding, analysis_code):
+        """Tests the post method to update the model and render the updated object."""
+        # Create the initial db entry
+        funding.source = "External"
+        funding.funding_body = "UKRI"
+        funding.cost_centre = "CC123"
+        funding.activity = "P12345"
+
+        # update values (a form submission requires all fields sent)
+        expected_funding_update = {
+            "project": funding.project.pk,
+            "source": funding.source,
+            "funding_body": "EPSRC",
+            "cost_centre": funding.cost_centre,
+            "activity": funding.activity,
+            "analysis_code": analysis_code.pk,
+            "expiry_date": funding.expiry_date,
+            "budget": funding.budget,
+            "daily_rate": funding.daily_rate,
+        }
+
+        post = admin_client.post(
+            reverse("main:funding_update", kwargs={"pk": funding.pk}),
+            expected_funding_update,
+        )
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+
+        # Check submission made it to DB
+        funding.refresh_from_db()
+        assert funding.funding_body == expected_funding_update["funding_body"]
+
+        # Check submission rendered in funding detail view and main funding view
+        for url in [post.url, reverse("main:funding")]:
+            response = admin_client.get(url)
+            assert response.status_code == HTTPStatus.OK
+            assert expected_funding_update["funding_body"] in response.content.decode()
