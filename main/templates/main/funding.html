@@ -3,6 +3,8 @@
 {% load django_tables2 %}
 {% block content %}
   <h2>Funding</h2>
-  <!-- Table -->
+  {% if perms.main.create_funding %}
+    <a class="btn btn-primary" href="{% url 'main:funding_create' %}">+ Create Funding</a>
+  {% endif %}
   {% render_table table %}
 {% endblock content %}
