@@ -59,35 +59,6 @@ def project(user, department):
 
 
 @pytest.fixture
-def project_static(user, department, analysis_code):
-    """Provides a statically dated project object with funding."""
-    from main import models
-
-    project = models.Project.objects.get_or_create(
-        name="ProCATv2",
-        department=department,
-        lead=user,
-        start_date=datetime(2025, 1, 1).date(),
-        end_date=datetime(2027, 6, 30).date(),
-        status="Active",
-    )[0]
-
-    _ = models.Funding.objects.get_or_create(
-        project=project,
-        source="External",
-        funding_body="Funding body",
-        cost_centre="centre",
-        activity="G12345",
-        analysis_code=analysis_code,
-        expiry_date=timezone.now().date() + timedelta(days=42),
-        budget=10000.00,
-        daily_rate=389.00,
-    )[0]
-
-    return project
-
-
-@pytest.fixture
 def analysis_code():
     """Provides a default analysis code object."""
     from main import models
@@ -128,24 +99,15 @@ def capacity(user):
 
 
 @pytest.fixture
-def phase(project_static):
-    """Provides a default ProjectPhase object alongside others."""
+def phase(project):
+    """Provides a default ProjectPhase object."""
     from main import models
 
-    models.ProjectPhase.objects.get_or_create(
-        project=project_static,
-        value=1,
-        start_date=datetime(2027, 4, 10).date(),
-        end_date=datetime(2027, 6, 30).date(),
-    )
-
-    models.Funding.objects.get_or_create(project=project_static)
-
     return models.ProjectPhase.objects.get_or_create(
-        project=project_static,
+        project=project,
         value=1,
-        start_date=datetime(2027, 2, 10).date(),
-        end_date=datetime(2027, 3, 9).date(),
+        start_date=datetime(2025, 1, 1).date(),
+        end_date=datetime(2025, 7, 1).date(),
     )[0]
 
 

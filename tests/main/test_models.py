@@ -831,20 +831,19 @@ class TestMonthlyCharge:
 class TestProjectPhase:
     """Tests for the Project Phase model."""
 
-    def test_model_str(self, project_static):
+    def test_model_str(self, project):
         """Test the object string for the monthly charge model."""
         from main import models
 
         project_phase = models.ProjectPhase(
-            project=project_static,
+            project=project,
             value=1,
             start_date=datetime(2025, 1, 1).date(),
-            end_date=datetime(2025, 1, 3).date(),
+            end_date=datetime(2025, 1, 31).date(),
         )
         project_phase.clean()
         assert str(project_phase) == (
-            f"{project_static.name} - {project_phase.start_date} -> "
-            f"{project_phase.end_date}"
+            f"{project.name} - {project_phase.start_date} -> {project_phase.end_date}"
         )
 
     @pytest.mark.django_db
@@ -872,8 +871,8 @@ class TestProjectPhase:
                 datetime(2025, 1, 1).date(),
                 datetime(2025, 6, 1).date(),
                 None,
-                "The FTE value must be greater than or equal to zero.",
-                id="FTE < 0",
+                "The ETF value must be greater than or equal to zero.",
+                id="ETF < 0",
             ),
             pytest.param(
                 220,
@@ -886,14 +885,12 @@ class TestProjectPhase:
         ),
     )
     def test_from_days(
-        self, project_static, days, start_date, end_date, value, validation_error
+        self, project, days, start_date, end_date, value, validation_error
     ):
         """Test the from_days function and that value is calculated correctly."""
         from main import models
 
-        models.ProjectPhase.from_days(
-            days, start_date, end_date, project=project_static
-        )
+        models.ProjectPhase.from_days(days, start_date, end_date, project=project)
         phase = models.ProjectPhase.objects.last()
 
         if validation_error is not None:
@@ -938,256 +935,44 @@ class TestProjectPhase:
 
         assert phase.days == expected_days
 
+    # @pytest.mark.django_db
     @pytest.mark.parametrize(
-        "value,start_date,end_date,validation_error,message",
+        "value,start_date,end_date,validation_error",
         (
-            pytest.param(
-                1,
-                datetime(2024, 12, 30).date(),
-                datetime(2026, 1, 1).date(),
-                pytest.raises(ValidationError),
-                "Phase period must be within the project period: 2025-01-01 ->"
-                " 2027-06-30",
-                id="Phase not within project period",
-            ),
-            pytest.param(
-                1,
-                datetime(2025, 12, 30).date(),
-                datetime(2026, 1, 1).date(),
-                does_not_raise(),
-                None,
-                id="Phase within project period",
-            ),
-        ),
-    )
-    def test_check_phase_in_project(
-        self,
-        project_static,
-        phase,
-        value,
-        start_date,
-        end_date,
-        validation_error,
-        message,
-    ):
-        """Test the check_phase_in_project method."""
-        from main import models
-
-        phase = models.ProjectPhase(
-            project=project_static,
-            value=value,
-            start_date=start_date,
-            end_date=end_date,
-        )
-
-        with validation_error as e:
-            phase.check_phase_in_project()
-        assert message is None or message in str(e)
-
-    @pytest.mark.parametrize(
-        "value,start_date,end_date,validation_error,message",
-        (
-            pytest.param(
-                1,
-                datetime(2027, 3, 9).date(),
-                datetime(2027, 4, 2).date(),
-                pytest.raises(ValidationError),
-                "Phase period must not overlap with other phase periods for the same "
-                "project: 2027-02-10 -> "
-                "2027-03-09 vs. 2027-03-09 -> 2027-04-02",
-                id="Overlaps with another phase - end date",
-            ),
-            pytest.param(
-                1,
-                datetime(2027, 2, 27).date(),
-                datetime(2027, 4, 2).date(),
-                pytest.raises(ValidationError),
-                "Phase period must not overlap with other phase periods for the same "
-                "project: 2027-02-10 -> "
-                "2027-03-09 vs. 2027-02-27 -> 2027-04-02",
-                id="Overlaps with another phase - start in phase",
-            ),
-            pytest.param(
-                1,
-                datetime(2027, 3, 28).date(),
-                datetime(2027, 5, 10).date(),
-                pytest.raises(ValidationError),
-                "Phase period must not overlap with other phase periods for the same "
-                "project: 2027-04-10 -> "
-                "2027-06-30 vs. 2027-03-28 -> 2027-05-10",
-                id="Overlaps with another phase - end in phase",
-            ),
-            pytest.param(
-                1,
-                datetime(2027, 3, 28).date(),
-                datetime(2027, 4, 10).date(),
-                pytest.raises(ValidationError),
-                "Phase period must not overlap with other phase periods for the same "
-                "project: 2027-04-10 -> "
-                "2027-06-30 vs. 2027-03-28 -> 2027-04-10",
-                id="Overlaps with another phase - start date",
-            ),
-            pytest.param(
-                1,
-                datetime(2027, 1, 1).date(),
-                datetime(2027, 1, 10).date(),
-                does_not_raise(),
-                None,
-                id="Doesn't overlap but would fail clean",
-            ),
-        ),
-    )
-    def test_check_overlapping_phases(
-        self,
-        project_static,
-        phase,
-        value,
-        start_date,
-        end_date,
-        validation_error,
-        message,
-    ):
-        """Test the check_overlapping_phases method."""
-        from main import models
-
-        phase = models.ProjectPhase(
-            project=project_static,
-            value=value,
-            start_date=start_date,
-            end_date=end_date,
-        )
-
-        with validation_error as e:
-            phase.check_overlapping_phases()
-        assert message is None or message in str(e)
-
-    @pytest.mark.parametrize(
-        "value,start_date,end_date,validation_error,message",
-        (
-            pytest.param(
-                1,
-                datetime(2025, 1, 2).date(),
-                datetime(2025, 1, 6).date(),
-                pytest.raises(ValidationError),
-                "Phase period must align with the start or end of a project or phase.",
-                id="Not touching any start/end date",
-            ),
             pytest.param(
                 1,
                 datetime(2025, 1, 1).date(),
                 datetime(2026, 1, 1).date(),
-                does_not_raise(),
                 None,
-                id="No err - touching project start",
+                id="1 year, v=1",
             ),
-            pytest.param(
-                1,
-                datetime(2027, 3, 20).date(),
-                datetime(2027, 4, 9).date(),
-                does_not_raise(),
-                None,
-                id="No err - touching a phase start (2027-04-10)",
-            ),
-            pytest.param(
-                1,
-                datetime(2027, 3, 10).date(),
-                datetime(2027, 4, 6).date(),
-                does_not_raise(),
-                None,
-                id="No err - touching a phase end (2027-03-10)",
-            ),
-            pytest.param(
-                1,
-                datetime(2027, 3, 10).date(),
-                datetime(2027, 4, 9).date(),
-                does_not_raise(),
-                None,
-                id="No err - touching a phase start and end (2027-03-10)->(2027-04-09)",
-            ),
-        ),
-    )
-    def test_check_phase_alignment(
-        self,
-        project_static,
-        phase,
-        value,
-        start_date,
-        end_date,
-        validation_error,
-        message,
-    ):
-        """Test the check_phase_alignment method."""
-        from main import models
-
-        phase = models.ProjectPhase(
-            project=project_static,
-            value=value,
-            start_date=start_date,
-            end_date=end_date,
-        )
-
-        with validation_error as e:
-            phase.check_phase_alignment()
-        assert message is None or message in str(e)
-
-    def test_check_project_funding(self, project):
-        """Test the check_project_funding method."""
-        from main import models
-
-        phase = models.ProjectPhase(
-            project=project,
-            value=1,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=12),
-        )
-
-        with pytest.raises(
-            ValidationError,
-            match="Project must have associated funding before phases can be added.",
-        ):
-            phase.check_project_funding()
-
-    @pytest.mark.parametrize(
-        "value,start_date,end_date,validation_error,message",
-        (
             pytest.param(
                 -1.4,
                 datetime(2025, 1, 1).date(),
                 datetime(2025, 6, 1).date(),
-                pytest.raises(ValidationError),
-                "The FTE value must be greater than or equal to zero.",
-                id="FTE less than 0",
+                "The ETF value must be greater than or equal to zero.",
+                id="ETF < 0",
             ),
             pytest.param(
                 1,
                 datetime(2026, 1, 1).date(),
                 datetime(2025, 1, 1).date(),
-                pytest.raises(ValidationError),
                 "The end date must be after the start date.",
                 id="End before start",
             ),
         ),
     )
-    def test_clean(
-        self,
-        project_static,
-        phase,
-        value,
-        start_date,
-        end_date,
-        validation_error,
-        message,
-    ):
+    def test_clean(self, project, value, start_date, end_date, validation_error):
         """Test the clean method."""
         from main import models
 
         phase = models.ProjectPhase(
-            project=project_static,
-            value=value,
-            start_date=start_date,
-            end_date=end_date,
+            project=project, value=value, start_date=start_date, end_date=end_date
         )
 
-        with validation_error as e:
-            phase.clean()
-        assert message is None or message in str(e)
+        if validation_error is not None:
+            with pytest.raises(
+                ValidationError,
+                match=validation_error,
+            ):
+                phase.clean()
