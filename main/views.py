@@ -208,6 +208,18 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
         return context
 
 
+class FundingCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [type-arg]
+    """View to create a new funding."""
+
+    permission_required = "main.create_funding"
+    raise_exception = False
+
+    model = models.Funding
+    form_class = forms.FundingForm
+    template_name = "main/funding_form.html"
+    success_url = reverse_lazy("main:funding")
+
+
 class ProjectCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [type-arg]
     """View to create a new project."""
 

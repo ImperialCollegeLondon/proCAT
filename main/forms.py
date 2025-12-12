@@ -59,6 +59,19 @@ class CostRecoveryForm(forms.Form):
     )
 
 
+class FundingForm(forms.ModelForm):  # type: ignore [type-arg]
+    """Form to create and edit funding instances."""
+
+    class Meta:
+        """Meta class for the form."""
+
+        model = models.Funding
+        fields = "__all__"
+        widgets: ClassVar = {
+            "expiry_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
 class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
     """Form to create and edit Project instances."""
 
