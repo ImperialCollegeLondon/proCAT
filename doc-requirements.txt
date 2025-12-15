@@ -140,7 +140,7 @@ pathspec==0.12.1
     # via mkdocs
 pillow==12.0.0
     # via bokeh
-platformdirs==4.3.8
+platformdirs==4.5.1
     # via mkdocs-get-deps
 pycparser==2.23
     # via cffi
