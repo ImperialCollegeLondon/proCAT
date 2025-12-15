@@ -7,7 +7,7 @@ import django_tables2 as tables
 from django.db.models import QuerySet
 from django.utils.safestring import mark_safe
 
-from .models import Capacity, Funding, MonthlyCharge, Project
+from .models import Capacity, Funding, MonthlyCharge, Project, ProjectPhase
 from .utils import format_currency, order_queryset_by_property
 
 
@@ -235,6 +235,71 @@ class FundingTable(tables.Table):
             "effort",
             "effort_left",
             "funding_left",
+        )
+        attrs: ClassVar[dict[str, str]] = {
+            "class": "table table-striped table-hover table-responsive",
+        }
+
+
+class ProjectPhaseTable(tables.Table):
+    """Table for the Project Phase listing."""
+
+    pk = tables.Column(
+        linkify=(
+            "main:project_phase_detail",
+            {"project_pk": tables.A("project.pk"), "pk": tables.A("pk")},
+        )
+    )
+
+    start_date = tables.Column(
+        attrs={
+            "th": {
+                "title": "The total effort in days available,\n"
+                "before any deductions are made."
+            }
+        },
+    )
+
+    end_date = tables.Column(
+        attrs={
+            "th": {
+                "title": "The amount of days remaining,\n"
+                "after deducting confirmed monthly\n"
+                "charges."
+            }
+        },
+    )
+
+    days = tables.Column(
+        attrs={
+            "th": {
+                "title": "The amount of days remaining,\n"
+                "after deducting confirmed monthly\n"
+                "charges."
+            }
+        },
+    )
+
+    value = tables.Column(
+        attrs={
+            "th": {
+                "title": "The amount of funding remaining,\n"
+                "after deducting confirmed monthly\n"
+                "charges."
+            }
+        },
+    )
+
+    class Meta:
+        """Meta class for the table."""
+
+        model = ProjectPhase
+        fields = (
+            "pk",
+            "start_date",
+            "end_date",
+            "days",
+            "value",
         )
         attrs: ClassVar[dict[str, str]] = {
             "class": "table table-striped table-hover table-responsive",

@@ -64,38 +64,6 @@ class ProjectsListView(LoginRequiredMixin, FilterView):
         return context
 
 
-class ProjectsPhaseListView(LoginRequiredMixin, FilterView):
-    """View to display the list of project phases split in five pre-filtered tables."""
-
-    model = models.Project
-    template_name = "main/project_phases.html"
-    filterset_fields = ("nature", "department", "status", "charging")
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
-        """Add multiple pre-filtered tables to the context."""
-        context = super().get_context_data(**kwargs)
-
-        base_qs = self.get_queryset()
-
-        buckets = [
-            ("Active", {"status": "Active"}, "active-"),
-            ("Confirmed", {"status": "Confirmed"}, "confirmed-"),
-            ("Tentative", {"status": "Tentative"}, "tentative-"),
-            ("Finished", {"status": "Finished"}, "finished-"),
-            ("Not done", {"status": "Not done"}, "not-done-"),
-        ]
-
-        created_tables: list[tuple[str, tables.ProjectTable]] = []
-        for title, filt, prefix in buckets:
-            qs = base_qs.filter(**filt)
-            tbl = tables.ProjectTable(qs, prefix=prefix)
-            RequestConfig(self.request).configure(tbl)
-            created_tables.append((title, tbl))
-
-        context["tables"] = created_tables
-        return context
-
-
 class FundingListView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -173,35 +141,16 @@ class ProjectDetailView(PermissionRequiredMixin, CustomBaseDetailView):
         # get funding info for the current project
         funding_source = self.get_object().funding_source.all()
         funding_table = tables.FundingTable(funding_source)
+        project_phase = models.ProjectPhase.objects.filter(
+            project__name=self.get_object().name
+        )
+        phase_table = tables.ProjectPhaseTable(project_phase)
         # enables the table to be sorted by column headings
         RequestConfig(self.request).configure(funding_table)
+        RequestConfig(self.request).configure(phase_table)
+
         context["funding_table"] = funding_table
-        return context
-
-
-class ProjectPhaseDetailView(PermissionRequiredMixin, CustomBaseDetailView):
-    """View to view details of a project."""
-
-    model = models.Project
-    template_name = "main/project_phase_detail.html"
-    permission_required = "main.view_project_phase"
-    raise_exception = False
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
-        """Add project name and funding table to the context.
-
-        A custom query is used with the funding table, so only the funding for the
-        current project is displayed.
-        """
-        context = super().get_context_data(**kwargs)
-        context["project_name"] = self.get_object().name
-        context["project_phase_name"] = self.get_object().name
-        # get funding info for the current project
-        funding_source = self.get_object().funding_source.all()
-        funding_table = tables.FundingTable(funding_source)
-        # enables the table to be sorted by column headings
-        RequestConfig(self.request).configure(funding_table)
-        context["funding_table"] = funding_table
+        context["phase_table"] = phase_table
         return context
 
 
@@ -263,4 +212,50 @@ class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
         layout = plots.create_cost_recovery_layout()
         context.update(plots.html_components_from_plot(layout))
         context["bokeh_version"] = bokeh.__version__
+        return context
+
+
+class ProjectCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [type-arg]
+    """View to create a new project."""
+
+    permission_required = "main.create_project"
+    raise_exception = False
+
+    model = models.Project
+    form_class = forms.ProjectForm
+    template_name = "main/project_form.html"
+    success_url = reverse_lazy("main:projects")
+
+
+class ProjectUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [type-arg]
+    """Update view based on a form from the Project model."""
+
+    model = models.Project
+    template_name = "main/project_update.html"
+    permission_required = "main.change_project"
+    raise_exception = False
+    form_class = forms.ProjectForm
+
+    def get_success_url(self):  # type: ignore [no-untyped-def]
+        """Django magic function to obtain a dynamic success URL."""
+        return reverse_lazy("main:project_detail", kwargs={"pk": self.object.pk})
+
+
+class ProjectPhaseDetailView(PermissionRequiredMixin, CustomBaseDetailView):
+    """View to view details of a project."""
+
+    model = models.ProjectPhase
+    template_name = "main/project_phase_detail.html"
+    permission_required = "main.view_project_phase"
+    raise_exception = False
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
+        """Add project name and funding table to the context.
+
+        A custom query is used with the funding table, so only the funding for the
+        current project is displayed.
+        """
+        context = super().get_context_data(**kwargs)
+        context["project_name"] = self.get_object().project.name
+
         return context

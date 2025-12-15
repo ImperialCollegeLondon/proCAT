@@ -2,7 +2,6 @@
 {% load django_bootstrap5 %}
 {% load django_tables2 %}
 {% block content %}
-  <h1>{{ project_phase_name }}</h1>
   <h2>{{ project_name }}</h2>
   <!-- Object details -->
   <div class="row">
@@ -12,6 +11,4 @@
     </div>
   </div>
   <!-- Funding table -->
-  <h2>Funding sources:</h2>
-  {% render_table funding_table %}
 {% endblock content %}
