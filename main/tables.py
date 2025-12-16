@@ -152,7 +152,7 @@ class FundingTable(tables.Table):
     """Table for the Funding listing."""
 
     funding_body = tables.Column(
-        linkify=("main:funding_detail", {"pk": tables.A("pk")})
+        attrs={"th": {"title": "Entity providing this funding, if external."}},
     )
 
     project = tables.Column(
