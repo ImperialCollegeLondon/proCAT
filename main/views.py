@@ -232,3 +232,15 @@ class ProjectUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [t
     def get_success_url(self):  # type: ignore [no-untyped-def]
         """Django magic function to obtain a dynamic success URL."""
         return reverse_lazy("main:project_detail", kwargs={"pk": self.object.pk})
+
+
+class ProjectPhaseCreateView(PermissionRequiredMixin, CreateView):  # type: ignore [type-arg]
+    """View to create a new project phase."""
+
+    permission_required = "main.create_project_phase"
+    raise_exception = False
+
+    model = models.ProjectPhase
+    form_class = forms.ProjectPhaseForm
+    template_name = "main/project_phase_form.html"
+    success_url = reverse_lazy("main:projects")

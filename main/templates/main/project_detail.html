@@ -13,6 +13,10 @@
       {% bootstrap_form form layout='horizontal' %}
     </div>
   </div>
+  <h2>Project Phase</h2>
+  {% if perms.main.create_project_phase %}
+    <a class="btn btn-primary" href="{% url 'main:project_phase_create' %}">+ Create Project Phase</a>
+  {% endif %}
   <!-- Funding table -->
   <h2>Funding sources:</h2>
   {% render_table funding_table %}

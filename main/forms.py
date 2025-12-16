@@ -71,3 +71,17 @@ class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
         }
+
+
+class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
+    """Form to create and edit Project Phase instances."""
+
+    class Meta:
+        """Meta class for the form."""
+
+        model = models.ProjectPhase
+        fields = "__all__"
+        widgets: ClassVar = {
+            "start_date": forms.DateInput(attrs={"type": "date"}),
+            "end_date": forms.DateInput(attrs={"type": "date"}),
+        }
