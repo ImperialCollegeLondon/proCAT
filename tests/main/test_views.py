@@ -5,12 +5,14 @@ This test module includes tests for main views of the app ensuring that:
   - The correct status codes are returned.
 """
 
+from datetime import timedelta
 from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
 from django.test import RequestFactory
 from django.urls import reverse
+from django.utils import timezone
 
 from main.models import Funding, Project
 
@@ -287,6 +289,110 @@ class TestCapacitiesListView(
 
     def _get_url(self):
         return reverse("main:capacities")
+
+
+@pytest.mark.django_db()
+class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Create view."""
+
+    _template_name = "main/project_form.html"
+
+    def _get_url(self):
+        return reverse("main:project_create")
+
+    def test_post(self, admin_client, department, user):
+        """Tests the post method to update the model and render the created object."""
+        expected_project_entry = {
+            "name": "Project 123",
+            "nature": "Support",
+            "pi": "John Smith",
+            "department": department.pk,
+            "lead": user.pk,
+            "start_date": timezone.now().date(),
+            "end_date": timezone.now().date() + timedelta(days=42),
+            "status": "Active",
+            "charging": "Actual",
+        }
+
+        post = admin_client.post("/projects/create/", expected_project_entry)
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+        # Check submission made it to DB
+        new_object = Project.objects.get(name=expected_project_entry["name"])
+        assert new_object.nature == expected_project_entry["nature"]
+        assert new_object.pi == expected_project_entry["pi"]
+        assert new_object.lead == user
+        assert new_object.department == department
+        assert new_object.start_date == expected_project_entry["start_date"]
+        assert new_object.end_date == expected_project_entry["end_date"]
+        assert new_object.status == expected_project_entry["status"]
+        assert new_object.charging == expected_project_entry["charging"]
+
+        # Check submission rendered in projects view
+        response = admin_client.get(reverse("main:projects"))
+        assert response.status_code == HTTPStatus.OK
+        projects = response.context["project_list"].values("name")[0]
+        assert "Project 123" in projects["name"]
+
+
+@pytest.mark.usefixtures("project")
+class TestProjectUpdateView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Update view."""
+
+    _template_name = "main/project_update.html"
+
+    def _get_url(self):
+        from main import models
+
+        project = models.Project.objects.get(name="ProCAT")
+
+        return reverse("main:project_update", kwargs={"pk": project.pk})
+
+    def test_post(self, admin_client, project, funding):
+        """Tests the post method to update the model and render the updated object."""
+        # Create the (full) initial db entry and link a funding source
+        project.nature = "Support"
+        project.pi = "John Smith"
+        project.charging = "Actual"
+        project.notifications_effort = {}
+        project.notifications_weeks = {}
+        project.clockify_id = ""
+        assert project.name == "ProCAT"
+
+        # update values (a form submission requires all fields sent)
+        expected_project_update = {
+            "name": "Project 123",
+            "nature": project.nature,
+            "pi": project.pi,
+            "department": project.department.pk,
+            "lead": project.lead.pk,
+            "start_date": project.start_date,
+            "end_date": project.end_date,
+            "status": project.status,
+            "charging": project.charging,
+            "notifications_effort": project.notifications_effort,
+            "notifications_weeks": project.notifications_weeks,
+            "clockify_id": project.clockify_id,
+        }
+
+        post = admin_client.post(
+            reverse("main:project_update", kwargs={"pk": project.pk}),
+            expected_project_update,
+        )
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+
+        # Check submission made it to DB
+        project.refresh_from_db()
+        assert project.name == expected_project_update["name"]
+
+        # Check submission rendered in project detail view and # main projects view
+        for url in [post.url, reverse("main:projects")]:
+            response = admin_client.get(url)
+            assert response.status_code == HTTPStatus.OK
+            assert expected_project_update["name"] in response.content.decode()
 
 
 @pytest.mark.usefixtures("project")
