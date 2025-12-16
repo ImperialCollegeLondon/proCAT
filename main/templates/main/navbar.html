@@ -27,15 +27,31 @@
           </li>
         {% endif %}
         <li class="nav-item">
-          <form method="post" action="{% url 'oidc_logout' %}">
-            {% csrf_token %}
-            <input class="nav-link logout-button" type="submit" value="Logout" />
-          </form>
+          {% if use_OIDC %}
+            <form method="post" action="{% url 'oidc_logout' %}">
+              {% csrf_token %}
+              <input class="nav-link logout-button" type="submit" value="Logout" />
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <input class="nav-link logout-button" type="submit" value="Logout" />
+            </form>
+          {% endif %}
         </li>
       {% else %}
         <!-- Otherwise we just show options to login -->
         <li>
-          <a class="nav-link" href="{% url 'oidc_authentication_init' %}">Login</a>
+          {% if use_OIDC %}
+            <a class="nav-link" href="{% url 'oidc_authentication_init' %}">Login</a>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'main:auth_register' %}">Register</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'login' %}">Login</a>
+            </li>
+          {% endif %}
         </li>
       {% endif %}
     </ul>
