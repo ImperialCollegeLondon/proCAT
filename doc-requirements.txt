@@ -12,7 +12,7 @@ backrefs==5.9
     # via mkdocs-material
 bokeh==3.8.1
     # via procat (pyproject.toml)
-certifi==2025.10.5
+certifi==2025.11.12
     # via requests
 cffi==2.0.0
     # via cryptography
@@ -32,7 +32,7 @@ cryptography==46.0.3
     # via
     #   josepy
     #   mozilla-django-oidc
-django==5.2.8
+django==6.0
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -45,7 +45,7 @@ django-admin-rangefilter==0.13.3
     # via procat (pyproject.toml)
 django-bootstrap5==25.2
     # via procat (pyproject.toml)
-django-crispy-forms==2.4
+django-crispy-forms==2.5
     # via
     #   crispy-bootstrap5
     #   procat (pyproject.toml)
@@ -99,19 +99,19 @@ mkdocs-autorefs==1.4.3
     # via
     #   mkdocstrings
     #   mkdocstrings-python
-mkdocs-gen-files==0.6.0
+mkdocs-gen-files==0.5.0
     # via procat (pyproject.toml)
 mkdocs-get-deps==0.2.0
     # via mkdocs
 mkdocs-literate-nav==0.6.2
     # via procat (pyproject.toml)
-mkdocs-material==9.6.21
+mkdocs-material==9.7.0
     # via procat (pyproject.toml)
 mkdocs-material-extensions==1.3.1
     # via mkdocs-material
 mkdocs-section-index==0.3.10
     # via procat (pyproject.toml)
-mkdocstrings==0.30.1
+mkdocstrings==1.0.0
     # via
     #   mkdocstrings-python
     #   procat (pyproject.toml)
@@ -140,7 +140,7 @@ pathspec==0.12.1
     # via mkdocs
 pillow==12.0.0
     # via bokeh
-platformdirs==4.3.8
+platformdirs==4.5.1
     # via mkdocs-get-deps
 pycparser==2.23
     # via cffi
