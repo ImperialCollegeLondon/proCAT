@@ -6,6 +6,9 @@
   {% if perms.main.create_project %}
     <a class="btn btn-primary" href="{% url 'main:project_create' %}">+ Create Project</a>
   {% endif %}
+  {% if perms.main.create_project_phase %}
+    <a class="btn btn-primary" href="{% url 'main:project_create' %}">+ Create Project Phase</a>
+  {% endif %}
   {% for title, table in tables %}
     <h3 class="mt-4">{{ title }}</h3>
     {% render_table table %}
