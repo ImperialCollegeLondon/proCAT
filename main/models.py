@@ -220,8 +220,10 @@ class Project(Warning, models.Model):
             expected_start_date = query.end_date + timedelta(days=1)
             span = (
                 phases_query.filter(start_date=expected_start_date).exists()
-                or self.end_date == expected_start_date
+                or self.end_date == query.end_date
             )
+            if not span:
+                break
 
         # do the check
         if not (starts or span):
