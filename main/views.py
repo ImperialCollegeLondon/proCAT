@@ -141,9 +141,16 @@ class ProjectDetailView(PermissionRequiredMixin, CustomBaseDetailView):
         # get funding info for the current project
         funding_source = self.get_object().funding_source.all()
         funding_table = tables.FundingTable(funding_source)
+        project_phase = models.ProjectPhase.objects.filter(
+            project__name=self.get_object().name
+        )
+        phase_table = tables.ProjectPhaseTable(project_phase)
         # enables the table to be sorted by column headings
         RequestConfig(self.request).configure(funding_table)
+        RequestConfig(self.request).configure(phase_table)
+
         context["funding_table"] = funding_table
+        context["phase_table"] = phase_table
         return context
 
 
@@ -256,6 +263,26 @@ class ProjectPhaseCreateView(PermissionRequiredMixin, CreateView):  # type: igno
     form_class = forms.ProjectPhaseForm
     template_name = "main/project_phase_form.html"
     success_url = reverse_lazy("main:projects")
+
+
+class ProjectPhaseDetailView(PermissionRequiredMixin, CustomBaseDetailView):
+    """View to view details of a project."""
+
+    model = models.ProjectPhase
+    template_name = "main/project_phase_detail.html"
+    permission_required = "main.view_project_phase"
+    raise_exception = False
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
+        """Add project name and funding table to the context.
+
+        A custom query is used with the funding table, so only the funding for the
+        current project is displayed.
+        """
+        context = super().get_context_data(**kwargs)
+        context["project_name"] = self.get_object().project.name
+
+        return context
 
 
 class FundingUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [type-arg]
