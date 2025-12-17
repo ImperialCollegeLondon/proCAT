@@ -19,5 +19,8 @@
   {% endif %}
   <!-- Funding table -->
   <h2>Funding sources:</h2>
+  <div class="text-start">
+    <a href="{% url 'main:funding_create' %}" class="btn btn-primary">Create Funding</a>
+  </div>
   {% render_table funding_table %}
 {% endblock content %}

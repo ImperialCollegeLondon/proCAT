@@ -12,9 +12,19 @@ urlpatterns = [
     path("funding/", views.FundingListView.as_view(), name="funding"),
     path("capacities/", views.CapacitiesListView.as_view(), name="capacities"),
     path(
+        "funding/create/",
+        views.FundingCreateView.as_view(),
+        name="funding_create",
+    ),
+    path(
         "projects/create/",
         views.ProjectCreateView.as_view(),
         name="project_create",
+    ),
+    path(
+        "funding/<slug:pk>/update",
+        views.FundingUpdateView.as_view(),
+        name="funding_update",
     ),
     path(
         "projects/<slug:pk>/", views.ProjectDetailView.as_view(), name="project_detail"
@@ -44,7 +54,7 @@ urlpatterns = [
     ),
 ]
 
-if settings.DEBUG:
+if settings.DEBUG and not settings.USE_OIDC:
     urlpatterns += [
         path("register/", views.RegistrationView.as_view(), name="auth_register"),
     ]
