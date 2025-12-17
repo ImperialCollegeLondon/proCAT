@@ -14,7 +14,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 
-from main.models import Funding, Project
+from main.models import Funding, Project, ProjectPhase
 
 from .view_utils import LoginRequiredMixin, PermissionRequiredMixin, TemplateOkMixin
 
@@ -522,3 +522,37 @@ class TestProjectUpdateView(PermissionRequiredMixin, TemplateOkMixin):
             response = admin_client.get(url)
             assert response.status_code == HTTPStatus.OK
             assert expected_project_update["name"] in response.content.decode()
+
+
+@pytest.mark.django_db()
+class TestProjectPhaseCreateView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Phase Create view."""
+
+    _template_name = "main/project_phase_form.html"
+
+    def _get_url(self):
+        return reverse("main:project_phase_create")
+
+    def test_post(self, admin_client, project_static):
+        """Tests the post method to create a project phase."""
+        expected_phase_entry = {
+            "project": project_static.pk,
+            "start_date": project_static.start_date,
+            "end_date": project_static.end_date,
+            "value": 1.0,
+        }
+
+        post = admin_client.post("/project-phase/create/", expected_phase_entry)
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+        # Check submission made it to DB
+        new_phase = ProjectPhase.objects.get(project=project_static)
+        assert new_phase.project == project_static
+        assert new_phase.start_date == expected_phase_entry["start_date"]
+        assert new_phase.end_date == expected_phase_entry["end_date"]
+        assert new_phase.value == expected_phase_entry["value"]
+
+        # Check submission rendered in projects view
+        response = admin_client.get(reverse("main:projects"))
+        assert response.status_code == HTTPStatus.OK
