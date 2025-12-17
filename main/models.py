@@ -233,10 +233,9 @@ class Project(Warning, models.Model):
         project_days = self.total_working_days
 
         # get query for project name
-        phases_query = ProjectPhase.objects.filter(project__name=self.name)
-        phase_days = 0
-        for phase in phases_query:
-            phase_days += phase.days
+        phase_days = sum(
+            phase.days for phase in ProjectPhase.objects.filter(project__name=self.name)
+        )
 
         # do the check
         if project_days != phase_days:
