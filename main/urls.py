@@ -22,12 +22,27 @@ urlpatterns = [
         name="project_create",
     ),
     path(
+        "funding/<slug:pk>/update",
+        views.FundingUpdateView.as_view(),
+        name="funding_update",
+    ),
+    path(
         "projects/<slug:pk>/", views.ProjectDetailView.as_view(), name="project_detail"
     ),
     path(
         "projects/<slug:pk>/update",
         views.ProjectUpdateView.as_view(),
         name="project_update",
+    ),
+    path(
+        "projects/<slug:project_pk>/phase/<slug:pk>",
+        views.ProjectPhaseDetailView.as_view(),
+        name="project_phase_detail",
+    ),
+    path(
+        "project-phase/create/",
+        views.ProjectPhaseCreateView.as_view(),
+        name="project_phase_create",
     ),
     path(
         "funding/<slug:pk>/", views.FundingDetailView.as_view(), name="funding_detail"
@@ -44,7 +59,7 @@ urlpatterns = [
     ),
 ]
 
-if settings.DEBUG:
+if settings.DEBUG and not settings.USE_OIDC:
     urlpatterns += [
         path("register/", views.RegistrationView.as_view(), name="auth_register"),
     ]
