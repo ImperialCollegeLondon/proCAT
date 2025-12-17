@@ -692,3 +692,46 @@ class TestFundingUpdateView(PermissionRequiredMixin, TemplateOkMixin):
             response = admin_client.get(url)
             assert response.status_code == HTTPStatus.OK
             assert expected_funding_update["funding_body"] in response.content.decode()
+
+
+@pytest.mark.usefixtures("phase")
+class TestProjectPhaseUpdateView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Phase Update view."""
+
+    _template_name = "main/project_phase_update.html"
+
+    def _get_url(self):
+        from main import models
+
+        project_phase = models.ProjectPhase.objects.first()
+        assert project_phase
+        return reverse(
+            "main:project_phase_update",
+            kwargs={"project_pk": project_phase.project.pk, "pk": project_phase.pk},
+        )
+
+    def test_post(self, admin_client, project_static):
+        """Tests the post method to update a project phase."""
+        phase = ProjectPhase.objects.first()
+
+        expected_phase_update = {
+            "project": project_static.pk,
+            "start_date": project_static.start_date,
+            "end_date": project_static.end_date,
+            "value": 2.0,
+        }
+
+        post = admin_client.post(
+            reverse(
+                "main:project_phase_update",
+                kwargs={"project_pk": project_static.pk, "pk": phase.pk},
+            ),
+            expected_phase_update,
+        )
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+
+        # Check submission made it to DB
+        phase.refresh_from_db()
+        assert phase.value == 2.0
