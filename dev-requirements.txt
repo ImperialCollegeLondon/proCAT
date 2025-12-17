@@ -10,7 +10,7 @@ bokeh==3.8.1
     # via procat (pyproject.toml)
 build==1.3.0
     # via pip-tools
-certifi==2025.10.5
+certifi==2025.11.12
     # via requests
 cffi==2.0.0
     # via cryptography
@@ -38,7 +38,7 @@ cssbeautifier==1.15.4
     # via djlint
 distlib==0.4.0
     # via virtualenv
-django==5.2.8
+django==6.0
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -128,7 +128,7 @@ pillow==12.0.0
     # via bokeh
 pip-tools==7.5.1
     # via procat (pyproject.toml)
-platformdirs==4.3.8
+platformdirs==4.5.1
     # via virtualenv
 pluggy==1.6.0
     # via
