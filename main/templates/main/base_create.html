@@ -13,9 +13,6 @@
     <div class="text-left">{% bootstrap_button button_type="submit" content="🖫 Save" %}</div>
     <p>&nbsp;</p>
     {% bootstrap_form form layout='horizontal' %}
-    {% if perms.main.create_funding %}
-      <div class="text-center">{% bootstrap_button button_type="submit" content="Save" %}</div>
-    {% endif %}
   </form>
 
 {% endblock content %}
