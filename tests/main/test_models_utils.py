@@ -48,5 +48,25 @@ class TestProjectWarnings:
 
         project_static = models.Project.objects.get(name="ProCATv2")
 
+        # Patch first phase to have a value which passes phase days warning
+        models.ProjectPhase.objects.filter(pk=1).update(value=10.9)
+
         assert project_static.warnings == ["Phases do not span project lifetime."]
         assert project_static.has_warnings
+
+    def test_warn_phase_days(self, project, funding):
+        """Tests Warning model mixin for generated warnings."""
+        from main import models
+
+        project = models.Project.objects.get(name="ProCAT")
+
+        # Patch project with spanning phase
+        models.ProjectPhase.objects.create(
+            project=project,
+            value=0.9,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=42),
+        )
+
+        assert project.warnings == ["Project days (25) do not match Phase days (23)."]
+        assert project.has_warnings

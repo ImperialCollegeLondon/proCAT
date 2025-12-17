@@ -223,9 +223,26 @@ class Project(Warning, models.Model):
                 or self.end_date == expected_start_date
             )
 
-        # do check
+        # do the check
         if not (starts or span):
             return "Phases do not span project lifetime."
+        return None
+
+    def _warn_wrong_days_sum(self) -> None | str:
+        """Warns if the phases do not sum to the total working days for the project."""
+        project_days = self.total_working_days
+
+        # get query for project name
+        phases_query = ProjectPhase.objects.filter(project__name=self.name)
+        phase_days = 0
+        for phase in phases_query:
+            phase_days += phase.days
+
+        # do the check
+        if project_days != phase_days:
+            return (
+                f"Project days ({project_days}) do not match Phase days ({phase_days})."
+            )
         return None
 
     def clean(self) -> None:
