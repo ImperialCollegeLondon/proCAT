@@ -22,8 +22,12 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("main.urls")),
-    path("oidc/", include("mozilla_django_oidc.urls")),
 ]
+
+if settings.USE_OIDC:
+    urlpatterns += [
+        path("oidc/", include("mozilla_django_oidc.urls")),
+    ]
 
 if settings.DEBUG:
     urlpatterns += [
