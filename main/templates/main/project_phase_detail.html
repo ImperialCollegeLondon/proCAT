@@ -4,7 +4,7 @@
 {% block content %}
   <h2>{{ project_name }}</h2>
   {% if perms.main.create_project_phase %}
-    <a class="btn btn-primary" href="{{ request.path }}update">✎ Update Project</a>
+    <a class="btn btn-primary" href="{{ request.path }}/update">✎ Update Project</a>
   {% endif %}
   <!-- Object details -->
   <div class="row">
