@@ -9,7 +9,7 @@ class TestProjectWarnings:
     """Tests for the different combinations of warnings."""
 
     def test_pass(self, project, funding):
-        """Test Warning model mixin for generated warnings."""
+        """Test Warning model mixin produces no generated warnings."""
         from main import models
 
         project = models.Project.objects.get(name="ProCAT")
@@ -26,7 +26,7 @@ class TestProjectWarnings:
         assert not project.has_warnings
 
     def test_project_has_funding(self, project):
-        """Test Warning model mixin for generated warnings."""
+        """Test Warning model mixin for has funding warnings."""
         from main import models
 
         project = models.Project.objects.get(name="ProCAT")
@@ -43,7 +43,11 @@ class TestProjectWarnings:
         assert project.has_warnings
 
     def test_warn_phase_lifetime(self, project_static, phase):
-        """Tests Warning model mixin for generated warnings."""
+        """Tests Warning model mixin for phase lifetime warnings.
+
+        This includes a patch increasing the `value` of one phase to cover the project
+        days and avoid triggering the `_warn_phase_days` warning.
+        """
         from main import models
 
         project_static = models.Project.objects.get(name="ProCATv2")
@@ -55,12 +59,12 @@ class TestProjectWarnings:
         assert project_static.has_warnings
 
     def test_warn_phase_days(self, project, funding):
-        """Tests Warning model mixin for generated warnings."""
+        """Tests Warning model mixin for phase days mismatch warnings."""
         from main import models
 
         project = models.Project.objects.get(name="ProCAT")
 
-        # Patch project with spanning phase
+        # Patch project with spanning phase at pass phase lifetime warning
         models.ProjectPhase.objects.create(
             project=project,
             value=0.9,
