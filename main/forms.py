@@ -59,6 +59,19 @@ class CostRecoveryForm(forms.Form):
     )
 
 
+class FundingForm(forms.ModelForm):  # type: ignore [type-arg]
+    """Form to create and edit funding instances."""
+
+    class Meta:
+        """Meta class for the form."""
+
+        model = models.Funding
+        fields = "__all__"
+        widgets: ClassVar = {
+            "expiry_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
 class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
     """Form to create and edit Project instances."""
 
@@ -67,6 +80,20 @@ class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
 
         model = models.Project
         exclude = ("notifications_effort", "notifications_weeks")
+        widgets: ClassVar = {
+            "start_date": forms.DateInput(attrs={"type": "date"}),
+            "end_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
+    """Form to create and edit Project Phase instances."""
+
+    class Meta:
+        """Meta class for the form."""
+
+        model = models.ProjectPhase
+        fields = "__all__"
         widgets: ClassVar = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
