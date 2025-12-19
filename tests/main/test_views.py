@@ -695,6 +695,7 @@ class TestFundingUpdateView(PermissionRequiredMixin, TemplateOkMixin):
 
 
 @pytest.mark.usefixtures("phase")
+@pytest.mark.django_db()
 class TestProjectPhaseDeleteView(PermissionRequiredMixin, TemplateOkMixin):
     """Test suite for the Project Phase Delete view."""
 
@@ -729,6 +730,8 @@ class TestProjectPhaseDeleteView(PermissionRequiredMixin, TemplateOkMixin):
         assert not ProjectPhase.objects.filter(pk=phase_pk).exists()
 
 
+@pytest.mark.usefixtures("phase")
+@pytest.mark.django_db()
 class TestProjectPhaseUpdateView(PermissionRequiredMixin, TemplateOkMixin):
     """Test suite for the Project Phase Update view."""
 
