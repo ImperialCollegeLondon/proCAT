@@ -3,7 +3,9 @@
 {% load django_tables2 %}
 {% block content %}
   <h2>Project Phases</h2>
-
+  {% if perms.main.create_project_phase %}
+    <a class="btn btn-primary" href="{% url 'main:project_phase_create' %}">+ Create Project Phase</a>
+  {% endif %}
   {% for title, table in tables %}
     <h3 class="mt-4">{{ title }}</h3>
     {% render_table table %}
