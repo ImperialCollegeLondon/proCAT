@@ -203,6 +203,49 @@ class Project(Warning, models.Model):
             return "No funding defined for the project."
         return None
 
+    def _warn_phase_lifetime(self) -> None | str:
+        """Warns if the phases don't cover the project lifetime."""
+        # get phases for project id
+        phases_query = ProjectPhase.objects.filter(project__name=self.name)
+
+        # required for mypy as Project.start_date can be blank and null
+        assert self.start_date is not None
+
+        # check start overlaps
+        starts = phases_query.filter(start_date=self.start_date).exists()
+
+        # iterate through phase end dates checking alignment with starts or project end.
+        span = False
+        for query in phases_query:
+            expected_start_date = query.end_date + timedelta(days=1)
+            span = (
+                phases_query.filter(start_date=expected_start_date).exists()
+                or self.end_date == query.end_date
+            )
+            if not span:
+                break
+
+        # do the check
+        if not (starts or span):
+            return "Phases do not span project lifetime."
+        return None
+
+    def _warn_wrong_days_sum(self) -> None | str:
+        """Warns if the phases do not sum to the total working days for the project."""
+        project_days = self.total_working_days
+
+        # get query for project name
+        phase_days = sum(
+            phase.days for phase in ProjectPhase.objects.filter(project__name=self.name)
+        )
+
+        # do the check
+        if project_days != phase_days:
+            return (
+                f"Project days ({project_days}) do not match Phase days ({phase_days})."
+            )
+        return None
+
     def clean(self) -> None:
         """Ensure all fields have a value unless status is 'Tentative' or 'Not done'.
 
