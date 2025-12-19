@@ -699,7 +699,7 @@ class TestProjectPhaseDeleteView(PermissionRequiredMixin, TemplateOkMixin):
     """Test suite for the Project Phase Delete view."""
 
     _template_name = "main/project_phase_delete.html"
-    
+
     def _get_url(self):
         from main import models
 
