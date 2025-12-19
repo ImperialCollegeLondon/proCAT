@@ -1,0 +1,10 @@
+{% extends "main/base_delete.html" %}
+
+{% block create %}
+  <h2>Delete Project Phase</h2>
+
+  <p>
+    Are you sure you want to delete the project phase from {{ object.start_date }} to {{ object.end_date }} for project {{ object.project.name }}?
+  </p>
+
+{% endblock create %}

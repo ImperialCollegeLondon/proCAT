@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views.generic import (
     CreateView,
+    DeleteView,
     FormView,
     ListView,
     TemplateView,
@@ -297,6 +298,16 @@ class FundingUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [t
     def get_success_url(self):  # type: ignore [no-untyped-def]
         """Django magic function to obtain a dynamic success URL."""
         return reverse_lazy("main:funding_detail", kwargs={"pk": self.object.pk})
+
+
+class ProjectPhaseDeleteView(PermissionRequiredMixin, DeleteView):  # type: ignore [type-arg]
+    """Delete view based on a form from the Project Phase model."""
+
+    model = models.ProjectPhase
+    template_name = "main/project_phase_delete.html"
+    permission_required = "main.delete_project_phase"
+    raise_exception = False
+    success_url = reverse_lazy("main:projects")
 
 
 class ProjectPhaseUpdateView(PermissionRequiredMixin, UpdateView):  # type: ignore [type-arg]

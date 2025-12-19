@@ -6,6 +6,9 @@
   {% if perms.main.create_project_phase %}
     <a class="btn btn-primary" href="{{ request.path }}/update">✎ Update Project Phase</a>
   {% endif %}
+  {% if perms.main.delete_project_phase %}
+    <a class="btn btn-primary" href="{{ request.path }}/delete">✎ Delete Project Phase</a>
+  {% endif %}
   <!-- Object details -->
   <div class="row">
     <div class="col">

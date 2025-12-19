@@ -695,6 +695,43 @@ class TestFundingUpdateView(PermissionRequiredMixin, TemplateOkMixin):
 
 
 @pytest.mark.usefixtures("phase")
+@pytest.mark.django_db()
+class TestProjectPhaseDeleteView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Phase Delete view."""
+
+    _template_name = "main/project_phase_delete.html"
+
+    def _get_url(self):
+        from main import models
+
+        project_phase = models.ProjectPhase.objects.first()
+        assert project_phase
+        return reverse(
+            "main:project_phase_delete",
+            kwargs={"project_pk": project_phase.project.pk, "pk": project_phase.pk},
+        )
+
+    def test_post(self, admin_client, project_static):
+        """Tests the post method deletes the project phase."""
+        phase = ProjectPhase.objects.first()
+        phase_pk = phase.pk
+
+        post = admin_client.post(
+            reverse(
+                "main:project_phase_delete",
+                kwargs={"project_pk": project_static.pk, "pk": phase_pk},
+            ),
+        )
+
+        # Check we got redirect URL
+        assert post.status_code == HTTPStatus.FOUND
+
+        # Check phase was deleted from DB
+        assert not ProjectPhase.objects.filter(pk=phase_pk).exists()
+
+
+@pytest.mark.usefixtures("phase")
+@pytest.mark.django_db()
 class TestProjectPhaseUpdateView(PermissionRequiredMixin, TemplateOkMixin):
     """Test suite for the Project Phase Update view."""
 

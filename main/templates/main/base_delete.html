@@ -1,0 +1,17 @@
+{% extends "main/base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+
+  <style>p {text-align: justify;}</style>
+
+  {% block create %}
+  {% endblock create %}
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+    <a href="{% url 'main:projects' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+
+{% endblock content %}
