@@ -103,7 +103,7 @@ mypy-extensions==1.1.0
     # via mypy
 narwhals==2.8.0
     # via bokeh
-nodeenv==1.9.1
+nodeenv==1.10.0
     # via pre-commit
 numpy==2.3.3
     # via
