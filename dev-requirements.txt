@@ -49,7 +49,7 @@ django==6.0
     #   django-tables2
     #   mozilla-django-oidc
     #   procat (pyproject.toml)
-django-admin-rangefilter==0.13.3
+django-admin-rangefilter==0.13.5
     # via procat (pyproject.toml)
 django-bootstrap5==25.2
     # via procat (pyproject.toml)
