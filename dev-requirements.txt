@@ -184,7 +184,7 @@ tornado==6.5.2
     # via bokeh
 tqdm==4.67.1
     # via djlint
-types-pytz==2025.2.0.20250809
+types-pytz==2025.2.0.20251108
     # via pandas-stubs
 types-pyyaml==6.0.12.20250915
     # via django-stubs
