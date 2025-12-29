@@ -49,7 +49,7 @@ django-crispy-forms==2.5
     # via
     #   crispy-bootstrap5
     #   procat (pyproject.toml)
-django-filter==25.1
+django-filter==25.2
     # via procat (pyproject.toml)
 django-tables2==2.8.0
     # via procat (pyproject.toml)
