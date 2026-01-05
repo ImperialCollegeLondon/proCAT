@@ -119,7 +119,7 @@ mkdocstrings-python==1.18.2
     # via procat (pyproject.toml)
 mozilla-django-oidc==4.0.1
     # via procat (pyproject.toml)
-narwhals==2.8.0
+narwhals==2.14.0
     # via bokeh
 numpy==2.3.3
     # via

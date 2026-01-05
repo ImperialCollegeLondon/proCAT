@@ -101,7 +101,7 @@ mypy==1.15.0
     #   procat (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
-narwhals==2.8.0
+narwhals==2.14.0
     # via bokeh
 nodeenv==1.10.0
     # via pre-commit
