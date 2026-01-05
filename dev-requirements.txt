@@ -180,7 +180,7 @@ six==1.17.0
     #   python-dateutil
 sqlparse==0.5.3
     # via django
-tornado==6.5.2
+tornado==6.5.4
     # via bokeh
 tqdm==4.67.1
     # via djlint
