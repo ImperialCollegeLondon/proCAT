@@ -88,7 +88,7 @@ class TestClockifyAPI:
         api = ClockifyAPI("invalid_api_key", "test_workspace_id")
         payload = {"dateRangeStart": "2024-09-01T00:00:00.000Z"}
 
-        with pytest.raises(requests.HTTPError, match="Unauthorized"):
+        with pytest.raises(requests.HTTPError, match=r"Unauthorized"):
             api.get_time_entries(payload)
 
         mock_response.raise_for_status.assert_called_once()

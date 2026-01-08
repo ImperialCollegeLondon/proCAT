@@ -434,7 +434,9 @@ def test_invalid_date_create_charges_report():
     future_date = current_date + timedelta(40)
     writer = Mock()
 
-    with pytest.raises(ValidationError, match="Report date must not be in the future."):
+    with pytest.raises(
+        ValidationError, match=r"Report date must not be in the future."
+    ):
         report.create_charges_report(future_date.month, future_date.year, writer)
 
 
