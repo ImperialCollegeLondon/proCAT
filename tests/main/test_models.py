@@ -49,7 +49,7 @@ class TestProject:
         project = models.Project(name="ProCAT", status="Finished")
         with pytest.raises(
             ValidationError,
-            match="All fields are mandatory except if Project status is 'Tentative'"
+            match=r"All fields are mandatory except if Project status is 'Tentative'"
             " or 'Not done'.",
         ):
             project.clean()
@@ -64,7 +64,7 @@ class TestProject:
         )
         with pytest.raises(
             ValidationError,
-            match="The end date must be after the start date.",
+            match=r"The end date must be after the start date.",
         ):
             project.clean()
 
@@ -101,7 +101,7 @@ class TestProject:
         project.save()
         with pytest.raises(
             ValidationError,
-            match="Active and Confirmed projects must have at least 1 funding source.",
+            match=r"Active and Confirmed projects must have at least 1 funding source.",
         ):
             project.clean()
 
@@ -113,7 +113,7 @@ class TestProject:
         )
         with pytest.raises(
             ValidationError,
-            match="Funding of Active and Confirmed projects must be complete.",
+            match=r"Funding of Active and Confirmed projects must be complete.",
         ):
             project.clean()
 
@@ -751,7 +751,7 @@ class TestMonthlyCharge:
         )
         with pytest.raises(
             ValidationError,
-            match="Funding source must have an expiry date.",
+            match=r"Funding source must have an expiry date.",
         ):
             monthly_charge.clean()
 
@@ -769,7 +769,7 @@ class TestMonthlyCharge:
 
         with pytest.raises(
             ValidationError,
-            match="Monthly charge must not exceed the funding date or amount.",
+            match=r"Monthly charge must not exceed the funding date or amount.",
         ):
             monthly_charge.clean()
 
@@ -789,7 +789,7 @@ class TestMonthlyCharge:
 
         with pytest.raises(
             ValidationError,
-            match="Monthly charge must not exceed the funding date or amount.",
+            match=r"Monthly charge must not exceed the funding date or amount.",
         ):
             monthly_charge.clean()
 
@@ -808,7 +808,7 @@ class TestMonthlyCharge:
 
         with pytest.raises(
             ValidationError,
-            match="Line description needed for manual charging method.",
+            match=r"Line description needed for manual charging method.",
         ):
             monthly_charge.clean()
 
@@ -1143,7 +1143,7 @@ class TestProjectPhase:
 
         with pytest.raises(
             ValidationError,
-            match="Project must have associated funding before phases can be added.",
+            match=r"Project must have associated funding before phases can be added.",
         ):
             phase.check_project_funding()
 
