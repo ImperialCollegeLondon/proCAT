@@ -59,7 +59,7 @@ def test_notify_left_threshold_valid_type(
 
 def test_notify_left_threshold_invalid_type():
     """Test notify_left_threshold_logic with invalid threshold type."""
-    with pytest.raises(ValueError, match="Invalid threshold type provided."):
+    with pytest.raises(ValueError, match=r"Invalid threshold type provided."):
         notify_left_threshold_logic(
             "lead@example.com", "Project Lead", "TestProject", "invalid_type", 10, 3
         )
