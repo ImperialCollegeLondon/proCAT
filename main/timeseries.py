@@ -156,7 +156,7 @@ def get_team_members_timeseries(
     )
 
     capacities = list(
-        models.Capacity.objects.filter(start_date__lte=end_date.date(), value__gt=0)
+        models.Capacity.objects.filter(start_date__lte=end_date.date(), value__gt=0)  # type: ignore [no-redef]
         .annotate(
             end_date=Window(
                 expression=Lead("start_date"),  # get start date of next capacity
@@ -201,7 +201,7 @@ def get_capacity_timeseries(
     # if multiple capacities for a user, end_date is start_date of next capacity object
     # if no subsequent capacity, then end_date is plotting period end_date
     capacities = list(
-        models.Capacity.objects.filter(start_date__lte=end_date.date())
+        models.Capacity.objects.filter(start_date__lte=end_date.date())  # type: ignore [no-redef]
         .annotate(
             end_date=Window(
                 expression=Lead("start_date"),  # get start date of next capacity
