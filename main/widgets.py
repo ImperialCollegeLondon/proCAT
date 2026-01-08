@@ -213,9 +213,11 @@ def add_bar_callback_to_button(
     start_tick = f"{dates[0].strftime('%b')} {dates[0].year}"
     end_tick = f"{dates[1].strftime('%b')} {dates[1].year}"
 
-    start = chart_months.index(start_tick)
+    start = chart_months.index(start_tick) if start_tick in chart_months else None
     end = chart_months.index(end_tick) + 1 if end_tick in chart_months else None
-    indexed_months = chart_months[start:end]
+    indexed_months = (
+        chart_months[start:end] if start is not None or end is not None else []
+    )
 
     # JS code dictates what happens when the button is clicked
     button.js_on_click(
