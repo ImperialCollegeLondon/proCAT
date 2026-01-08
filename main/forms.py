@@ -68,7 +68,7 @@ class FundingForm(forms.ModelForm):  # type: ignore [type-arg]
         model = models.Funding
         fields = "__all__"
         widgets: ClassVar = {
-            "expiry_date": forms.DateInput(attrs={"type": "date"}),
+            "expiry_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
         }
 
 
@@ -81,8 +81,8 @@ class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
         model = models.Project
         exclude = ("notifications_effort", "notifications_weeks")
         widgets: ClassVar = {
-            "start_date": forms.DateInput(attrs={"type": "date"}),
-            "end_date": forms.DateInput(attrs={"type": "date"}),
+            "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
+            "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
         }
 
 
@@ -95,6 +95,6 @@ class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
         model = models.ProjectPhase
         fields = "__all__"
         widgets: ClassVar = {
-            "start_date": forms.DateInput(attrs={"type": "date"}),
-            "end_date": forms.DateInput(attrs={"type": "date"}),
+            "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
+            "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
         }
