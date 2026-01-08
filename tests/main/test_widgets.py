@@ -175,15 +175,16 @@ def test_add_bar_callback_to_button():
 
     calendar_dates = utils.get_calendar_year_dates()
     end_month = f"{calendar_dates[1].strftime('%b')} {calendar_dates[1].year}"
+    start_month = f"{calendar_dates[0].strftime('%b')} {calendar_dates[0].year}"
     idxs = (
-        chart_months.index(
-            f"{calendar_dates[0].strftime('%b')} {calendar_dates[0].year}"
-        ),
+        chart_months.index(start_month) if start_month in chart_months else None,
         chart_months.index(end_month) if end_month in chart_months else None,
     )
     expected_callback = CustomJS(
         args=dict(
-            indexed_months=chart_months[idxs[0] : idxs[1]],
+            indexed_months=chart_months[idxs[0] : idxs[1]]
+            if idxs != (None, None)
+            else [],
             plot=bar_plot,
         ),
         code="""window.skip_bar_picker_callback = true;

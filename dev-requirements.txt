@@ -4,19 +4,19 @@
 #
 #    pip-compile --extra=dev --output-file=dev-requirements.txt
 #
-asgiref==3.9.2
+asgiref==3.11.0
     # via django
-bokeh==3.8.1
+bokeh==3.8.2
     # via procat (pyproject.toml)
 build==1.3.0
     # via pip-tools
-certifi==2025.11.12
+certifi==2026.1.4
     # via requests
 cffi==2.0.0
     # via cryptography
-cfgv==3.4.0
+cfgv==3.5.0
     # via pre-commit
-charset-normalizer==3.4.3
+charset-normalizer==3.4.4
     # via requests
 click==8.3.1
     # via
@@ -26,19 +26,17 @@ colorama==0.4.6
     # via djlint
 contourpy==1.3.3
     # via bokeh
-coverage[toml]==7.11.3
+coverage[toml]==7.13.1
     # via pytest-cov
 crispy-bootstrap5==2025.6
     # via procat (pyproject.toml)
 cryptography==46.0.3
-    # via
-    #   josepy
-    #   mozilla-django-oidc
+    # via mozilla-django-oidc
 cssbeautifier==1.15.4
     # via djlint
 distlib==0.4.0
     # via virtualenv
-django==6.0
+django==6.0.1
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
@@ -51,17 +49,17 @@ django==6.0
     #   procat (pyproject.toml)
 django-admin-rangefilter==0.13.5
     # via procat (pyproject.toml)
-django-bootstrap5==25.2
+django-bootstrap5==26.1
     # via procat (pyproject.toml)
 django-crispy-forms==2.5
     # via
     #   crispy-bootstrap5
     #   procat (pyproject.toml)
-django-filter==25.1
+django-filter==25.2
     # via procat (pyproject.toml)
-django-stubs[compatible-mypy]==5.2.2
+django-stubs[compatible-mypy]==5.2.8
     # via procat (pyproject.toml)
-django-stubs-ext==5.2.7
+django-stubs-ext==5.2.8
     # via django-stubs
 django-tables2==2.8.0
     # via procat (pyproject.toml)
@@ -71,41 +69,41 @@ editorconfig==0.17.1
     # via
     #   cssbeautifier
     #   jsbeautifier
-filelock==3.19.1
+filelock==3.20.2
     # via virtualenv
-huey==2.5.3
+huey==2.6.0
     # via procat (pyproject.toml)
 identify==2.6.15
     # via pre-commit
-idna==3.10
+idna==3.11
     # via requests
 iniconfig==2.3.0
     # via pytest
 jinja2==3.1.6
     # via bokeh
-josepy==2.2.0
-    # via mozilla-django-oidc
 jsbeautifier==1.15.4
     # via
     #   cssbeautifier
     #   djlint
-json5==0.12.1
+json5==0.13.0
     # via djlint
+librt==0.7.7
+    # via mypy
 markupsafe==3.0.3
     # via jinja2
-mozilla-django-oidc==4.0.1
+mozilla-django-oidc==5.0.2
     # via procat (pyproject.toml)
-mypy==1.15.0
+mypy==1.19.1
     # via
     #   django-stubs
     #   procat (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
-narwhals==2.8.0
+narwhals==2.15.0
     # via bokeh
 nodeenv==1.10.0
     # via pre-commit
-numpy==2.3.3
+numpy==2.3.5
     # via
     #   bokeh
     #   contourpy
@@ -120,13 +118,15 @@ pandas==2.3.3
     # via
     #   bokeh
     #   procat (pyproject.toml)
-pandas-stubs==2.3.2.250926
+pandas-stubs==2.3.3.251219
     # via procat (pyproject.toml)
-pathspec==0.12.1
-    # via djlint
-pillow==12.0.0
+pathspec==1.0.2
+    # via
+    #   djlint
+    #   mypy
+pillow==12.1.0
     # via bokeh
-pip-tools==7.5.1
+pip-tools==7.5.2
     # via procat (pyproject.toml)
 platformdirs==4.5.1
     # via virtualenv
@@ -134,17 +134,19 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pre-commit==4.4.0
+pre-commit==4.5.1
     # via procat (pyproject.toml)
 pycparser==2.23
     # via cffi
 pygments==2.19.2
     # via pytest
+pyjwt==2.10.1
+    # via mozilla-django-oidc
 pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pytest==9.0.0
+pytest==9.0.2
     # via
     #   procat (pyproject.toml)
     #   pytest-cov
@@ -160,54 +162,54 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2025.2
     # via pandas
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   bokeh
     #   djlint
     #   pre-commit
-regex==2025.9.18
+regex==2025.11.3
     # via djlint
 requests==2.32.5
     # via
     #   mozilla-django-oidc
     #   procat (pyproject.toml)
-ruff==0.14.6
+ruff==0.14.10
     # via procat (pyproject.toml)
 six==1.17.0
     # via
     #   cssbeautifier
     #   jsbeautifier
     #   python-dateutil
-sqlparse==0.5.3
+sqlparse==0.5.5
     # via django
-tornado==6.5.2
+tornado==6.5.4
     # via bokeh
 tqdm==4.67.1
     # via djlint
-types-pytz==2025.2.0.20250809
+types-pytz==2025.2.0.20251108
     # via pandas-stubs
 types-pyyaml==6.0.12.20250915
     # via django-stubs
-types-requests==2.32.4.20250913
+types-requests==2.32.4.20260107
     # via procat (pyproject.toml)
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   django-stubs
     #   django-stubs-ext
     #   mypy
-tzdata==2025.2
+tzdata==2025.3
     # via pandas
-urllib3==2.5.0
+urllib3==2.6.3
     # via
     #   requests
     #   types-requests
-virtualenv==20.35.4
+virtualenv==20.36.0
     # via pre-commit
 wheel==0.45.1
     # via pip-tools
 whitenoise==6.11.0
     # via procat (pyproject.toml)
-xyzservices==2025.4.0
+xyzservices==2025.11.0
     # via bokeh
 
 # The following packages are considered to be unsafe in a requirements file:

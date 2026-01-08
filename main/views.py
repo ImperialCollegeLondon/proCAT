@@ -103,7 +103,7 @@ class CustomBaseDetailView(LoginRequiredMixin, UpdateView):  # type: ignore [typ
     instead, which can easily be styled, and make the form read only.
     """
 
-    fields = "__all__"  # type: ignore [assignment]
+    fields = "__all__"
 
     def get_form(self, form_class: Any | None = None) -> ModelForm:  # type: ignore
         """Customize form to make it read-only.

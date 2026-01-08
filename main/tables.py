@@ -18,10 +18,6 @@ class ProjectTable(tables.Table):
         linkify=("main:project_detail", {"pk": tables.A("pk")}),
         attrs={"th": {"style": "min-width: 150px;"}},
     )
-    project_phase_name = tables.Column(
-        linkify=("main:project_phase_detail", {"pk": tables.A("pk")}),
-        attrs={"th": {"style": "min-width: 150px;"}},
-    )
 
     weeks_to_deadline = tables.Column(
         attrs={
