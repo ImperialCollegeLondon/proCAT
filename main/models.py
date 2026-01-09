@@ -24,7 +24,9 @@ from .models_utils import Warning
 class User(AbstractUser):
     """Custom user model."""
 
-    pass
+    def __str__(self) -> str:
+        """Full name of the user."""
+        return f"{self.first_name} {self.last_name}"
 
 
 class Department(models.Model):
