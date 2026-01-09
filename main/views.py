@@ -130,7 +130,7 @@ class ProjectDetailView(PermissionRequiredMixin, CustomBaseDetailView):
     template_name = "main/project_detail.html"
     permission_required = "main.view_project"
     raise_exception = False
-    fields = None
+    fields = None  # type: ignore
     form_class = forms.ProjectForm
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
