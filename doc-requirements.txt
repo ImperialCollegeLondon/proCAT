@@ -144,7 +144,7 @@ pygments==2.19.2
     # via mkdocs-material
 pyjwt==2.10.1
     # via mozilla-django-oidc
-pymdown-extensions==10.20
+pymdown-extensions==10.20.1
     # via
     #   mkdocs-material
     #   mkdocstrings
