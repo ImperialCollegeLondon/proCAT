@@ -53,7 +53,7 @@ mozilla-django-oidc==5.0.2
     # via procat (pyproject.toml)
 narwhals==2.15.0
     # via bokeh
-numpy==2.4.0
+numpy==2.4.1
     # via
     #   bokeh
     #   contourpy
