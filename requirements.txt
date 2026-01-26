@@ -60,7 +60,7 @@ numpy==2.4.0
     #   pandas
 packaging==25.0
     # via bokeh
-pandas==2.3.3
+pandas==3.0.0
     # via
     #   bokeh
     #   procat (pyproject.toml)
