@@ -103,7 +103,7 @@ narwhals==2.15.0
     # via bokeh
 nodeenv==1.10.0
     # via pre-commit
-numpy==2.3.5
+numpy==2.4.2
     # via
     #   bokeh
     #   contourpy
