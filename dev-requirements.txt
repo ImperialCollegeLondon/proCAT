@@ -184,7 +184,7 @@ sqlparse==0.5.5
     # via django
 tornado==6.5.4
     # via bokeh
-tqdm==4.67.1
+tqdm==4.67.2
     # via djlint
 types-pytz==2025.2.0.20251108
     # via pandas-stubs
