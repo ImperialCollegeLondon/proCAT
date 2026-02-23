@@ -87,7 +87,7 @@ jsbeautifier==1.15.4
     #   djlint
 json5==0.13.0
     # via djlint
-librt==0.8.0
+librt==0.8.1
     # via mypy
 markupsafe==3.0.3
     # via jinja2
