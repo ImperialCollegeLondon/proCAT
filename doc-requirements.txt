@@ -142,7 +142,7 @@ pycparser==2.23
     # via cffi
 pygments==2.19.2
     # via mkdocs-material
-pyjwt==2.10.1
+pyjwt==2.11.0
     # via mozilla-django-oidc
 pymdown-extensions==10.20.1
     # via

@@ -68,7 +68,7 @@ pillow==12.1.1
     # via bokeh
 pycparser==2.23
     # via cffi
-pyjwt==2.10.1
+pyjwt==2.11.0
     # via mozilla-django-oidc
 python-dateutil==2.9.0.post0
     # via pandas
