@@ -27,7 +27,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
 
       - name: Build and push Docker image for the web app
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
