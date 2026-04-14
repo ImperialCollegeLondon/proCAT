@@ -3,6 +3,7 @@
 from contextlib import nullcontext as does_not_raise
 from datetime import date, datetime, timedelta
 
+import pandas as pd
 import pytest
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -830,6 +831,27 @@ class TestMonthlyCharge:
 
 class TestProjectPhase:
     """Tests for the Project Phase model."""
+
+    def test_trace(self) -> None:
+        """Test the trace method."""
+        from main import models
+
+        start_date = datetime(2025, 1, 1).date()
+        end_date = datetime(2025, 1, 3).date()
+        project_phase = models.ProjectPhase(
+            value=1,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        project_timerange = pd.date_range(start=start_date, end=end_date)
+        assert (project_phase.trace() == 1).all()
+
+        timerange = pd.date_range(
+            start=datetime(2024, 12, 1).date(), end=datetime(2025, 2, 1).date()
+        )
+        output = project_phase.trace(timerange)
+        assert (output.loc[project_timerange] == 1).all()
+        assert (output.loc[~output.index.isin(project_timerange)] == 0).all()
 
     def test_model_str(self, project_static):
         """Test the object string for the monthly charge model."""
