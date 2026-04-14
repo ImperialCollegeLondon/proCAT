@@ -869,7 +869,9 @@ class FullTimeEquivalent(models.Model):
         if timerange is not None:
             idx = timerange.copy()
             output = pd.Series(0.0, index=idx)
-            output.loc[self.start_date : self.end_date] = self.value
+            output.loc[pd.Timestamp(self.start_date) : pd.Timestamp(self.end_date)] = (
+                self.value
+            )
         else:
             idx = pd.date_range(start=self.start_date, end=self.end_date)
             output = pd.Series(self.value, index=idx)
