@@ -866,12 +866,15 @@ class FullTimeEquivalent(models.Model):
         If timerange is provided, those dates are used, otherwise a datetime index is
         created using the start and end dates of the FTE object.
         """
-        if timerange:
+        if timerange is not None:
             idx = timerange.copy()
+            output = pd.Series(0.0, index=idx)
+            output.loc[self.start_date : self.end_date] = self.value
         else:
             idx = pd.date_range(start=self.start_date, end=self.end_date)
+            output = pd.Series(self.value, index=idx)
 
-        return pd.Series(self.value, index=idx)
+        return output
 
     def clean(self) -> None:
         """Ensure start date comes before end date and that value 0 or positive."""
