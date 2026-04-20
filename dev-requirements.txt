@@ -109,7 +109,7 @@ numpy==2.4.2
     #   contourpy
     #   pandas
     #   pandas-stubs
-packaging==25.0
+packaging==26.1
     # via
     #   bokeh
     #   build
