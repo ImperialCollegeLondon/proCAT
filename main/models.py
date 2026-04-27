@@ -1,6 +1,6 @@
 """Models module for main app."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -606,24 +606,38 @@ class Funding(models.Model):
         """
         return float(round(self.funding_left / self.daily_rate, 1))
 
-    @property
-    def monthly_pro_rata_charge(self) -> float | None:
+    def monthly_pro_rata_charge(self, date: date) -> float | None:
         """Calculate the charge per month if the project has Pro-rata charging.
 
         Calculates the number of months between project start and end date regardless
         of the day of the month so the monthly charge will be the same regardless
         of the number of days in the month.
+
+        The last month of the project is not charged, so the charge applies from the
+        month of the start date until the month before the end date, to ensure that no
+        charges are made outside of the project period. For example, if a project
+        starts on 15th January and ends on 10th April, the charge will apply for
+        January, February and March, but not April.
+
+        Args:
+            date: The date for which to calculate the monthly charge, used to check if
+                the project has started and hasn't ended yet.
+
+        Returns:
+            The monthly charge amount, or None if the project doesn't have Pro-rata
+            charging or the date is outside the project period.
         """
         if (
             self.project.charging == "Pro-rata"
             and self.project.start_date
             and self.project.end_date
+            and self.project.start_date.month
+            <= date.month
+            < self.project.end_date.month
         ):
             months = (
-                (self.project.end_date.year - self.project.start_date.year) * 12
-                + (self.project.end_date.month - self.project.start_date.month)
-                + 1
-            )
+                self.project.end_date.year - self.project.start_date.year
+            ) * 12 + (self.project.end_date.month - self.project.start_date.month)
             return float(self.budget / months)
         return None
 
