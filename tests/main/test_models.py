@@ -618,13 +618,13 @@ class TestFunding:
             analysis_code=analysis_code,
             budget=10000.00,
         )
-        assert funding.monthly_pro_rata_charge is None
+        assert funding.monthly_pro_rata_charge(date(2025, 3, 15)) is None
 
     @pytest.mark.django_db
     def test_monthly_pro_rata_charge(self, user, department, analysis_code):
         """Test the monthly_pro_rata_charge property."""
         start_date = date(2025, 3, 15)
-        end_date = date(2025, 7, 8)  # 5 equal monthly charges will be created
+        end_date = date(2025, 7, 8)  # 4 equal monthly charges will be created
         from main import models
 
         project = models.Project.objects.create(
@@ -643,8 +643,10 @@ class TestFunding:
             analysis_code=analysis_code,
             budget=10000.00,
         )
-        expected_charge = funding.budget / 5
-        assert funding.monthly_pro_rata_charge == expected_charge
+        expected_charge = funding.budget / 4
+        assert funding.monthly_pro_rata_charge(start_date) == expected_charge
+        # Last month is not charged, so the charge is None
+        assert funding.monthly_pro_rata_charge(end_date) is None
 
 
 class TestCapacity:
