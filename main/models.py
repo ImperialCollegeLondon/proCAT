@@ -621,7 +621,7 @@ class Funding(models.Model):
 
         Args:
             date: The date for which to calculate the monthly charge, used to check if
-            the project has started and hasn't ended yet.
+                the project has started and hasn't ended yet.
 
         Returns:
             The monthly charge amount, or None if the project doesn't have Pro-rata
