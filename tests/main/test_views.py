@@ -772,3 +772,62 @@ class TestProjectPhaseUpdateView(PermissionRequiredMixin, TemplateOkMixin):
         # Check submission made it to DB
         phase.refresh_from_db()
         assert phase.value == 2.0
+
+
+@pytest.mark.django_db()
+class TestCreateDefaultPhaseView(PermissionRequiredMixin):
+    """Test suite for the Create Default Phase view."""
+
+    _template_name = "main/project_detail.html"
+
+    def _get_url(self):
+        return reverse("main:project_default_phase_create")
+
+    def test_post_phase_added(self, admin_client, project_static):
+        """Tests the post method to create a default project phase.
+
+        Tests that when the form is submitted, a default project phase is created for
+        the specified project and the user is redirected to the project detail page.
+        """
+        post = admin_client.post(
+            reverse("main:project_default_phase_create"),
+            {"project_name": project_static.name},
+        )
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+        assert post.url == reverse(
+            "main:project_detail", kwargs={"pk": project_static.pk}
+        )
+
+        # Check a new phase was created in DB with the correct values
+        new_phase = ProjectPhase.objects.filter(project=project_static).last()
+        assert new_phase is not None
+        assert new_phase.project == project_static
+        assert new_phase.start_date == project_static.start_date
+        assert new_phase.end_date == project_static.end_date
+        assert new_phase.value < 1.0
+
+    def test_post_no_effort(self, admin_client, project_static):
+        """Tests the post method when the project has no total effort defined.
+
+        Tests that when the form is submitted for a project with no total effort, no
+        phase is created and the user is redirected to the project detail page.
+        """
+        # Remove funding sources, so there's no effort
+        project_static.funding_source.all().delete()
+
+        post = admin_client.post(
+            reverse("main:project_default_phase_create"),
+            {"project_name": project_static.name},
+        )
+
+        # Check we got redirect URL (not a refresh 200)
+        assert post.status_code == HTTPStatus.FOUND
+        assert post.url == reverse(
+            "main:project_detail", kwargs={"pk": project_static.pk}
+        )
+
+        # Check no new phase was created in DB
+        phases = ProjectPhase.objects.filter(project=project_static)
+        assert not phases.exists()
