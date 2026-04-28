@@ -4,7 +4,7 @@ from typing import Any
 
 import bokeh
 from django.contrib import messages
-from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.forms import Form, ModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -270,14 +270,13 @@ class ProjectPhaseCreateView(PermissionRequiredMixin, CreateView):  # type: igno
     success_url = reverse_lazy("main:projects")
 
 
+@login_required
 @permission_required("main.create_project_phase", raise_exception=True)
 def create_default_project_phase(request: HttpRequest) -> HttpResponse:
     """Create a default project phase.
 
     This view is used to create a default project phase for a project, given the total
-    effort in days and the start and end dates of the project. The default phase will
-    have a name "Default Phase" and will be created only if the project has a total
-    effort defined.
+    effort in days and the start and end dates of the project.
 
     If successful, the project detail page will be reloaded to show the new phase. If
     the project does not have a total effort defined, no phase will be created and the
