@@ -2,7 +2,7 @@
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 from django.contrib.auth.models import AbstractUser
@@ -428,6 +428,33 @@ class Project(Warning, models.Model):
         if self.total_effort and self.total_working_days:
             return self.total_effort / self.total_working_days
         return None
+
+    def fte(self, timerange: pd.DatetimeIndex | None = None) -> pd.Series:  # type: ignore[explicit-any]
+        """Calculate the FTE trace for the project over a given timerange.
+
+        This is calculated by summing the trace of all the phases of the project,
+        which are assumed to be sequential and non-overlapping.
+
+        Args:
+            timerange: The timerange to calculate the FTE trace over.
+
+        Returns:
+            A pandas Series with the FTE trace over the timerange, or a trace of 0 if
+            there are no phases.
+        """
+        assert self.start_date is not None
+        assert self.end_date is not None
+
+        timerange = (
+            timerange
+            if timerange is not None
+            else pd.date_range(start=self.start_date, end=self.end_date)
+        )
+        if self.phases.exists():
+            return cast(  # type: ignore[explicit-any]
+                pd.Series, sum(phase.trace(timerange) for phase in self.phases.all())
+            )
+        return pd.Series(0.0, index=timerange)
 
 
 class Funding(models.Model):
