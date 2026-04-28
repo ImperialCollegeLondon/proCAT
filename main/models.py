@@ -1,6 +1,6 @@
 """Models module for main app."""
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, cast
 
@@ -876,9 +876,9 @@ class FullTimeEquivalent(models.Model):
     @classmethod
     def from_days(  # type: ignore[explicit-any]
         cls,
-        days: int,
-        start_date: datetime,
-        end_date: datetime,
+        days: float,
+        start_date: date,
+        end_date: date,
         **kwargs: Any,
     ) -> None:
         """Creates an FTE object given a number of days time period."""

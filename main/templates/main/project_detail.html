@@ -2,6 +2,14 @@
 {% load django_bootstrap5 %}
 {% load django_tables2 %}
 {% block content %}
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}"
+           role="alert">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
   <h2>{{ project_name }}</h2>
   {% if perms.main.create_project %}
     <a class="btn btn-primary" href="{{ request.path }}update">✎ Update Project</a>
@@ -16,7 +24,13 @@
   <!-- Phases table -->
   <h2>Project Phases:</h2>
   {% if perms.main.create_project_phase %}
-    <a class="btn btn-primary" href="{% url 'main:project_phase_create' %}">+ Create Project Phase</a>
+
+    <form method="post" action="{% url 'main:project_default_phase_create' %}">
+      {% csrf_token %}
+      <input type="text" name="project_name" value="{{ project_name }}" hidden>
+      <a class="btn btn-primary" href="{% url 'main:project_phase_create' %}">+ Create Project Phase</a>
+      {% bootstrap_button button_type="submit" button_class="btn btn-secondary" content="+ Create Default Phase" %}
+    </form>
   {% endif %}
   {% render_table phase_table %}
   <!-- Funding table -->
