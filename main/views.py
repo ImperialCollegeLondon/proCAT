@@ -4,6 +4,7 @@ from typing import Any
 
 import bokeh
 from django.contrib import messages
+from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.forms import Form, ModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -269,6 +270,7 @@ class ProjectPhaseCreateView(PermissionRequiredMixin, CreateView):  # type: igno
     success_url = reverse_lazy("main:projects")
 
 
+@permission_required("main.create_project_phase", raise_exception=True)
 def create_default_project_phase(request: HttpRequest) -> HttpResponse:
     """Create a default project phase.
 
@@ -288,12 +290,21 @@ def create_default_project_phase(request: HttpRequest) -> HttpResponse:
         assert project.start_date is not None
         assert project.end_date is not None
         if days := project.total_effort:
-            models.ProjectPhase.from_days(
-                days=days,
-                project=project,
-                start_date=project.start_date,
-                end_date=project.end_date,
-            )
+            try:
+                models.ProjectPhase.from_days(
+                    days=days,
+                    project=project,
+                    start_date=project.start_date,
+                    end_date=project.end_date,
+                )
+            except Exception as e:
+                messages.add_message(
+                    request,
+                    messages.WARNING,
+                    e.messages[0]
+                    if hasattr(e, "messages") and len(e.messages) > 0
+                    else str(e),
+                )
         else:
             messages.add_message(
                 request,

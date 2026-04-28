@@ -887,12 +887,14 @@ class FullTimeEquivalent(models.Model):
         # use WORKING_DAYS to estimate day_difference minus weekends & holidays
         day_difference = date_difference * WORKING_DAYS / 365
         # FTE will then be the # of days work / the (weighted) time period in days
-        cls.objects.create(  # type: ignore[attr-defined]
+        obj = cls(
             value=days / day_difference,
             start_date=start_date,
             end_date=end_date,
             **kwargs,
         )
+        obj.clean()
+        obj.save()
 
     @property
     def days(self) -> int:
