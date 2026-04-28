@@ -282,6 +282,12 @@ def create_default_project_phase(request: HttpRequest) -> HttpResponse:
     If successful, the project detail page will be reloaded to show the new phase. If
     the project does not have a total effort defined, no phase will be created and the
     user will be redirected to the project detail page with no changes.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        An HTTP response object that redirects to the project detail page.
     """
     if request.method == "POST":
         project_name = request.POST.get("project_name")
