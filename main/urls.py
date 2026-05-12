@@ -45,6 +45,11 @@ urlpatterns = [
         name="project_phase_create",
     ),
     path(
+        "project-phase/create/default/",
+        views.create_default_project_phase,
+        name="project_default_phase_create",
+    ),
+    path(
         "projects/<slug:project_pk>/phase/<slug:pk>/delete/",
         views.ProjectPhaseDeleteView.as_view(),
         name="project_phase_delete",

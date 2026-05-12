@@ -137,7 +137,7 @@ def test_create_pro_rata_monthly_charges_missing_dates(department, user, analysi
     )
 
     # Check that no Pro-rata charge created (no funding.monthly_pro_rata_charge)
-    assert funding.monthly_pro_rata_charge is None
+    assert funding.monthly_pro_rata_charge(start_date) is None
     report.create_pro_rata_monthly_charges(project, start_date, end_date)
     assert not models.MonthlyCharge.objects.exists()
 
@@ -175,7 +175,7 @@ def test_create_pro_rata_monthly_charges(department, user, analysis_code):
     # Create Pro-rata charge and check amount
     report.create_pro_rata_monthly_charges(project, start_date, end_date)
     expected_amount = models.MonthlyCharge.objects.get(date=start_date).amount
-    assert funding.monthly_pro_rata_charge == expected_amount
+    assert funding.monthly_pro_rata_charge(start_date) == expected_amount
 
 
 @pytest.mark.django_db
@@ -545,7 +545,7 @@ def test_create_charges_report_for_download(department, user, analysis_code):
             funding_A.cost_centre,
             funding_A.activity,
             funding_A.analysis_code.code,
-            f"{funding_A.budget / 2:.2f}",
+            f"{funding_A.budget:.2f}",
             (
                 f"RSE Project {project_A.name} ({funding_A.cost_centre}_"
                 f"{funding_A.activity}): 6/2025 [rcs-manager@imperial.ac.uk]"
