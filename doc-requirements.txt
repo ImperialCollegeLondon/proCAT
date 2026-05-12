@@ -55,7 +55,7 @@ ghp-import==2.1.0
     # via mkdocs
 griffe==2.0.2
     # via mkdocstrings-python
-huey==2.6.0
+huey==3.0.0
     # via procat (pyproject.toml)
 idna==3.11
     # via requests

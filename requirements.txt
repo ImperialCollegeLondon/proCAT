@@ -41,7 +41,7 @@ django-filter==25.2
     # via procat (pyproject.toml)
 django-tables2==2.8.0
     # via procat (pyproject.toml)
-huey==2.6.0
+huey==3.0.0
     # via procat (pyproject.toml)
 idna==3.11
     # via requests

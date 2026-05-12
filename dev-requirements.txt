@@ -71,7 +71,7 @@ editorconfig==0.17.1
     #   jsbeautifier
 filelock==3.20.3
     # via virtualenv
-huey==2.6.0
+huey==3.0.0
     # via procat (pyproject.toml)
 identify==2.6.16
     # via pre-commit
