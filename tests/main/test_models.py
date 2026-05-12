@@ -379,6 +379,28 @@ class TestProject:
         effort_per_day = total_effort / project.total_working_days
         assert project.effort_per_day == effort_per_day
 
+    @pytest.mark.django_db
+    def test_fte(self, project):
+        """Test the fte method."""
+        from main import models
+
+        assert (project.fte() == 0).all()
+
+        models.ProjectPhase.objects.create(
+            project=project,
+            value=0.5,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
+        assert (project.fte() == 0.5).all()
+
+        timerange = pd.date_range(
+            start=project.start_date, end=project.end_date + timedelta(days=30)
+        )  # add extra days to check that FTE is 0 outside of project period
+        output = project.fte(timerange)
+        assert (output.loc[project.start_date : project.end_date] == 0.5).all()
+        assert (output.loc[~output.index.isin(timerange)] == 0).all()
+
 
 class TestFunding:
     """Tests for the funding model."""
@@ -618,13 +640,13 @@ class TestFunding:
             analysis_code=analysis_code,
             budget=10000.00,
         )
-        assert funding.monthly_pro_rata_charge is None
+        assert funding.monthly_pro_rata_charge(date(2025, 3, 15)) is None
 
     @pytest.mark.django_db
     def test_monthly_pro_rata_charge(self, user, department, analysis_code):
         """Test the monthly_pro_rata_charge property."""
         start_date = date(2025, 3, 15)
-        end_date = date(2025, 7, 8)  # 5 equal monthly charges will be created
+        end_date = date(2025, 7, 8)  # 4 equal monthly charges will be created
         from main import models
 
         project = models.Project.objects.create(
@@ -643,8 +665,10 @@ class TestFunding:
             analysis_code=analysis_code,
             budget=10000.00,
         )
-        expected_charge = funding.budget / 5
-        assert funding.monthly_pro_rata_charge == expected_charge
+        expected_charge = funding.budget / 4
+        assert funding.monthly_pro_rata_charge(start_date) == expected_charge
+        # Last month is not charged, so the charge is None
+        assert funding.monthly_pro_rata_charge(end_date) is None
 
 
 class TestCapacity:
@@ -894,7 +918,7 @@ class TestProjectPhase:
                 datetime(2025, 1, 1).date(),
                 datetime(2025, 6, 1).date(),
                 None,
-                "The FTE value must be greater than or equal to zero.",
+                r"The FTE value must be greater than or equal to zero.",
                 id="FTE < 0",
             ),
             pytest.param(
@@ -902,7 +926,7 @@ class TestProjectPhase:
                 datetime(2026, 1, 1).date(),
                 datetime(2025, 1, 1).date(),
                 None,
-                "The end date must be after the start date.",
+                r"The end date must be after the start date.",
                 id="End before start",
             ),
         ),
@@ -913,17 +937,17 @@ class TestProjectPhase:
         """Test the from_days function and that value is calculated correctly."""
         from main import models
 
-        models.ProjectPhase.from_days(
-            days, start_date, end_date, project=project_static
-        )
-        phase = models.ProjectPhase.objects.last()
-
         if validation_error is not None:
             with pytest.raises(ValidationError, match=validation_error):
-                phase.clean()
+                models.ProjectPhase.from_days(
+                    days, start_date, end_date, project=project_static
+                )
 
         else:
-            phase.clean()
+            models.ProjectPhase.from_days(
+                days, start_date, end_date, project=project_static
+            )
+            phase = models.ProjectPhase.objects.last()
             assert phase.value == value
 
     @pytest.mark.parametrize(
