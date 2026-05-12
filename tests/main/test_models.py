@@ -918,7 +918,7 @@ class TestProjectPhase:
                 datetime(2025, 1, 1).date(),
                 datetime(2025, 6, 1).date(),
                 None,
-                "The FTE value must be greater than or equal to zero.",
+                r"The FTE value must be greater than or equal to zero.",
                 id="FTE < 0",
             ),
             pytest.param(
@@ -926,7 +926,7 @@ class TestProjectPhase:
                 datetime(2026, 1, 1).date(),
                 datetime(2025, 1, 1).date(),
                 None,
-                "The end date must be after the start date.",
+                r"The end date must be after the start date.",
                 id="End before start",
             ),
         ),
@@ -937,17 +937,17 @@ class TestProjectPhase:
         """Test the from_days function and that value is calculated correctly."""
         from main import models
 
-        models.ProjectPhase.from_days(
-            days, start_date, end_date, project=project_static
-        )
-        phase = models.ProjectPhase.objects.last()
-
         if validation_error is not None:
             with pytest.raises(ValidationError, match=validation_error):
-                phase.clean()
+                models.ProjectPhase.from_days(
+                    days, start_date, end_date, project=project_static
+                )
 
         else:
-            phase.clean()
+            models.ProjectPhase.from_days(
+                days, start_date, end_date, project=project_static
+            )
+            phase = models.ProjectPhase.objects.last()
             assert phase.value == value
 
     @pytest.mark.parametrize(

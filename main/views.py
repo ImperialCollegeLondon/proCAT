@@ -3,9 +3,11 @@
 from typing import Any
 
 import bokeh
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.forms import Form, ModelForm
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -266,6 +268,66 @@ class ProjectPhaseCreateView(PermissionRequiredMixin, CreateView):  # type: igno
     form_class = forms.ProjectPhaseForm
     template_name = "main/project_phase_form.html"
     success_url = reverse_lazy("main:projects")
+
+
+@login_required
+@permission_required("main.create_project_phase", raise_exception=True)
+def create_default_project_phase(request: HttpRequest) -> HttpResponse:
+    """Create a default project phase.
+
+    This view is used to create a default project phase for a project, given the total
+    effort in days and the start and end dates of the project.
+
+    If successful, the project detail page will be reloaded to show the new phase. If
+    the project does not have a total effort defined, no phase will be created and the
+    user will be redirected to the project detail page with no changes.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        An HTTP response object that redirects to the project detail page.
+    """
+    if request.method == "POST":
+        project_name = request.POST.get("project_name")
+        project = models.Project.objects.get(name=project_name)
+
+        assert project.start_date is not None
+        assert project.end_date is not None
+        if days := project.total_effort:
+            try:
+                models.ProjectPhase.from_days(
+                    days=days,
+                    project=project,
+                    start_date=project.start_date,
+                    end_date=project.end_date,
+                )
+            except Exception as e:
+                messages.add_message(
+                    request,
+                    messages.WARNING,
+                    e.messages[0]
+                    if hasattr(e, "messages") and len(e.messages) > 0
+                    else str(e),
+                )
+        else:
+            messages.add_message(
+                request,
+                messages.WARNING,
+                "No funding defined for this project. Please add a funding source"
+                "before creating a project phase.",
+            )
+
+        return HttpResponseRedirect(
+            reverse_lazy("main:project_detail", kwargs={"pk": project.pk})
+        )
+
+    else:
+        # If GET, we just go back to the detail page without doing anything or to the
+        # projects page if the referer is not defined.
+        return HttpResponseRedirect(
+            request.META.get("HTTP_REFERER", reverse_lazy("main:projects"))
+        )
 
 
 class ProjectPhaseDetailView(PermissionRequiredMixin, CustomBaseDetailView):
