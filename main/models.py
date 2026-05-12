@@ -1,8 +1,8 @@
 """Models module for main app."""
 
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 from django.contrib.auth.models import AbstractUser
@@ -429,6 +429,33 @@ class Project(Warning, models.Model):
             return self.total_effort / self.total_working_days
         return None
 
+    def fte(self, timerange: pd.DatetimeIndex | None = None) -> pd.Series:  # type: ignore[explicit-any]
+        """Calculate the FTE trace for the project over a given timerange.
+
+        This is calculated by summing the trace of all the phases of the project,
+        which are assumed to be sequential and non-overlapping.
+
+        Args:
+            timerange: The timerange to calculate the FTE trace over.
+
+        Returns:
+            A pandas Series with the FTE trace over the timerange, or a trace of 0 if
+            there are no phases.
+        """
+        assert self.start_date is not None
+        assert self.end_date is not None
+
+        timerange = (
+            timerange
+            if timerange is not None
+            else pd.date_range(start=self.start_date, end=self.end_date)
+        )
+        if self.phases.exists():
+            return cast(  # type: ignore[explicit-any]
+                pd.Series, sum(phase.trace(timerange) for phase in self.phases.all())
+            )
+        return pd.Series(0.0, index=timerange)
+
 
 class Funding(models.Model):
     """Funding associated with a project."""
@@ -606,24 +633,38 @@ class Funding(models.Model):
         """
         return float(round(self.funding_left / self.daily_rate, 1))
 
-    @property
-    def monthly_pro_rata_charge(self) -> float | None:
+    def monthly_pro_rata_charge(self, date: date) -> float | None:
         """Calculate the charge per month if the project has Pro-rata charging.
 
         Calculates the number of months between project start and end date regardless
         of the day of the month so the monthly charge will be the same regardless
         of the number of days in the month.
+
+        The last month of the project is not charged, so the charge applies from the
+        month of the start date until the month before the end date, to ensure that no
+        charges are made outside of the project period. For example, if a project
+        starts on 15th January and ends on 10th April, the charge will apply for
+        January, February and March, but not April.
+
+        Args:
+            date: The date for which to calculate the monthly charge, used to check if
+                the project has started and hasn't ended yet.
+
+        Returns:
+            The monthly charge amount, or None if the project doesn't have Pro-rata
+            charging or the date is outside the project period.
         """
         if (
             self.project.charging == "Pro-rata"
             and self.project.start_date
             and self.project.end_date
+            and self.project.start_date.month
+            <= date.month
+            < self.project.end_date.month
         ):
             months = (
-                (self.project.end_date.year - self.project.start_date.year) * 12
-                + (self.project.end_date.month - self.project.start_date.month)
-                + 1
-            )
+                self.project.end_date.year - self.project.start_date.year
+            ) * 12 + (self.project.end_date.month - self.project.start_date.month)
             return float(self.budget / months)
         return None
 
@@ -835,9 +876,9 @@ class FullTimeEquivalent(models.Model):
     @classmethod
     def from_days(  # type: ignore[explicit-any]
         cls,
-        days: int,
-        start_date: datetime,
-        end_date: datetime,
+        days: float,
+        start_date: date,
+        end_date: date,
         **kwargs: Any,
     ) -> None:
         """Creates an FTE object given a number of days time period."""
@@ -846,12 +887,14 @@ class FullTimeEquivalent(models.Model):
         # use WORKING_DAYS to estimate day_difference minus weekends & holidays
         day_difference = date_difference * WORKING_DAYS / 365
         # FTE will then be the # of days work / the (weighted) time period in days
-        cls.objects.create(  # type: ignore[attr-defined]
+        obj = cls(
             value=days / day_difference,
             start_date=start_date,
             end_date=end_date,
             **kwargs,
         )
+        obj.clean()
+        obj.save()
 
     @property
     def days(self) -> int:
@@ -866,12 +909,17 @@ class FullTimeEquivalent(models.Model):
         If timerange is provided, those dates are used, otherwise a datetime index is
         created using the start and end dates of the FTE object.
         """
-        if timerange:
+        if timerange is not None:
             idx = timerange.copy()
+            output = pd.Series(0.0, index=idx)
+            output.loc[pd.Timestamp(self.start_date) : pd.Timestamp(self.end_date)] = (
+                self.value
+            )
         else:
             idx = pd.date_range(start=self.start_date, end=self.end_date)
+            output = pd.Series(self.value, index=idx)
 
-        return pd.Series(self.value, index=idx)
+        return output
 
     def clean(self) -> None:
         """Ensure start date comes before end date and that value 0 or positive."""
