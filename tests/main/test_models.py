@@ -379,6 +379,28 @@ class TestProject:
         effort_per_day = total_effort / project.total_working_days
         assert project.effort_per_day == effort_per_day
 
+    @pytest.mark.django_db
+    def test_fte(self, project):
+        """Test the fte method."""
+        from main import models
+
+        assert (project.fte() == 0).all()
+
+        models.ProjectPhase.objects.create(
+            project=project,
+            value=0.5,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
+        assert (project.fte() == 0.5).all()
+
+        timerange = pd.date_range(
+            start=project.start_date, end=project.end_date + timedelta(days=30)
+        )  # add extra days to check that FTE is 0 outside of project period
+        output = project.fte(timerange)
+        assert (output.loc[project.start_date : project.end_date] == 0.5).all()
+        assert (output.loc[~output.index.isin(timerange)] == 0).all()
+
 
 class TestFunding:
     """Tests for the funding model."""
