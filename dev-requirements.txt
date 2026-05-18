@@ -61,7 +61,7 @@ django-stubs[compatible-mypy]==6.0.3
     # via procat (pyproject.toml)
 django-stubs-ext==6.0.4
     # via django-stubs
-django-tables2==2.8.0
+django-tables2==3.0.0
     # via procat (pyproject.toml)
 djlint==1.36.4
     # via procat (pyproject.toml)
