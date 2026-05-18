@@ -202,7 +202,7 @@ virtualenv==20.36.1
     # via pre-commit
 wheel==0.46.3
     # via pip-tools
-whitenoise==6.11.0
+whitenoise==6.12.0
     # via procat (pyproject.toml)
 xyzservices==2025.11.0
     # via bokeh

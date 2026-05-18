@@ -178,7 +178,7 @@ urllib3==2.6.3
     #   types-requests
 watchdog==6.0.0
     # via mkdocs
-whitenoise==6.11.0
+whitenoise==6.12.0
     # via procat (pyproject.toml)
 xyzservices==2025.11.0
     # via bokeh
