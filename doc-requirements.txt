@@ -172,7 +172,7 @@ tornado==6.5.4
     # via bokeh
 types-requests==2.32.4.20260107
     # via procat (pyproject.toml)
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   requests
     #   types-requests
