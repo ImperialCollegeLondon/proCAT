@@ -129,7 +129,7 @@ pillow==12.1.1
     # via bokeh
 pip-tools==7.5.2
     # via procat (pyproject.toml)
-platformdirs==4.5.1
+platformdirs==4.9.6
     # via virtualenv
 pluggy==1.6.0
     # via
