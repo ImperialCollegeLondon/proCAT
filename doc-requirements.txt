@@ -47,7 +47,7 @@ django-crispy-forms==2.5
     #   procat (pyproject.toml)
 django-filter==25.2
     # via procat (pyproject.toml)
-django-tables2==2.8.0
+django-tables2==3.0.0
     # via procat (pyproject.toml)
 ghp-import==2.1.0
     # via mkdocs
