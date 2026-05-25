@@ -115,7 +115,7 @@ packaging==26.1
     #   build
     #   pytest
     #   wheel
-pandas==3.0.1
+pandas==3.0.3
     # via
     #   bokeh
     #   procat (pyproject.toml)
