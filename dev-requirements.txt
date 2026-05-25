@@ -93,7 +93,7 @@ markupsafe==3.0.3
     # via jinja2
 mozilla-django-oidc==5.0.2
     # via procat (pyproject.toml)
-mypy==1.19.1
+mypy==2.1.0
     # via
     #   django-stubs
     #   procat (pyproject.toml)
