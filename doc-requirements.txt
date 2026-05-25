@@ -28,7 +28,7 @@ crispy-bootstrap5==2026.3
     # via procat (pyproject.toml)
 cryptography==46.0.5
     # via mozilla-django-oidc
-django==6.0.1
+django==6.0.5
     # via
     #   crispy-bootstrap5
     #   django-bootstrap5
