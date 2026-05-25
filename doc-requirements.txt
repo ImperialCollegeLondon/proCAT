@@ -126,7 +126,7 @@ packaging==26.1
     #   mkdocs
 paginate==0.5.7
     # via mkdocs-material
-pandas==3.0.1
+pandas==3.0.3
     # via
     #   bokeh
     #   procat (pyproject.toml)
