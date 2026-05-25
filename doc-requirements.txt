@@ -55,7 +55,7 @@ griffelib==2.0.2
     # via mkdocstrings-python
 huey==3.0.0
     # via procat (pyproject.toml)
-idna==3.15
+idna==3.16
     # via requests
 jinja2==3.1.6
     # via
