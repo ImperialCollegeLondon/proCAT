@@ -127,7 +127,7 @@ pathspec==1.0.4
     #   mypy
 pillow==12.1.1
     # via bokeh
-pip-tools==7.5.2
+pip-tools==7.5.3
     # via procat (pyproject.toml)
 platformdirs==4.9.6
     # via virtualenv
