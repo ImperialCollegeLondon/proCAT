@@ -10,7 +10,7 @@ babel==2.18.0
     # via mkdocs-material
 backrefs==6.1
     # via mkdocs-material
-bokeh==3.8.2
+bokeh==3.9.0
     # via procat (pyproject.toml)
 certifi==2026.1.4
     # via requests
