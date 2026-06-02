@@ -3,5 +3,6 @@
 !manage.py
 !requirements.txt
 !procat
+!templates
 !db
 db/*
