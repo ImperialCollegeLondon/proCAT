@@ -3,8 +3,8 @@
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import QuerySet
-from django.http import HttpRequest, HttpResponseRedirect
-from django.urls import path, reverse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.urls import URLPattern, path, reverse
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (
@@ -83,7 +83,7 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     )
     list_filter = ("user", "project")
 
-    def get_urls(self):
+    def get_urls(self) -> list[URLPattern]:
         """Get urls for this admin view."""
         urls = super().get_urls()
         custom_urls = [
@@ -95,7 +95,7 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         ]
         return custom_urls + urls
 
-    def sync_time_entries_view(self, request: HttpRequest):
+    def sync_time_entries_view(self, request: HttpRequest) -> HttpResponse:
         """Forces a synchronisation of Clockify time entries."""
         issues = sync_clockify_time_entries()
         if not issues:
