@@ -901,7 +901,7 @@ class FullTimeEquivalent(models.Model):
         """Convert FTE to days using the working days in a year in the settings."""
         date_difference = (self.end_date - self.start_date).days
 
-        return round(self.value * date_difference * WORKING_DAYS / 365)
+        return round(self.value * date_difference * WORKING_DAYS / 365, 1)
 
     def trace(self, timerange: pd.DatetimeIndex | None = None) -> "pd.Series[float]":
         """Convert the FTE to a dataframe.
