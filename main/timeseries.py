@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from typing import cast
 
 import pandas as pd
 from django.db.models import (
@@ -69,9 +70,10 @@ def get_effort_timeseries(
     Returns:
         Pandas series of aggregated effort with date range as index.
     """
-    dates = pd.bdate_range(
-        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left"
+    dates = pd.date_range(
+        pd.Timestamp(start_date.date()), pd.Timestamp(end_date.date()), tz=UTC
     )
+
     # filter Projects to ensure dates exist and overlap with timeseries dates
     projects = list(
         models.Project.objects.filter(
@@ -83,14 +85,9 @@ def get_effort_timeseries(
             Q(status__in=project_statuses) if project_statuses else Q()
         )
     )
-    projects = [project for project in projects if project.funding_source.exists()]
 
-    # initialize timeseries
-    timeseries = pd.Series(0.0, index=dates)
-    for project in projects:
-        timeseries = update_timeseries(timeseries, project, "effort_per_day")
-
-    return timeseries
+    timeseries = sum(project.fte(dates) for project in projects)
+    return cast("pd.Series[float]", timeseries)
 
 
 def get_internal_effort_timeseries(
@@ -110,7 +107,7 @@ def get_internal_effort_timeseries(
     Returns:
         Pandas Series containing internal effort timeseries data.
     """
-    dates = pd.bdate_range(
+    dates = pd.date_range(
         pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left", tz=TIME_ZONE
     )
     # filter Projects to ensure dates exist and overlap with timeseries dates
@@ -128,12 +125,8 @@ def get_internal_effort_timeseries(
         if project.funding_source.filter(source="Internal").exists()
     ]
 
-    # initialize timeseries
-    timeseries = pd.Series(0.0, index=dates)
-    for project in projects:
-        timeseries = update_timeseries(timeseries, project, "effort_per_day")
-
-    return timeseries
+    timeseries = sum(project.fte(dates) for project in projects)
+    return cast("pd.Series[float]", timeseries)
 
 
 def get_team_members_timeseries(
