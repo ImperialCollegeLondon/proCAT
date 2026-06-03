@@ -20,15 +20,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v6
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: ${{matrix.python-version}}
-          cache: pip
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r dev-requirements.txt
-          pip install -e .
+          enable-cache: true
+          prune-cache: false
+          activate-environment: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install project
+        run: uv sync
 
       - name: Run mypy
         run: mypy .
@@ -42,9 +43,6 @@ jobs:
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Install doc dependencies
-        run: pip install -r doc-requirements.txt
 
       - name: Check that documentation builds cleanly with MkDocs
         if: matrix.os == 'ubuntu-latest'
