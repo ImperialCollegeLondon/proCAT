@@ -46,4 +46,6 @@ jobs:
 
       - name: Check that documentation builds cleanly with MkDocs
         if: matrix.os == 'ubuntu-latest'
-        run: mkdocs build --strict
+        run: |
+          uv sync --group doc
+          mkdocs build --strict
