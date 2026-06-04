@@ -1,7 +1,8 @@
 *
 !main
 !manage.py
-!requirements.txt
+!pyproject.toml
+!uv.lock
 !procat
 !templates
 !db

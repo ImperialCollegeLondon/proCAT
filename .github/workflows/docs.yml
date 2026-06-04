@@ -31,12 +31,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.13'
-          cache: pip
-      - name: Install dependencies
-        run: pip install -r doc-requirements.txt
+          enable-cache: true
+          prune-cache: false
+          activate-environment: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install project
+        run: uv sync --group doc
+
       - name: Build docs with MkDocs
         run: mkdocs build --strict
       - name: Setup Pages

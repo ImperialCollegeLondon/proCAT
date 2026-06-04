@@ -4,6 +4,7 @@ import csv
 import io
 from _csv import Writer
 from datetime import date, datetime, timedelta
+from typing import cast
 
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet, Sum
@@ -131,7 +132,9 @@ def create_actual_monthly_charges(
             total_days -= days_deduce
 
             # update time entries with monthly charge
-            for time_entry in models.TimeEntry.objects.filter(pk__in=pks):
+            for time_entry in models.TimeEntry.objects.filter(
+                pk__in=cast(list[int], pks)
+            ):
                 time_entry.monthly_charge.add(charge)
 
 
