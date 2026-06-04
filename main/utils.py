@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -51,7 +51,7 @@ def create_analysis(*args: Any) -> None:  # type: ignore [explicit-any]
 
 def destroy_analysis(*args: Any) -> None:  # type: ignore [explicit-any]
     """Delete default analysis codes."""
-    codes = [ac["code"] for ac in ANALYSIS_CODES]
+    codes = cast("Iterable[str]", [ac["code"] for ac in ANALYSIS_CODES])
     models.AnalysisCode.objects.filter(code__in=codes).delete()
 
 
