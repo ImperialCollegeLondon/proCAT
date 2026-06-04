@@ -125,7 +125,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         sizing_mode="stretch_width",
     )
     if x_range:
-        plot.x_range = Range1d(x_range[0], x_range[1])
+        plot.x_range = Range1d(x_range[0], x_range[1])  # type: ignore[arg-type]
     plot.yaxis.axis_label = "Value"
     plot.xaxis.axis_label = "Date"
 

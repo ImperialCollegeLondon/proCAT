@@ -120,6 +120,10 @@ class ProjectTable(tables.Table):
         """Render the days_left with Bootstrap badge classes."""
         return self._style_fraction(value)
 
+    def render_total_effort(self, value: float) -> str:
+        """Render the total effort left with just two decimals."""
+        return str(round(value, 2))
+
     def _style_fraction(self, value: tuple[int, float]) -> str:
         """Render the fraction of days with Bootstrap badge classes.
 
@@ -252,43 +256,24 @@ class ProjectPhaseTable(tables.Table):
     )
 
     start_date = tables.Column(
-        attrs={
-            "th": {
-                "title": "The total effort in days available,\n"
-                "before any deductions are made."
-            }
-        },
+        attrs={"th": {"title": "The start date of the phase."}},
     )
 
     end_date = tables.Column(
-        attrs={
-            "th": {
-                "title": "The amount of days remaining,\n"
-                "after deducting confirmed monthly\n"
-                "charges."
-            }
-        },
+        attrs={"th": {"title": "The end date of the phase."}},
     )
 
     days = tables.Column(
-        attrs={
-            "th": {
-                "title": "The amount of days remaining,\n"
-                "after deducting confirmed monthly\n"
-                "charges."
-            }
-        },
+        attrs={"th": {"title": "The number of working days in the phase."}},
     )
 
     value = tables.Column(
-        attrs={
-            "th": {
-                "title": "The amount of funding remaining,\n"
-                "after deducting confirmed monthly\n"
-                "charges."
-            }
-        },
+        attrs={"th": {"title": "The FTE associated to the phase."}},
     )
+
+    def render_value(self, value: float) -> str:
+        """Render the FTE value with just two decimals."""
+        return str(round(value, 2))
 
     class Meta:
         """Meta class for the table."""

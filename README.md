@@ -10,7 +10,7 @@ A Django web app for hosting the Project Charging and Analytics Tool (proCAT).
 
 This Django project uses:
 
-- [`pip-tools`][pip-tools] for packaging and dependency management.
+- [`uv`][uv] for packaging and dependency management.
 - [`pre-commit`][pre-commit] for various linting, formatting and static type checking.
   - Pre-commit hooks are automatically kept updated with [pre-commit.ci][pre-commit.ci].
 - [`pytest`][pytest] and [GitHub Actions][GitHub Actions].
@@ -26,23 +26,17 @@ To get started:
    git init
    ```
 
-1. Create and activate a [virtual environment]:
+1. Create and activate a virtual environment. This creates a `.venv` in the same
+  directory with the environment, including the `dev` dependencies:
 
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate # with Powershell on Windows: `.venv\Scripts\Activate.ps1`
-   ```
-
-1. Install development requirements:
-
-   ```bash
-   pip install -r dev-requirements.txt
+   uv sync
    ```
 
 1. (Optionally) install tools for building documentation:
 
    ```bash
-   pip install -r doc-requirements.txt
+   uv sync --group doc
    ```
 
 1. Install the git hooks:
@@ -115,30 +109,25 @@ The documentation is built using the [Material theme for MkDocs](https://squidfu
 
 ## Updating Dependencies
 
-To add or remove dependencies:
+You can check all the options for [managing dependencies with uv], but a summary would be:
 
-1. Edit the `dependencies` variables in the `pyproject.toml` file (aim to keep
-development tools separate from the project requirements).
-1. Update the requirements files:
-   - `pip-compile` for `requirements.txt` - the project requirements.
-   - `pip-compile --extra dev -o dev-requirements.txt` for the development requirements.
-   - `pip-compile --extra doc -o doc-requirements.txt` for
-the documentation tools.
-1. Sync the files with your installation (install packages):
-   - `pip-sync *requirements.txt`
+1. To add a dependency use `uv add dependency_name`.
+2. You can add it to a group, as well with the `--group` flag,
+  eg. `uv add --group dev dependency_name`.
+3. To remove a dependency use `uv remove dependency_name`.
 
-To upgrade pinned versions, use the `--upgrade` flag with `pip-compile`.
+To upgrade pinned versions, use `uv lock --upgrade`.
 
 Versions can be restricted from updating within the `pyproject.toml` using standard
 python package version specifiers, i.e. `"black<23"` or `"pip-tools!=6.12.2"`
 
-[pip-tools]: https://pip-tools.readthedocs.io/en/stable/
+[uv]: https://docs.astral.sh/uv/
 [pre-commit]: https://pre-commit.com/
 [pytest]: https://pytest.org/
 [GitHub Actions]: https://github.com/features/actions
 [pre-commit.ci]: https://pre-commit.ci
 [Docker]: https://docs.docker.com/desktop/
-[virtual environment]: https://docs.python.org/3/library/venv.html
+[managing dependencies with uv]: https://docs.astral.sh/uv/concepts/projects/dependencies/
 
 ## Contributors ✨
 
