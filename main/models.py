@@ -1057,3 +1057,19 @@ class ProjectPhase(FullTimeEquivalent):
         self.check_overlapping_phases()
         self.check_phase_alignment()
         self.check_project_funding()
+
+    @property
+    def expected_days_left(self) -> float:
+        """Expected number of days left in the phase.
+
+        If the days were to be used homogenously over the phase length, this function
+        calculates how many days of effort are left from today. In phases that have not
+        started (today < start date), the days left will be the total number of days,
+        and phases that are gone (today > end date) the total number of days will be
+        zero.
+        """
+        total_calendar_days = (self.end_date - self.start_date).days
+        fraction_left = min(
+            1, max((self.end_date - timezone.now().date()).days, 0) / total_calendar_days
+        )
+        return fraction_left * self.days

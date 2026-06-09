@@ -1244,3 +1244,45 @@ class TestProjectPhase:
         with validation_error as e:
             phase.clean()
         assert message is None or message in str(e)
+
+    def test_before_phase_returns_total_days(self, project_static):
+        """When today is before the start date, all days should remain."""
+        from main import models
+
+        today = timezone.now()
+        phase = models.ProjectPhase(
+            project=project_static,
+            value=0.7,
+            start_date=(today + timedelta(days=10)).date(),
+            end_date=(today + timedelta(days=40)).date(),
+        )
+
+        assert phase.expected_days_left == phase.days
+
+    def test_after_phase_returns_zero(self, project_static):
+        """When today is after the end date, no days should remain."""
+        from main import models
+
+        today = timezone.now()
+        phase = models.ProjectPhase(
+            project=project_static,
+            value=0.7,
+            start_date=(today - timedelta(days=40)).date(),
+            end_date=(today - timedelta(days=10)).date(),
+        )
+
+        assert phase.expected_days_left == 0
+
+    def test_midpoint_of_phase_returns_half_days(self, project_static):
+        """When today is exactly halfway through, half the days should remain."""
+        from main import models
+
+        today = timezone.now()
+        phase = models.ProjectPhase(
+            project=project_static,
+            value=0.7,
+            start_date=(today - timedelta(days=40)).date(),
+            end_date=(today + timedelta(days=40)).date(),
+        )
+
+        assert phase.expected_days_left == phase.days / 2
