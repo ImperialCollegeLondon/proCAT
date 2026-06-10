@@ -1,6 +1,8 @@
 """Models module for main app."""
 
-from datetime import date, timedelta
+from __future__ import annotations
+
+from datetime import UTC, date, timedelta
 from decimal import Decimal
 from typing import Any, cast
 
@@ -448,7 +450,7 @@ class Project(Warning, models.Model):
         timerange = (
             timerange
             if timerange is not None
-            else pd.date_range(start=self.start_date, end=self.end_date)
+            else pd.date_range(start=self.start_date, end=self.end_date, tz=UTC)
         )
         if self.phases.exists():
             return cast(  # type: ignore[explicit-any]
@@ -903,7 +905,7 @@ class FullTimeEquivalent(models.Model):
 
         return round(self.value * date_difference * WORKING_DAYS / 365)
 
-    def trace(self, timerange: pd.DatetimeIndex | None = None) -> "pd.Series[float]":
+    def trace(self, timerange: pd.DatetimeIndex | None = None) -> pd.Series[float]:
         """Convert the FTE to a dataframe.
 
         If timerange is provided, those dates are used, otherwise a datetime index is
@@ -912,11 +914,13 @@ class FullTimeEquivalent(models.Model):
         if timerange is not None:
             idx = timerange.copy()
             output = pd.Series(0.0, index=idx)
-            output.loc[pd.Timestamp(self.start_date) : pd.Timestamp(self.end_date)] = (
-                self.value
-            )
+            output.loc[
+                pd.Timestamp(self.start_date, tz=UTC) : pd.Timestamp(
+                    self.end_date, tz=UTC
+                )
+            ] = self.value
         else:
-            idx = pd.date_range(start=self.start_date, end=self.end_date)
+            idx = pd.date_range(start=self.start_date, end=self.end_date, tz=UTC)
             output = pd.Series(self.value, index=idx)
 
         return output
