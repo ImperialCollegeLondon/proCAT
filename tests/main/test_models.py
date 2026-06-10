@@ -408,6 +408,86 @@ class TestProject:
         ).all()
         assert (output.loc[~output.index.isin(timerange)] == 0).all()
 
+    @pytest.mark.django_db
+    def test_no_phases_returns_zero_series(self, project_mid):
+        """When no phases exist, the output should be all zeros."""
+        timerange = make_timerange(
+            start_date=project_mid.start_date, end_date=project_mid.end_date
+        )
+        result = project_mid._excess_fte(timerange)
+        assert (result == 0.0).all()
+
+    @pytest.mark.django_db
+    def test_no_excess_returns_zero_series(self, project_mid):
+        """When days_left <= expected_left across phases, excess FTE should be zero."""
+        from main import models
+
+        timerange = make_timerange(
+            start_date=project_mid.start_date, end_date=project_mid.end_date
+        )
+        models.ProjectPhase.from_days(
+            days=project_mid.total_effort,
+            start_date=project_mid.start_date,
+            end_date=project_mid.end_date,
+            project=project_mid,
+        )
+
+        # We have consumed most of the time
+        now = timezone.now()
+        models.TimeEntry.objects.create(
+            user=project_mid.lead,
+            project=project_mid,
+            start_time=now - timedelta(days=project_mid.total_effort + 1),
+            end_time=now,
+        )
+
+        # days_left[0] will be <= expected_days_left, so no excess
+        result = project_mid._excess_fte(timerange)
+        assert (result == 0.0).all()
+
+    @pytest.mark.django_db
+    def test_excess_returns_positive_fte_from_today_to_end_date(self, project_mid):
+        """When days_left > expected_left, a positive FTE is set from now to end."""
+        from main import models
+
+        timerange = make_timerange(
+            start_date=project_mid.start_date, end_date=project_mid.end_date
+        )
+        models.ProjectPhase.from_days(
+            days=project_mid.total_effort,
+            start_date=project_mid.start_date,
+            end_date=project_mid.end_date,
+            project=project_mid,
+        )
+
+        result = project_mid._excess_fte(timerange)
+
+        today = timezone.now()  # Already has tz
+        past = result[result.index < pd.Timestamp(today)]
+        future = result[
+            (result.index >= pd.Timestamp(today))
+            & (result.index <= pd.Timestamp(project_mid.end_date, tz=UTC))
+        ]
+
+        assert (past == 0.0).all()
+        assert (future > 0.0).all()
+
+
+def make_timerange(
+    start_date: datetime | None = None, end_date: datetime | None = None
+) -> pd.DatetimeIndex:
+    """A simple daily timerange."""
+    today = timezone.now()
+    start_date = start_date if start_date else today - timedelta(days=10)
+    end_date = end_date if end_date else today + timedelta(days=10)
+
+    return pd.date_range(
+        start=start_date,
+        end=end_date,
+        freq="D",
+        tz=UTC,
+    )
+
 
 class TestFunding:
     """Tests for the funding model."""

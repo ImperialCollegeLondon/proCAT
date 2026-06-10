@@ -59,6 +59,35 @@ def project(user, department):
 
 
 @pytest.fixture
+def project_mid(user, department, analysis_code):
+    """Provides a project object halfway through it lifetime."""
+    from main import models
+
+    project = models.Project.objects.get_or_create(
+        name="ProCAT",
+        department=department,
+        lead=user,
+        start_date=timezone.now().date() - timedelta(days=42),
+        end_date=timezone.now().date() + timedelta(days=42),
+        status="Active",
+    )[0]
+
+    _ = models.Funding.objects.get_or_create(
+        project=project,
+        source="External",
+        funding_body="Funding body",
+        cost_centre="centre",
+        activity="G12345",
+        analysis_code=analysis_code,
+        expiry_date=timezone.now().date() + timedelta(days=42),
+        budget=10000.00,
+        daily_rate=389.00,
+    )[0]
+
+    return project
+
+
+@pytest.fixture
 def project_static(user, department, analysis_code):
     """Provides a statically dated project object with funding."""
     from main import models
