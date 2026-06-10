@@ -455,8 +455,39 @@ class Project(Warning, models.Model):
         if self.phases.exists():
             return cast(  # type: ignore[explicit-any]
                 pd.Series, sum(phase.trace(timerange) for phase in self.phases.all())
-            )
+            ) + self._excess_fte(timerange)
         return pd.Series(0.0, index=timerange)
+
+    def _excess_fte(self, timerange: pd.DatetimeIndex) -> pd.Series:  # type: ignore[explicit-any]
+        """Calculate the excess FTE due to not using enough time of a project.
+
+        This will be homogeneously spread over the remaining time of the project. If
+        time left is more than what it should, then the excess FTE will be positive,
+        otherwise, it will be zero.
+
+        Args:
+            timerange: The timerange to calculate the excess FTE trace over.
+
+        Returns:
+            A pandas Series with the excess FTE trace over the timerange.
+        """
+        output = pd.Series(0.0, index=timerange)
+        if not self.phases.exists() or not self.days_left:
+            return output
+
+        # Extra days available
+        expected_left = sum(phase.expected_days_left for phase in self.phases.all())
+        excess_left = max(self.days_left[0] - expected_left, 0)
+
+        # Period to use them
+        now = timezone.now().date()
+        day_difference = (self.end_date - now).days * WORKING_DAYS / 365
+
+        # Actual excess full time equivalent needed to use those days over the time left
+        excess_fte = excess_left / day_difference
+        output.loc[now : pd.Timestamp(self.end_date, tz=UTC)] = excess_fte
+
+        return output
 
 
 class Funding(models.Model):
@@ -1062,7 +1093,7 @@ class ProjectPhase(FullTimeEquivalent):
     def expected_days_left(self) -> float:
         """Expected number of days left in the phase.
 
-        If the days were to be used homogenously over the phase length, this function
+        If the days were to be used homogeneously over the phase length, this function
         calculates how many days of effort are left from today. In phases that have not
         started (today < start date), the days left will be the total number of days,
         and phases that are gone (today > end date) the total number of days will be
@@ -1070,6 +1101,7 @@ class ProjectPhase(FullTimeEquivalent):
         """
         total_calendar_days = (self.end_date - self.start_date).days
         fraction_left = min(
-            1, max((self.end_date - timezone.now().date()).days, 0) / total_calendar_days
+            1,
+            max((self.end_date - timezone.now().date()).days, 0) / total_calendar_days,
         )
         return fraction_left * self.days
