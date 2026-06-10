@@ -4,5 +4,6 @@
 !pyproject.toml
 !uv.lock
 !procat
+!templates
 !db
 db/*

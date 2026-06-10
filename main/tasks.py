@@ -284,17 +284,22 @@ def sync_clockify_time_entries(
     days_back: int = 30,
     end_date: datetime.datetime = timezone.now(),
     page_size: int = 1000,
-) -> None:
+) -> bool:
     """Task to sync time entries from Clockify API to TimeEntry model.
 
     Args:
         days_back (int): Number of days to look back for time entries.
         end_date (datetime.datetime): The end date for the time entries to fetch.
         page_size (int): Number of entries to fetch per API call.
+
+    Returns:
+        True if there is any issue, and False if all went well.
     """
+    issues = False
     if not settings.CLOCKIFY_API_KEY or not settings.CLOCKIFY_WORKSPACE_ID:
         logger.warning("Clockify API key not found in environment variables")
-        return
+        return True
+
     api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
     start_date = end_date - datetime.timedelta(days=days_back)
 
@@ -314,6 +319,7 @@ def sync_clockify_time_entries(
             logger.error(
                 f"Error fetching time entries for project {project.clockify_id}: {e}"
             )
+            issues = issues or True
             continue
 
         entries = response.get("timeentries", [])
@@ -331,6 +337,7 @@ def sync_clockify_time_entries(
 
             if not (project_id and user_email and start and end and entry_id):
                 logger.warning(f"Skipping incomplete entry: {entry_id}")
+                issues = issues or True
                 continue
 
             try:
@@ -339,6 +346,7 @@ def sync_clockify_time_entries(
                 logger.warning(
                     f"User {user_email} not found. Skipping entry {entry_id}."
                 )
+                issues = issues or True
                 continue
 
             start_time = datetime.datetime.fromisoformat(start.replace("Z", "+00:00"))
@@ -367,6 +375,8 @@ def sync_clockify_time_entries(
             logger.info(
                 f"Removed {deleted_count} stale entries for project {project.clockify_id}"  # noqa E501
             )
+
+    return issues
 
 
 @db_periodic_task(crontab(**settings.HUEY_TASK_SCHEDULES["SYNC_CLOCKIFY_TIME_ENTRIES"]))

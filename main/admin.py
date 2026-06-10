@@ -1,9 +1,10 @@
 """Admin module for the main app."""
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import QuerySet
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.urls import URLPattern, path, reverse
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (
@@ -16,6 +17,7 @@ from .models import (
     TimeEntry,
     User,
 )
+from .tasks import sync_clockify_time_entries
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Department)
@@ -80,6 +82,31 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "end_time",
     )
     list_filter = ("user", "project")
+
+    def get_urls(self) -> list[URLPattern]:
+        """Get urls for this admin view."""
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "sync_clockify/",
+                self.sync_time_entries_view,
+                name="sync-clockify",
+            )
+        ]
+        return custom_urls + urls
+
+    def sync_time_entries_view(self, request: HttpRequest) -> HttpResponse:
+        """Forces a synchronisation of Clockify time entries."""
+        issues = sync_clockify_time_entries()
+        if not issues:
+            self.message_user(request, "Syncronysation completted successfully!")
+        else:
+            self.message_user(
+                request,
+                "Something went wrong with the synchronisation. Check the logs.",
+                level=messages.ERROR,
+            )
+        return HttpResponseRedirect(reverse("admin:main_timeentry_changelist"))
 
 
 @admin.register(MonthlyCharge)

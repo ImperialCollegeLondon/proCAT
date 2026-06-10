@@ -1,0 +1,8 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+
+  <a class="button" href="{% url 'admin:sync-clockify' %}">Synchronise Clockify</a>
+
+{% endblock object-tools-items %}

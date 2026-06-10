@@ -1,7 +1,7 @@
 """Tests for the models."""
 
 from contextlib import nullcontext as does_not_raise
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pandas as pd
 import pytest
@@ -395,10 +395,17 @@ class TestProject:
         assert (project.fte() == 0.5).all()
 
         timerange = pd.date_range(
-            start=project.start_date, end=project.end_date + timedelta(days=30)
+            start=project.start_date, end=project.end_date + timedelta(days=30), tz=UTC
         )  # add extra days to check that FTE is 0 outside of project period
         output = project.fte(timerange)
-        assert (output.loc[project.start_date : project.end_date] == 0.5).all()
+        assert (
+            output.loc[
+                pd.Timestamp(project.start_date, tz=UTC) : pd.Timestamp(
+                    project.end_date, tz=UTC
+                )
+            ]
+            == 0.5
+        ).all()
         assert (output.loc[~output.index.isin(timerange)] == 0).all()
 
 
@@ -867,11 +874,11 @@ class TestProjectPhase:
             start_date=start_date,
             end_date=end_date,
         )
-        project_timerange = pd.date_range(start=start_date, end=end_date)
+        project_timerange = pd.date_range(start=start_date, end=end_date, tz=UTC)
         assert (project_phase.trace() == 1).all()
 
         timerange = pd.date_range(
-            start=datetime(2024, 12, 1).date(), end=datetime(2025, 2, 1).date()
+            start=datetime(2024, 12, 1).date(), end=datetime(2025, 2, 1).date(), tz=UTC
         )
         output = project_phase.trace(timerange)
         assert (output.loc[project_timerange] == 1).all()

@@ -72,7 +72,7 @@ def test_get_effort_timeseries(
         end_date=end_date,
     )
 
-    funding = models.Funding.objects.create(
+    models.Funding.objects.create(
         project=project,
         source="External",
         cost_centre="centre",
@@ -82,19 +82,24 @@ def test_get_effort_timeseries(
         daily_rate=100.00,
     )
 
+    # Create a default phase covering the whole project
+    assert project.total_effort
+    models.ProjectPhase.from_days(
+        days=project.total_effort,
+        project=project,
+        start_date=project.start_date,
+        end_date=project.end_date,
+    )
+
     ts = timeseries.get_effort_timeseries(plot_start_date, plot_end_date)
     assert isinstance(ts, pd.Series)
 
-    effort = funding.budget / funding.daily_rate
-    effort_per_day = effort / project.total_working_days
-    n_entries = ts.value_counts()[effort_per_day]
+    n_entries = ts.value_counts()[project.fte().iloc[0]]
 
     # get intersecting dates
-    project_days = pd.bdate_range(start_date, end_date, inclusive="left", tz=TIME_ZONE)
-    plot_days = pd.bdate_range(
-        plot_start_date,
-        plot_end_date,
-        inclusive="left",
+    project_days = pd.date_range(start_date, end_date, tz=TIME_ZONE)
+    plot_days = pd.date_range(
+        plot_start_date.date(), plot_end_date.date(), tz=TIME_ZONE
     )
     n_days = len(project_days.intersection(plot_days))
     assert n_entries == n_days
@@ -151,16 +156,14 @@ def test_get_effort_timeseries_status_filter(
 
     # Check effort_per_day is totalled over all projects with no status filter
     ts = timeseries.get_effort_timeseries(start_date, end_date)
-    assert (
-        ts.iloc[0] == active_project.effort_per_day + tentative_project.effort_per_day
-    )
+    assert ts.iloc[0] == active_project.fte().iloc[0] + tentative_project.fte().iloc[0]
 
     # Check with status filter
     ts = timeseries.get_effort_timeseries(start_date, end_date, ["Active"])
-    assert ts.iloc[0] == active_project.effort_per_day
+    assert ts.iloc[0] == active_project.fte().iloc[0]
 
     ts = timeseries.get_effort_timeseries(start_date, end_date, ["Tentative"])
-    assert ts.iloc[0] == tentative_project.effort_per_day
+    assert ts.iloc[0] == tentative_project.fte().iloc[0]
 
 
 @pytest.mark.django_db
