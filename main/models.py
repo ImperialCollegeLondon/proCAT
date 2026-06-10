@@ -480,8 +480,8 @@ class Project(Warning, models.Model):
         excess_left = max(self.days_left[0] - expected_left, 0)
 
         # Period to use them
-        now = timezone.now().date()
-        day_difference = (self.end_date - now).days * WORKING_DAYS / 365
+        now = timezone.now()
+        day_difference = (self.end_date - now.date()).days * WORKING_DAYS / 365
 
         # Actual excess full time equivalent needed to use those days over the time left
         excess_fte = excess_left / day_difference
