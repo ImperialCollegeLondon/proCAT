@@ -471,6 +471,8 @@ class Project(Warning, models.Model):
         Returns:
             A pandas Series with the excess FTE trace over the timerange.
         """
+        assert self.end_date is not None
+
         output = pd.Series(0.0, index=timerange)
         if not self.phases.exists() or not self.days_left:
             return output
