@@ -27,28 +27,28 @@
           displays the average capacity for project work and the fraction of capacity
           that was recovered (based on Clockify data). The second plot, '<i>Total monthly
           charges</i>', shows aggregated monthly charges for each month.
-        </p>
-      </div>
-      <div class="col-md-6">
-        <form method="post">
-          <h6>Download charges report</h6>
-          {% csrf_token %}
-          {% bootstrap_form form layout="horizontal" %}
-          {% if user.is_superuser %}
-            {% bootstrap_button button_type="submit" content="Download CSV" %}
-          {% endif %}
-        </form>
-      </div>
+      </p>
     </div>
+    <div class="col-md-6">
+      <form method="post">
+        <h6>Download charges report</h6>
+        {% csrf_token %}
+        {% bootstrap_form form layout="horizontal" %}
+        {% if user.is_superuser %}
+          {% bootstrap_button button_type="submit" content="Download CSV" %}
+        {% endif %}
+      </form>
+    </div>
+  </div>
 
-    <br>
+  <br>
 
-    <!-- Bokeh plots -->
+  <!-- Bokeh plots -->
 
-    <h6>Cost recovery plots</h6>
+  <h6>Cost recovery plots</h6>
 
-    {{ script | safe }}
-    {{ div | safe }}
+  {{ script | safe }}
+  {{ div | safe }}
 
   </div>
 
