@@ -18,22 +18,22 @@ repos:
     hooks:
       - id: check-github-workflows
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.21
+    rev: v0.15.22
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.49.0
+    rev: v0.49.1
     hooks:
       - id: markdownlint-fix
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         args: [-I, .codespell_ignore.txt]
   - repo: https://github.com/djlint/djLint
-    rev: v1.40.6
+    rev: v1.41.0
     hooks:
       - id: djlint-reformat-django
       - id: djlint-django
