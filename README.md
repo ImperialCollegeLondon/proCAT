@@ -19,11 +19,16 @@ This Django project uses:
 
 To get started:
 
-1. Activate a git repository (required for `pre-commit` and the package versioning with
-`setuptools-scm`):
+1. Clone this repository:
 
    ```bash
-   git init
+   git clone https://github.com/ImperialCollegeLondon/proCAT.git
+   ```
+
+1. Move into the created repo.
+
+   ```bash
+   cd proCAT
    ```
 
 1. Create and activate a virtual environment. This creates a `.venv` in the same
