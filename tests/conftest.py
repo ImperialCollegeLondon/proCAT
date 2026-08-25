@@ -32,10 +32,31 @@ def user(django_user_model):
 
 
 @pytest.fixture
+def unauthorized_user(django_user_model):
+    """Provides a Django user with no extra permissions."""
+    user = django_user_model.objects.create_user(
+        first_name="Unauthorized",
+        last_name="user",
+        email="unauthorized.user@mail.com",
+        password="1234",
+        username="unauthorizeduser",
+    )
+    return user
+
+
+@pytest.fixture
 def auth_client(user) -> Client:
     """Return an authenticated client."""
     client = Client()
     client.force_login(user)
+    return client
+
+
+@pytest.fixture
+def auth_client_unauthorizeduser(unauthorized_user) -> Client:
+    """Return an authenticated client."""
+    client = Client()
+    client.force_login(unauthorized_user)
     return client
 
 
