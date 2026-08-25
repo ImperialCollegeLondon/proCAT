@@ -41,12 +41,13 @@ class RegistrationView(CreateView):  # type: ignore [type-arg]
     template_name = "registration/register.html"
 
 
-class ProjectsListView(LoginRequiredMixin, FilterView):
+class ProjectsListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
     """View to display the list of projects split in five pre-filtered tables."""
 
     model = models.Project
     template_name = "main/projects.html"
     filterset_fields = ("nature", "department", "status", "charging")
+    permission_required = "main.view_project"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add multiple pre-filtered tables to the context."""
@@ -190,10 +191,11 @@ class FundingDetailView(PermissionRequiredMixin, CustomBaseDetailView):
         return context
 
 
-class CapacityPlanningView(LoginRequiredMixin, TemplateView):
+class CapacityPlanningView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     """View that renders the Capacity Planning page."""
 
     template_name = "main/capacity_planning.html"
+    permission_required = "main.view_project"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add HTML components and Bokeh version to the context."""
@@ -204,10 +206,11 @@ class CapacityPlanningView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class CostRecoveryView(LoginRequiredMixin, FormView):  # type: ignore [type-arg]
+class CostRecoveryView(LoginRequiredMixin, PermissionRequiredMixin, FormView):  # type: ignore [type-arg]
     """View that renders the Cost Recovery page."""
 
     template_name = "main/cost_recovery.html"
+    permission_required = "main.view_project"
     form_class = forms.CostRecoveryForm
 
     def form_valid(self, form: Form) -> HttpResponse:

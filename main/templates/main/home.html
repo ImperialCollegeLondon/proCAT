@@ -1,10 +1,15 @@
 {% extends "main/base.html" %}
 {% block content %}
-{% load static %}
-<img
-    src="{% static 'ProCAT_logo.png' %}"
-    alt="ProCAT Logo"
-    class="img-fluid"
-    style="max-width: 50%; height: auto; display: block; margin: 50px auto;"
-/>
+
+  {% load static %}
+  <!-- djlint:off -->
+  <img src="{% static 'ProCAT_logo.png' %}"
+       alt="ProCAT Logo"
+       class="img-fluid"
+       style="max-width: 50%;
+              width: auto;
+              height: auto;
+              display: block;
+              margin: 50px auto" />
+  <!-- djlint:on -->
 {% endblock content %}
