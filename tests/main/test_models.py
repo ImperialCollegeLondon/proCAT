@@ -94,15 +94,21 @@ class TestProject:
         )
         project.clean()
 
-        # Change to active but no pk value
+        # Change to active but no pk value (project not saved yet)
         project.status = "Active"
-        project.clean()
-
-        # No funding, no active
-        project.save()
         with pytest.raises(
             ValidationError,
             match=r"Active and Confirmed projects must have at least 1 funding source.",
+        ):
+            project.clean()
+
+        # No funding, no active
+        project.save()
+        # pk value now exists, so the error changes too if funding not available
+        # or row in table is incomplete
+        with pytest.raises(
+            ValidationError,
+            match=r"Funding of Active and Confirmed projects must be complete.",
         ):
             project.clean()
 
