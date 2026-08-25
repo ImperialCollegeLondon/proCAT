@@ -28,6 +28,15 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
         return reverse("main:projects")
 
     @pytest.mark.django_db
+    def test_not_authorized(self, auth_client_unauthorizeduser):
+        """Test that an unauthorized user cannot see the page."""
+        endpoint = self._get_url()
+        response = auth_client_unauthorizeduser.get(endpoint)
+
+        # Check status code and context
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.django_db
     def test_get_context_data(self, auth_client, project):
         """Test that the view returns the correct context data with filtered tables."""
         endpoint = reverse("main:projects")
@@ -508,6 +517,15 @@ class TestCapacityPlanningView(LoginRequiredMixin, TemplateOkMixin):
     def _get_url(self):
         return reverse("main:capacity_planning")
 
+    @pytest.mark.django_db
+    def test_not_authorized(self, auth_client_unauthorizeduser):
+        """Test that an unauthorized user cannot see the page."""
+        endpoint = self._get_url()
+        response = auth_client_unauthorizeduser.get(endpoint)
+
+        # Check status code and context
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
     def test_get(self, auth_client, funding):
         """Tests the get method and the data provided."""
         import bokeh
@@ -527,6 +545,15 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
 
     def _get_url(self):
         return reverse("main:cost_recovery")
+
+    @pytest.mark.django_db
+    def test_not_authorized(self, auth_client_unauthorizeduser):
+        """Test that an unauthorized user cannot see the page."""
+        endpoint = self._get_url()
+        response = auth_client_unauthorizeduser.get(endpoint)
+
+        # Check status code and context
+        assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_get(self, auth_client):
         """Tests the get method and the data provided."""
