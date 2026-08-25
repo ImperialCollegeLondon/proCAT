@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.forms import Form, ModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -21,6 +22,11 @@ from django_filters.views import FilterView
 from django_tables2 import RequestConfig, SingleTableMixin
 
 from . import forms, models, plots, report, tables
+
+
+def index(request: HttpRequest) -> HttpResponse:
+    """View for the index page, using the home template."""
+    return render(request, "main/home.html")
 
 
 class RegistrationView(CreateView):  # type: ignore [type-arg]
