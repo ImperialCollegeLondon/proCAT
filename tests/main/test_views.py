@@ -319,7 +319,8 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
             "lead": user.pk,
             "start_date": timezone.now().date(),
             "end_date": timezone.now().date() + timedelta(days=42),
-            "status": "Active",
+            # Use 'Tentative' as 'Active' projects cannot be created without funding
+            "status": "Tentative",
             "charging": "Actual",
         }
 
@@ -343,6 +344,29 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
         assert response.status_code == HTTPStatus.OK
         projects = response.context["project_list"].values("name")[0]
         assert "Project 123" in projects["name"]
+
+    def test_post_active_without_funding_rejected(self, admin_client, department, user):
+        """Creating a project directly as 'Active' (no funding) must not be possible."""
+        data = {
+            "name": "Should Fail",
+            "nature": "Support",
+            "pi": "John Smith",
+            "department": department.pk,
+            "lead": user.pk,
+            "start_date": timezone.now().date(),
+            "end_date": timezone.now().date() + timedelta(days=42),
+            "status": "Active",
+            "charging": "Actual",
+        }
+
+        # Simulate admin logs in and tries to create form defined in `data`
+        response = admin_client.post("/projects/create/", data)
+        # Form is now invalid, post should not be saved
+        assert response.status_code == HTTPStatus.OK
+        # 200 is expected, nothing should be found in the db
+        assert not Project.objects.filter(name="Should Fail").exists()
+        # Check that the expected error is shown to the user
+        assert b"at least 1 funding source" in response.content
 
 
 @pytest.mark.usefixtures("project")
