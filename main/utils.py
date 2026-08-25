@@ -65,6 +65,16 @@ def destroy_HoRSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
     Group.objects.filter(name="HoRSE").delete()
 
 
+def create_RSETeam_group(*args: Any) -> None:  # type: ignore [explicit-any]
+    """Create RSETeam group."""
+    Group.objects.get_or_create(name="RSETeam")[0]
+
+
+def destroy_RSETeam_group(*args: Any) -> None:  # type: ignore [explicit-any]
+    """Delete RSETeam group."""
+    Group.objects.filter(name="RSETeam").delete()
+
+
 def get_logged_hours(
     entries: Iterable["TimeEntry"],
 ) -> tuple[float, str]:

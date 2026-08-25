@@ -33,6 +33,18 @@ def test_create_destroy_horse_group():
     assert Group.objects.filter(name="HoRSE").exists()
 
 
+@pytest.mark.django_db
+def test_create_destroy_rseteam_group():
+    """Roundtrip check of creation and destruction of the RSETeam group."""
+    from main import utils
+
+    assert Group.objects.filter(name="RSETeam").exists()
+    utils.destroy_RSETeam_group()
+    assert not Group.objects.filter(name="RSETeam").exists()
+    utils.create_RSETeam_group()
+    assert Group.objects.filter(name="RSETeam").exists()
+
+
 def test_get_head_email(user):
     """Test get_head_email function."""
     from main import utils
