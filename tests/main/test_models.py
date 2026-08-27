@@ -94,21 +94,21 @@ class TestProject:
         )
         project.clean()
 
-        # Change to active but no pk value (project not saved yet)
+        # Change to 'Active' but pK is None (status not saved yet, cannot create)
+        project.status = "Active"
+        with pytest.raises(ValidationError, match="cannot be created directly in"):
+            project.clean()
+
+        # Set to 'Tentative' and save in memory so that `was_active == FALSE` as
+        # per the new changes in `clean()`
+        project.status = "Tentative"
+        project.save()
+        # When trying yo update it to 'Active', there will be no funding
+        # and an error should occur
         project.status = "Active"
         with pytest.raises(
             ValidationError,
-            match=r"Active and Confirmed projects must have at least 1 funding source.",
-        ):
-            project.clean()
-
-        # No funding, no active
-        project.save()
-        # pk value now exists, so the error changes too if funding not available
-        # or row in table is incomplete
-        with pytest.raises(
-            ValidationError,
-            match=r"Funding of Active and Confirmed projects must be complete.",
+            match="cannot be made Active or Confirmed if",
         ):
             project.clean()
 
@@ -120,13 +120,28 @@ class TestProject:
         )
         with pytest.raises(
             ValidationError,
-            match=r"Funding of Active and Confirmed projects must be complete.",
+            match="cannot be made Active or Confirmed if",
         ):
             project.clean()
 
-        # Now things work, as the above is enough for an internal source to be complete
+        # Adding `funding.source` is not enough with new restrictions to when
+        # projects can become 'Active': there must be at least one phase to
+        # change the status of a project to 'Active'
         funding.source = "Internal"
         funding.save()
+        # Add phase
+        models.ProjectPhase.objects.create(
+            project=project,
+            value=1,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
+        # Test passes when trying to set it to 'Active' now that
+        # both funding and phase are enabled
+        project.status = "Active"
+        # If the code changes and unexpected warnings are raised, the test will fail
+        # here before moving onto `project.clean()`
+        assert project.has_warnings is False
         project.clean()
 
     @pytest.mark.parametrize(
