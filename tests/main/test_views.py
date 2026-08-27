@@ -366,7 +366,7 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
         # 200 is expected, nothing should be found in the db
         assert not Project.objects.filter(name="Should Fail").exists()
         # Check that the expected error is shown to the user
-        assert b"at least 1 funding source" in response.content
+        assert b"Projects cannot be created directly in" in response.content
 
 
 @pytest.mark.usefixtures("project")
