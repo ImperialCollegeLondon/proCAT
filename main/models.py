@@ -254,8 +254,8 @@ class Project(Warning, models.Model):
         """Ensure all fields have a value unless status is 'Tentative' or 'Not done'.
 
         It also checks that, if present, the end date is after the start date.
-        In addition, a project that was not yet 'Active' cannot have warnings; the
-        project must start clean
+        In addition, a project that was not yet 'Active', but wants to,
+        cannot have warnings; the project must start clean
         """
         if self.status == "Tentative" or self.status == "Not done":
             return super().clean()
