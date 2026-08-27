@@ -5,7 +5,6 @@ from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
-from django.contrib.auth.models import Group
 from django.utils import timezone
 
 
@@ -24,30 +23,42 @@ def test_create_destroy_analysis_codes():
 @pytest.mark.django_db
 def test_create_destroy_horse_group():
     """Roundtrip check of creation and destruction of the HoRSE group."""
+    from django.apps import apps
+
     from main import utils
 
+    Group = apps.get_model("auth", "Group")
+
     assert Group.objects.filter(name="HoRSE").exists()
-    utils.destroy_HoRSE_group()
+    utils.destroy_HoRSE_group(apps)
     assert not Group.objects.filter(name="HoRSE").exists()
-    utils.create_HoRSE_group()
+    utils.create_HoRSE_group(apps)
     assert Group.objects.filter(name="HoRSE").exists()
 
 
 @pytest.mark.django_db
 def test_create_destroy_rseteam_group():
     """Roundtrip check of creation and destruction of the RSETeam group."""
+    from django.apps import apps
+
     from main import utils
 
+    Group = apps.get_model("auth", "Group")
+
     assert Group.objects.filter(name="RSETeam").exists()
-    utils.destroy_RSETeam_group()
+    utils.destroy_RSETeam_group(apps)
     assert not Group.objects.filter(name="RSETeam").exists()
-    utils.create_RSETeam_group()
+    utils.create_RSETeam_group(apps)
     assert Group.objects.filter(name="RSETeam").exists()
 
 
 def test_get_head_email(user):
     """Test get_head_email function."""
+    from django.apps import apps
+
     from main import utils
+
+    Group = apps.get_model("auth", "Group")
 
     group = Group.objects.get(name="HoRSE")
     email = utils.get_head_email()
