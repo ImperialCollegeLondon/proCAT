@@ -38,8 +38,10 @@ class TestProjectWarnings:
             start_date=timezone.now().date(),
             end_date=timezone.now().date() + timedelta(days=42),
         )
-
-        assert project.warnings == ["No funding defined for the project."]
+        # `_warn_no_funding` checks for both now, message changed
+        assert project.warnings == [
+            "No funding defined for the project or incomplete row."
+        ]
         assert project.has_warnings
 
     def test_warn_phase_lifetime(self, project_static, phase):
