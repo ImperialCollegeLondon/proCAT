@@ -14,7 +14,7 @@
       <!-- djlint:on --></a>
 
     <ul class="navbar-nav me-auto">
-      {% if perms.main.can_view_project %}
+      {% if perms.main.view_project %}
         <li class="nav-item">
           <a class="nav-link" href="{% url 'main:projects' %}">Projects</a>
         </li>
