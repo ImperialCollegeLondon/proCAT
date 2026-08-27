@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Any, cast
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.management import create_permissions
 from django.db.models import Case, When
 from django.db.models.query import QuerySet
 from django.utils import timezone
@@ -55,23 +55,43 @@ def destroy_analysis(*args: Any) -> None:  # type: ignore [explicit-any]
     models.AnalysisCode.objects.filter(code__in=codes).delete()
 
 
-def create_HoRSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
+def create_HoRSE_group(apps: Any, *args: Any) -> None:  # type: ignore [explicit-any]
     """Create HoRSE group."""
+    Group = apps.get_model("auth", "Group")
     Group.objects.get_or_create(name="HoRSE")[0]
 
 
-def destroy_HoRSE_group(*args: Any) -> None:  # type: ignore [explicit-any]
+def destroy_HoRSE_group(apps: Any, *args: Any) -> None:  # type: ignore [explicit-any]
     """Delete HoRSE group."""
+    Group = apps.get_model("auth", "Group")
     Group.objects.filter(name="HoRSE").delete()
 
 
-def create_RSETeam_group(*args: Any) -> None:  # type: ignore [explicit-any]
-    """Create RSETeam group."""
-    Group.objects.get_or_create(name="RSETeam")[0]
+def create_RSETeam_group(apps: Any, *args: Any) -> None:  # type: ignore [explicit-any]
+    """Create RSETeam group and add permissions."""
+    Group = apps.get_model("auth", "Group")
+    rse_team = Group.objects.get_or_create(name="RSETeam")[0]
+
+    # Permissions have to be created before applying them
+    for app_config in apps.get_app_configs():
+        app_config.models_module = True
+        create_permissions(app_config, verbosity=0)
+        app_config.models_module = None
+
+    # Now we get the relevant permission and add it to the group
+    view_project = apps.get_model("auth", "Permission").objects.get(
+        codename="view_project"
+    )
+    rse_team.permissions.add(view_project)
 
 
-def destroy_RSETeam_group(*args: Any) -> None:  # type: ignore [explicit-any]
-    """Delete RSETeam group."""
+def destroy_RSETeam_group(apps: Any, *args: Any) -> None:  # type: ignore [explicit-any]
+    """Delete RSETeam group.
+
+    Note that this deletes the group but does not delete the permissions
+    associated with the group, so it is not truly reversible.
+    """
+    Group = apps.get_model("auth", "Group")
     Group.objects.filter(name="RSETeam").delete()
 
 
