@@ -138,7 +138,7 @@ class TestProject:
         )
         # Now there should be no warnings anymore.
         assert project.has_warnings is False
-        
+
         # Test passes when trying to set it to 'Active' now that
         # both funding and phase are enabled
         project.clean()
