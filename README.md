@@ -1,6 +1,6 @@
  <!-- markdownlint-disable MD041 -->
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-13-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/proCAT/graph/badge.svg?token=A9KNEMYXXN)](https://codecov.io/gh/ImperialCollegeLondon/proCAT)
 
@@ -158,6 +158,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Tosinibikunle"><img src="https://avatars.githubusercontent.com/u/89074158?v=4?s=100" width="100px;" alt="Tosinibikunle"/><br /><sub><b>Tosinibikunle</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=Tosinibikunle" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mjademitchell"><img src="https://avatars.githubusercontent.com/u/242165951?v=4?s=100" width="100px;" alt="mjademitchell"/><br /><sub><b>mjademitchell</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=mjademitchell" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Max-Gamill"><img src="https://avatars.githubusercontent.com/u/91465918?v=4?s=100" width="100px;" alt="Max Gamill"/><br /><sub><b>Max Gamill</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=Max-Gamill" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://sabifo4.github.io/"><img src="https://avatars.githubusercontent.com/u/23108019?v=4?s=100" width="100px;" alt="Sandra AC"/><br /><sub><b>Sandra AC</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=sabifo4" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/issues?q=author%3Asabifo4" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
