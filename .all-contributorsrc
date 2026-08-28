@@ -128,6 +128,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "sabifo4",
+      "name": "Sandra AC",
+      "avatar_url": "https://avatars.githubusercontent.com/u/23108019?v=4",
+      "profile": "https://sabifo4.github.io/",
+      "contributions": [
+        "code",
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
