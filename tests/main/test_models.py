@@ -136,12 +136,11 @@ class TestProject:
             start_date=project.start_date,
             end_date=project.end_date,
         )
+        # Now there should be no warnings anymore.
+        assert project.has_warnings is False
+        
         # Test passes when trying to set it to 'Active' now that
         # both funding and phase are enabled
-        project.status = "Active"
-        # If the code changes and unexpected warnings are raised, the test will fail
-        # here before moving onto `project.clean()`
-        assert project.has_warnings is False
         project.clean()
 
     @pytest.mark.parametrize(
