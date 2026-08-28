@@ -99,7 +99,7 @@ class TestProject:
         with pytest.raises(ValidationError, match="cannot be created directly in"):
             project.clean()
 
-        # Set to 'Tentative' and save in memory so that `was_active == FALSE` as
+        # Set to 'Tentative' and save in database so that `was_active == FALSE` as
         # per the new changes in `clean()`
         project.status = "Tentative"
         project.save()
