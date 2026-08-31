@@ -201,7 +201,7 @@ class Project(Warning, models.Model):
         """String representation of the Project object."""
         return self.name
 
-    def _warn_no_funding(self) -> None | str:
+    def _warn_no_funding(self) -> str | None:
         """Warns if there is no funding associated to the project."""
         if not self.funding_source.exists() or not all(
             [f.is_complete() for f in self.funding_source.all()]
@@ -209,7 +209,7 @@ class Project(Warning, models.Model):
             return "No funding defined for the project or incomplete row."
         return None
 
-    def _warn_phase_lifetime(self) -> None | str:
+    def _warn_phase_lifetime(self) -> str | None:
         """Warns if the phases don't cover the project lifetime."""
         # get phases for project id
         phases_query = ProjectPhase.objects.filter(project__name=self.name)
@@ -236,7 +236,7 @@ class Project(Warning, models.Model):
             return "Phases do not span project lifetime."
         return None
 
-    def _warn_wrong_days_sum(self) -> None | str:
+    def _warn_wrong_days_sum(self) -> str | None:
         """Warns if the phases do not sum to the total working days for the project."""
         project_days = self.total_working_days
 
