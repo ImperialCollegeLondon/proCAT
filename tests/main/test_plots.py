@@ -52,6 +52,7 @@ def test_create_capacity_planning_plot():
 
     legend_items = [item.label.value for item in plot.legend.items]
     assert "Active project effort" in legend_items
+    assert "Maintenance project effort" in legend_items
     assert "Confirmed project effort" in legend_items
     assert "Tentative project effort" in legend_items
     assert "Capacity" in legend_items
