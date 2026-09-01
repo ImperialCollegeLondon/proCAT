@@ -53,7 +53,6 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
         # Check that the tables have the correct titles and prefixes
         expected_tables = [
             ("Active", "active-"),
-            # Add check for 'Maintenance' status
             ("Maintenance", "maintenance-"),
             ("Confirmed", "confirmed-"),
             ("Tentative", "tentative-"),
