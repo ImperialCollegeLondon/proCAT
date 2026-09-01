@@ -29,7 +29,7 @@ if settings.USE_OIDC:
         path("oidc/", include("mozilla_django_oidc.urls")),
     ]
 
-if settings.DEBUG:
+if not settings.USE_OIDC:
     urlpatterns += [
         path("auth/", include("django.contrib.auth.urls")),
     ]

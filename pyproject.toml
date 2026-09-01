@@ -23,7 +23,8 @@ dependencies = [
     "bokeh",
     "pandas",
     "mozilla-django-oidc",
-    "django-admin-rangefilter"
+    "django-admin-rangefilter",
+    "gunicorn>=26.2.0",
 ]
 
 [dependency-groups]
