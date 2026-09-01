@@ -107,6 +107,7 @@ class Project(Warning, models.Model):
         ("Active", "Active"),
         ("Finished", "Finished"),
         ("Not done", "Not done"),
+        ("Maintenance", "Maintenance"),
     )
     _CHARGING = (
         ("Actual", "Actual"),
