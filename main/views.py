@@ -57,6 +57,7 @@ class ProjectsListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
 
         buckets = [
             ("Active", {"status": "Active"}, "active-"),
+            ("Maintenance", {"status": "Maintenance"}, "maintenance-"),
             ("Confirmed", {"status": "Confirmed"}, "confirmed-"),
             ("Tentative", {"status": "Tentative"}, "tentative-"),
             ("Finished", {"status": "Finished"}, "finished-"),
