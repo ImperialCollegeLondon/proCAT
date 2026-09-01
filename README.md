@@ -1,7 +1,9 @@
  <!-- markdownlint-disable MD041 -->
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-13-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
+
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/proCAT/graph/badge.svg?token=A9KNEMYXXN)](https://codecov.io/gh/ImperialCollegeLondon/proCAT)
 
 # Project Charging and Analytics Tool (proCAT)
@@ -32,7 +34,7 @@ To get started:
    ```
 
 1. Create and activate a virtual environment. This creates a `.venv` in the same
-  directory with the environment, including the `dev` dependencies:
+   directory with the environment, including the `dev` dependencies:
 
    ```bash
    uv sync
@@ -96,17 +98,80 @@ typically your own, then that account will be updated with the details from the 
 account. So, if you created a superuser account as above with your email and then
 connect via SSO, then your account will be the superuser account.
 
-## Installation with Docker
+## Running with Docker
 
-The app can be run within a Docker container and a `docker-compose.yml` file is provided to make this easy for development.
+Ensure you have [Docker][Docker] installed. The `docker-compose.yml` file supports two
+modes selected via Compose profiles.
 
-Ensure you have [Docker][Docker] installed and simply run:
+### Development mode (default)
+
+Use this for day-to-day feature work. It mounts the source tree into the container so
+any file change is picked up immediately by Django's auto-reloader — no rebuild needed.
+Django's built-in development server is used with `DEBUG=True`, which gives detailed
+error pages and serves static files automatically without a `collectstatic` step.
 
 ```bash
 docker compose up
 ```
 
-The app will be available at <http://127.0.0.1:8000/>
+The app is available at <http://localhost:8000>. If it is the first time you run it, or
+after adding new migrations, you may need to create a superuser account:
+
+```bash
+docker compose exec app python manage.py createsuperuser
+```
+
+Rebuilding the image is only necessary when dependencies change (i.e. `pyproject.toml`
+or `uv.lock` are modified):
+
+```bash
+docker compose up --build
+```
+
+### Production-like mode
+
+Use this to test behaviour that only surfaces outside of `DEBUG=True`: production
+settings, static files served via [WhiteNoise] from a pre-collected `staticfiles/`
+directory baked into the image, gunicorn as the WSGI server, and a [Caddy] reverse
+proxy in front of it. The source tree is **not** mounted, so the image must be rebuilt
+after any code change.
+
+This mode requires a `SECRET_KEY` environment variable:
+
+```bash
+export SECRET_KEY="a-long-random-secret"
+docker compose --profile production up web proxy
+```
+
+The app is available at <http://localhost>. Naming the services (`web proxy`) explicitly
+prevents the development `app` service from starting alongside them.
+
+After code changes, rebuild before restarting:
+
+```bash
+docker compose --profile production up --build web proxy
+```
+
+### Stopping services
+
+For development mode:
+
+```bash
+docker compose down
+```
+
+For production-like mode the profile must be specified so Compose includes the
+`web` and `proxy` services:
+
+```bash
+docker compose --profile production down
+```
+
+The database is stored in a named Docker volume (`db`) and is preserved across
+restarts. To also delete the database, add `--volumes` to either command.
+
+[WhiteNoise]: https://whitenoise.readthedocs.io
+[Caddy]: https://caddyserver.com
 
 ## Documentation
 
@@ -118,7 +183,7 @@ You can check all the options for [managing dependencies with uv], but a summary
 
 1. To add a dependency use `uv add dependency_name`.
 2. You can add it to a group, as well with the `--group` flag,
-  eg. `uv add --group dev dependency_name`.
+   eg. `uv add --group dev dependency_name`.
 3. To remove a dependency use `uv remove dependency_name`.
 
 To upgrade pinned versions, use `uv lock --upgrade`.

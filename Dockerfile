@@ -27,15 +27,19 @@ RUN uv sync
 
 COPY . .
 
+# Collect static files into staticfiles/ using the base settings
+# (which have a built-in SECRET_KEY and no external service requirements)
+RUN .venv/bin/python manage.py collectstatic --noinput
+
 # Execution environment
 FROM python:3.13-slim-bookworm
 ARG APPDIR
 WORKDIR ${APPDIR}
 
-COPY . .
 COPY --from=build ${APPDIR}/.venv/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages
+COPY --chown=nobody:nogroup . .
+COPY --chown=nobody:nogroup --from=build ${APPDIR}/staticfiles/ ./staticfiles/
 
 EXPOSE 8000
-COPY --chown=nobody:nogroup . /usr/src/app
 
 USER nobody

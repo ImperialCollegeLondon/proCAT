@@ -75,7 +75,7 @@ urlpatterns = [
     ),
 ]
 
-if settings.DEBUG and not settings.USE_OIDC:
+if not settings.USE_OIDC:
     urlpatterns += [
         path("register/", views.RegistrationView.as_view(), name="auth_register"),
     ]

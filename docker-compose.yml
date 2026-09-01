@@ -1,6 +1,12 @@
 services:
+  # ── Default: local development ─────────────────────────────────────────────
+  # docker compose up
   app:
     build: .
+    # Run as root so the process can write to the bind-mounted source tree:
+    # Python needs it for __pycache__ (faster restarts) and management commands
+    # like makemigrations need it to create files in the source tree.
+    user: root
     environment:
       - CLOCKIFY_API_KEY
       - CLOCKIFY_WORKSPACE_ID
@@ -24,5 +30,50 @@ services:
     volumes:
       - .:/usr/src/app
       - db:/usr/src/app/db
+
+  # ── Production-like: profile=production ───────────────────────────────────
+  # docker compose --profile production up web proxy
+  web:
+    profiles: [production]
+    build: .
+    environment:
+      - DJANGO_SETTINGS_MODULE=procat.settings._production
+      - SECRET_KEY
+      - HOME=/tmp
+      - CLOCKIFY_API_KEY
+      - CLOCKIFY_WORKSPACE_ID
+      - OIDC_RP_CLIENT_ID
+      - OIDC_RP_CLIENT_SECRET
+      - OIDC_OP_AUTHORIZATION_ENDPOINT
+      - OIDC_OP_TOKEN_ENDPOINT
+      - OIDC_OP_USER_ENDPOINT
+      - OIDC_OP_JWKS_ENDPOINT
+      - OIDC_RP_SCOPES
+      - OIDC_RP_SIGN_ALGO
+    command:
+      - sh
+      - -c
+      - |
+        python manage.py migrate
+        python manage.py run_huey &
+        python -m gunicorn procat.wsgi:application --bind 0.0.0.0:8000 --workers 2 --worker-tmp-dir /tmp
+    volumes:
+      - db:/usr/src/app/db
+    restart: unless-stopped
+
+  proxy:
+    profiles: [production]
+    image: caddy:2.7.4-alpine
+    depends_on:
+      - web
+    environment:
+      - HOST=web
+      - PORT=8000
+    ports:
+      - 80:80
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+
 volumes:
   db:
