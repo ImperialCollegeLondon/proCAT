@@ -46,13 +46,15 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
         assert response.status_code == HTTPStatus.OK
         assert "tables" in response.context
 
-        # Check that there are 5 tables, one for each status
+        # Check that there are 6 tables, one for each status
         tables = response.context["tables"]
-        assert len(tables) == 5
+        assert len(tables) == 6
 
         # Check that the tables have the correct titles and prefixes
         expected_tables = [
             ("Active", "active-"),
+            # Add check for 'Maintenance' status
+            ("Maintenance", "maintenance-"),
             ("Confirmed", "confirmed-"),
             ("Tentative", "tentative-"),
             ("Finished", "finished-"),
@@ -107,6 +109,15 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
             start_date=project.start_date,
             end_date=project.end_date,
         )
+        # Add a check for 'Maintenance'
+        Project.objects.create(
+            name="Test Maintenance",
+            status="Maintenance",
+            department=department,
+            lead=user,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
 
         endpoint = reverse("main:projects")
         response = auth_client.get(endpoint)
@@ -143,6 +154,12 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
         not_done_projects = [p for p in not_done_table.data]
         assert len(not_done_projects) == 1
         assert all(p.status == "Not done" for p in not_done_projects)
+
+        # Check Maintenance table
+        maintenance_table = tables["Maintenance"]
+        maintenance_projects = [p for p in maintenance_table.data]
+        assert len(maintenance_projects) == 1
+        assert all(p.status == "Maintenance" for p in maintenance_projects)
 
     @pytest.mark.django_db
     def test_order_weeks_to_deadline(self, auth_client):
