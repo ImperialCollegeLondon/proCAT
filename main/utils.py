@@ -194,7 +194,7 @@ def get_projects_with_days_used_exceeding_days_left() -> list[
     tuple[Project, float, float | None]
 ]:
     """Get projects whose time entries exceed the total effort of the project."""
-    projects = Project.objects.filter(status="Active")
+    projects = Project.objects.filter(status__in=("Active", "Maintenance"))
     projects_with_negative_days_left = []
 
     for project in projects:
