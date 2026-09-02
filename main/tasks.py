@@ -79,7 +79,7 @@ def daily_project_status_check() -> None:
     """Daily task to check project statuses and notify leads."""
     from .models import Project
 
-    projects = Project.objects.filter(status="Active")
+    projects = Project.objects.filter(status__in=["Active", "Maintenance"])
     for project in projects:
         project.check_and_notify_status()
 
@@ -303,7 +303,9 @@ def sync_clockify_time_entries(
     api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
     start_date = end_date - datetime.timedelta(days=days_back)
 
-    projects = Project.objects.filter(status="Active").exclude(clockify_id="")
+    projects = Project.objects.filter(status__in=["Active", "Maintenance"]).exclude(
+        clockify_id=""
+    )
     for project in projects:
         logger.info(f"Processing project ID: {project.clockify_id}")
         payload = {
