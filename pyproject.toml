@@ -24,7 +24,7 @@ dependencies = [
     "pandas",
     "mozilla-django-oidc",
     "django-admin-rangefilter",
-    "gunicorn>=26.2.0",
+    "gunicorn",
 ]
 
 [dependency-groups]

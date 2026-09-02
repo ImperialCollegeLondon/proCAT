@@ -1363,7 +1363,7 @@ requires-dist = [
     { name = "django-crispy-forms" },
     { name = "django-filter" },
     { name = "django-tables2" },
-    { name = "gunicorn", specifier = ">=26.2.0" },
+    { name = "gunicorn" },
     { name = "huey" },
     { name = "mozilla-django-oidc" },
     { name = "pandas" },
