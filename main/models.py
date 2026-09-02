@@ -107,6 +107,7 @@ class Project(Warning, models.Model):
         ("Active", "Active"),
         ("Finished", "Finished"),
         ("Not done", "Not done"),
+        ("Maintenance", "Maintenance"),
     )
     _CHARGING = (
         ("Actual", "Actual"),
@@ -256,7 +257,7 @@ class Project(Warning, models.Model):
         """Ensure all fields have a value unless status is 'Tentative' or 'Not done'.
 
         It also checks that, if present, the end date is after the start date.
-        In addition, a project that was not yet 'Active', but wants to,
+        In addition, a project that was not yet 'Active' or 'Maintenance', but wants to,
         cannot have warnings; the project must start clean
         """
         if self.status == "Tentative" or self.status == "Not done":
@@ -271,22 +272,23 @@ class Project(Warning, models.Model):
         if self.end_date <= self.start_date:
             raise ValidationError("The end date must be after the start date.")
 
-        # No more checks if the projectstatus is not set to become
-        # 'Active' or 'Confirmed'
-        if self.status not in ("Active", "Confirmed"):
+        # No more checks if the project status is not set to become
+        # 'Active', 'Confirmed', or 'Maintenance'
+        if self.status not in ("Active", "Confirmed", "Maintenance"):
             return
 
         if self.pk is None:
             raise ValidationError(
-                "Projects cannot be created directly in Active or Confirmed statuses."
+                "Projects cannot be created directly in Active, Confirmed, or "
+                "Maintenance statuses."
             )
         else:
             was_active = Project.objects.filter(
-                pk=self.pk, status__in=("Active", "Confirmed")
+                pk=self.pk, status__in=("Active", "Confirmed", "Maintenance")
             ).exists()
             if not was_active and self.has_warnings:
                 message = (
-                    "A project cannot be made Active or Confirmed if "
+                    "A project cannot be made Active, Confirmed, or Maintenance if "
                     "there are warnings:"
                 )
                 raise ValidationError([message, *self.warnings])
@@ -295,12 +297,16 @@ class Project(Warning, models.Model):
     def weeks_to_deadline(self) -> tuple[int, float] | None:
         """Provide the number of weeks left until project deadline.
 
-        Only relevant for active projects.
+        Only relevant for projects in Active, Confirmed, and Maintenance statuses.
 
         Returns:
             The number of weeks left or None if the project is Tentative or Not done.
         """
-        if self.status in ["Active", "Confirmed"] and self.end_date and self.start_date:
+        if (
+            self.status in ["Active", "Confirmed", "Maintenance"]
+            and self.end_date
+            and self.start_date
+        ):
             left = (self.end_date - timezone.now().date()).days / 7
             total = (self.end_date - self.start_date).days / 7
             return int(left), round(left / total * 100, 1)
@@ -600,11 +606,12 @@ class Funding(models.Model):
         """Ensure that the activity code has a valid value."""
         if (
             self.project
-            and self.project.status in ("Active", "Confirmed")
+            and self.project.status in ("Active", "Confirmed", "Maintenance")
             and not self.is_complete()
         ):
             raise ValidationError(
-                "Funding of Active and Confirmed projects must be complete."
+                "Funding of Active, Confirmed, and Maintenance projects must "
+                "be complete."
             )
 
         allowed_characters = ["P", "F", "G", "I"]

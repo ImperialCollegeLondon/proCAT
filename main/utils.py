@@ -159,14 +159,18 @@ def get_budget_status(
         date = timezone.now().date()
 
     funds_ran_out_not_expired = list(
-        Funding.objects.filter(expiry_date__gt=date, project__status="Active")
+        Funding.objects.filter(
+            expiry_date__gt=date, project__status__in=["Active", "Maintenance"]
+        )
     )
     funds_ran_out_not_expired = [
         fund for fund in funds_ran_out_not_expired if fund.funding_left <= 0
     ]
 
     funding_expired_budget_left = list(
-        Funding.objects.filter(expiry_date__lt=date, project__status="Active")
+        Funding.objects.filter(
+            expiry_date__lt=date, project__status__in=["Active", "Maintenance"]
+        )
     )
     funding_expired_budget_left = [
         fund for fund in funding_expired_budget_left if fund.funding_left > 0
@@ -194,7 +198,7 @@ def get_projects_with_days_used_exceeding_days_left() -> list[
     tuple[Project, float, float | None]
 ]:
     """Get projects whose time entries exceed the total effort of the project."""
-    projects = Project.objects.filter(status="Active")
+    projects = Project.objects.filter(status__in=("Active", "Maintenance"))
     projects_with_negative_days_left = []
 
     for project in projects:

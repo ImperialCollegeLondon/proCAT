@@ -108,7 +108,7 @@ class TestProject:
         project.status = "Active"
         with pytest.raises(
             ValidationError,
-            match="cannot be made Active or Confirmed if",
+            match="cannot be made Active, Confirmed, or Maintenance",
         ):
             project.clean()
 
@@ -120,7 +120,7 @@ class TestProject:
         )
         with pytest.raises(
             ValidationError,
-            match="cannot be made Active or Confirmed if",
+            match="cannot be made Active, Confirmed, or Maintenance",
         ):
             project.clean()
 
