@@ -105,6 +105,5 @@ ProjectPhaseFormSet = inlineformset_factory(
     models.Project,
     models.ProjectPhase,
     form=ProjectPhaseForm,
-    extra=1,
     can_delete=True,
 )
