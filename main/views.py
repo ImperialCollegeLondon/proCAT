@@ -142,8 +142,27 @@ class ProjectDetailView(PermissionRequiredMixin, CustomBaseDetailView):
     fields = None  # type: ignore
     form_class = forms.ProjectForm
 
+    def get_phase_formset(self):  # type: ignore[no-untyped-def]
+        """Return the inline formset for this project's phases."""
+        return forms.ProjectPhaseFormSet(instance=self.object)
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # type: ignore[explicit-any]
+        """Save the project's inline phase formset."""
+        if not request.user.has_perm("main.change_project_phase"):
+            return self.handle_no_permission()
+
+        self.object = self.get_object()
+        phase_formset = forms.ProjectPhaseFormSet(request.POST, instance=self.object)
+        if phase_formset.is_valid():
+            phase_formset.save()
+            return HttpResponseRedirect(request.path)
+
+        context = self.get_context_data(object=self.object)
+        context["phase_form"] = phase_formset
+        return self.render_to_response(context)
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
-        """Add project name and funding table to the context.
+        """Add project name, phase and funding table to the context.
 
         A custom query is used with the funding table, so only the funding for the
         current project is displayed.
@@ -160,6 +179,8 @@ class ProjectDetailView(PermissionRequiredMixin, CustomBaseDetailView):
         # enables the table to be sorted by column headings
         RequestConfig(self.request).configure(funding_table)
         RequestConfig(self.request).configure(phase_table)
+
+        context.setdefault("phase_form", self.get_phase_formset())
 
         context["funding_table"] = funding_table
         context["phase_table"] = phase_table
