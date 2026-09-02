@@ -103,6 +103,12 @@ connect via SSO, then your account will be the superuser account.
 Ensure you have [Docker][Docker] installed. The `docker-compose.yml` file supports two
 modes selected via Compose profiles.
 
+NOTE: The database used when running in Docker is stored in a named volume (`db`) and
+is preserved across container restarts. This database **is different** from the one used
+when running the web app directly on the host, as described above. Content added to the
+database in the docker-based deployment (either of the two modes) will not be available
+when using the local deployment and vice-versa, neither migrations.
+
 ### Development mode (default)
 
 Use this for day-to-day feature work. It mounts the source tree into the container so
