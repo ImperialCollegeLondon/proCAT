@@ -247,7 +247,7 @@ def _get_projects_to_create_report_for(
         start_date__isnull=False,
         end_date__isnull=False,
         funding_source__source="External",
-        status="Active",
+        status__in=["Active", "Maintenance"],
     ).exclude(charging="Manual")
 
 
