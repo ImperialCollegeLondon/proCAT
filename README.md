@@ -115,7 +115,7 @@ docker compose up
 ```
 
 The app is available at <http://localhost:8000>. If it is the first time you run it, or
-after adding new migrations, you may need to create a superuser account:
+after deleting the local database, you will need to create a superuser account:
 
 ```bash
 docker compose exec app python manage.py createsuperuser
