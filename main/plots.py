@@ -193,8 +193,8 @@ def create_capacity_planning_plot(
     projects = (  # Traces are cumulative
         ("Tentative", "firebrick", ["Tentative", "Confirmed", "Active", "Maintenance"]),
         ("Confirmed", "orange", ["Confirmed", "Active", "Maintenance"]),
-        ("Maintenance", "purple", ["Maintenance"]),
-        ("Active", "navy", ["Active", "Maintenance"]),
+        ("Maintenance", "purple", ["Active", "Maintenance"]),
+        ("Active", "navy", ["Active"]),
     )
     for status, colour, filter in projects:
         effort_timeseries = timeseries.get_effort_timeseries(
@@ -211,7 +211,6 @@ def create_capacity_planning_plot(
     # Apply area shading between select traces
     vareas = (
         (("Capacity", "Confirmed project effort"), "green"),
-        # Gap between 'Maintenance' and 'Active' areas
         (("Maintenance project effort", "Active project effort"), "purple"),
         (("Confirmed project effort", "Maintenance project effort"), "yellow"),
         (("Tentative project effort", "Confirmed project effort"), "red"),
