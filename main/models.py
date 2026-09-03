@@ -295,12 +295,11 @@ class Project(Warning, models.Model):
 
         # Check that a project has two phaess before updating its status to
         # 'Maintenance'
-        if self.status == "Maintenance":
-            if self.phases.count() < 2:
-                raise ValidationError(
-                    "Projects cannot be set to Maintenance status unless there "
-                    "are two phases."
-                )
+        if self.status == "Maintenance" and self.phases.count() < 2:
+            raise ValidationError(
+                "Projects cannot be set to Maintenance status unless there "
+                "are two phases."
+            )
 
     @property
     def weeks_to_deadline(self) -> tuple[int, float] | None:
