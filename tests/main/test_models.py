@@ -143,6 +143,70 @@ class TestProject:
         # both funding and phase are enabled
         project.clean()
 
+    def test_clean_when_maintenance_not_two_phases(self, user, department):
+        """Reject setting a project to Maintenance without two phases.
+
+        Updating the status of a project to 'Maintenance' without two phases must
+        not be possible.
+        """
+        from main import models
+
+        # All good, the project is Tentative
+        project = models.Project(
+            name="ProCAT",
+            lead=user,
+            department=department,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=42),
+            status="Tentative",
+        )
+        project.clean()
+        project.save()
+
+        # Add funding and one phase so that status can be set to Active
+        models.Funding.objects.get_or_create(
+            project=project,
+            source="Internal",
+            budget=10000.00,
+        )
+        start, end = project.start_date, project.end_date
+        phase1 = models.ProjectPhase.objects.create(
+            project=project,
+            value=1,
+            start_date=start,
+            end_date=end,
+        )
+        # Now it can go to Active and no issues
+        project.status = "Active"
+        project.clean()
+        project.save()
+
+        # A project cannot be set to Maintenance without two phases
+        project.status = "Maintenance"
+        with pytest.raises(
+            ValidationError,
+            match="set to Maintenance status unless",
+        ):
+            project.clean()
+
+        # Modify previous phase and add a second phase
+        mid = start + timedelta(days=21)
+        phase1.end_date = mid
+        phase1.value = 1
+        phase1.save(update_fields=["end_date", "value"])
+        models.ProjectPhase.objects.create(
+            project=project,
+            value=1,
+            start_date=mid + timedelta(days=1),
+            end_date=end,
+        )
+        # Assert total number of phases required to set project to Maintenance status
+        assert project.phases.count() == 2
+        # Assert sum of total working days (not calendar days) is right
+        assert sum(p.days for p in project.phases.all()) == project.total_working_days
+        # Status is still 'Maintenance', check should not fail now
+        project.clean()
+
     @pytest.mark.parametrize(
         ["status", "start_date", "end_date", "output"],
         [
