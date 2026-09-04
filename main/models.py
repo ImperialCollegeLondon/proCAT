@@ -375,8 +375,14 @@ class Project(Warning, models.Model):
         if self.total_effort:
             time_entries = self.timeentry_set.all()
             hours_logged = get_logged_hours(time_entries)[0]
-            left = self.total_effort - (hours_logged / 7)
-            return round(left, 1), round(left / self.total_effort * 100, 1)
+            if self.status == "Maintenance":
+                maint_phase = self.phases.order_by("start_date").last()
+                pro_rata_used_maint = maint_phase.days - maint_phase.expected_days_left
+                left = maint_phase.days - min(pro_rata_used_maint, (hours_logged / 7))
+                return round(left, 1), round(left / maint_phase.days * 100, 1)
+            else:
+                left = self.total_effort - (hours_logged / 7)
+                return round(left, 1), round(left / self.total_effort * 100, 1)
 
         return None
 
