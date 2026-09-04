@@ -377,6 +377,8 @@ class Project(Warning, models.Model):
             hours_logged = get_logged_hours(time_entries)[0]
             if self.status == "Maintenance":
                 maint_phase = self.phases.order_by("start_date").last()
+                # Projects with status 'Maintenance' always have two phases
+                assert maint_phase is not None
                 pro_rata_used_maint = maint_phase.days - maint_phase.expected_days_left
                 left = maint_phase.days - min(pro_rata_used_maint, (hours_logged / 7))
                 return round(left, 1), round(left / maint_phase.days * 100, 1)
