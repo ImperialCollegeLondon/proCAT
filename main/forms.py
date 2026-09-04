@@ -5,6 +5,7 @@ from typing import ClassVar
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+from django.forms import inlineformset_factory
 from django.utils import timezone
 
 from . import models
@@ -98,3 +99,11 @@ class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
             "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
             "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
         }
+
+
+ProjectPhaseFormSet = inlineformset_factory(
+    models.Project,
+    models.ProjectPhase,
+    form=ProjectPhaseForm,
+    can_delete=True,
+)
