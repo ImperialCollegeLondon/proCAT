@@ -1,3 +1,5 @@
 :80 {
-  reverse_proxy {$HOST}:{$PORT}
+handle_path {$PROCAT_SCRIPT_NAME}* {
+        reverse_proxy {$HOST}:{$PORT}
+   }
 }

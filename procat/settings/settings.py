@@ -27,6 +27,12 @@ DEBUG = True
 
 ALLOWED_HOSTS: list[str]
 
+FORCE_SCRIPT_NAME: str = os.environ.get("PROCAT_SCRIPT_NAME", "")
+"""Url suffix to use as the root path after the hostname.
+
+Eg. if '/procat', the url for the app would be http://someserver.com/procat .
+See https://docs.djangoproject.com/en/6.1/ref/settings/#force-script-name
+"""
 
 # Application definition
 
@@ -113,8 +119,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = "static/"
+WHITENOISE_STATIC_PREFIX = "/static/"
+STATIC_URL = FORCE_SCRIPT_NAME + WHITENOISE_STATIC_PREFIX
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -147,8 +153,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
 
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = f"{FORCE_SCRIPT_NAME}/"
+LOGOUT_REDIRECT_URL = f"{FORCE_SCRIPT_NAME}/"
 
 HUEY = {
     "huey_class": "huey.SqliteHuey",
@@ -198,12 +204,12 @@ if USE_OIDC:
         "django.contrib.auth.backends.ModelBackend",
         "main.oidc.ICLOIDCAuthenticationBackend",
     ]
-    LOGIN_URL = "/oidc/authenticate/"
+    LOGIN_URL = f"{FORCE_SCRIPT_NAME}/oidc/authenticate/"
 else:
     AUTHENTICATION_BACKENDS = [
         "django.contrib.auth.backends.ModelBackend",
     ]
-    LOGIN_URL = "/register/"
+    LOGIN_URL = f"{FORCE_SCRIPT_NAME}/auth/login"
 
 HUEY_TASK_SCHEDULES = {
     "SYNC_CLOCKIFY_TIME_ENTRIES": {
