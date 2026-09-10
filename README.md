@@ -104,7 +104,7 @@ Ensure you have [Docker][Docker] installed. The `docker-compose.yml` file suppor
 modes selected via Compose profiles.
 
 All the environment variables used by the app (Clockify, OIDC/SSO, and the
-production-only settings) are documented in [`.env.example`](.env.example), which
+production-only settings) are documented in `.env.example`, which
 indicates which ones are mandatory for each mode. Copy it to `.env` and fill in the
 values you need; Docker Compose picks it up automatically.
 
