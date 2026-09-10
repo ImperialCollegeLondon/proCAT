@@ -103,6 +103,11 @@ connect via SSO, then your account will be the superuser account.
 Ensure you have [Docker][Docker] installed. The `docker-compose.yml` file supports two
 modes selected via Compose profiles.
 
+All the environment variables used by the app (Clockify, OIDC/SSO, and the
+production-only settings) are documented in `.env.example`, which
+indicates which ones are mandatory for each mode. Copy it to `.env` and fill in the
+values you need; Docker Compose picks it up automatically.
+
 NOTE: The database used when running in Docker is stored in a named volume (`db`) and
 is preserved across container restarts. This database **is different** from the one used
 when running the web app directly on the host, as described above. Content added to the
