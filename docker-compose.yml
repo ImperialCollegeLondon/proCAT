@@ -50,6 +50,7 @@ services:
       - OIDC_OP_JWKS_ENDPOINT
       - OIDC_RP_SCOPES
       - OIDC_RP_SIGN_ALGO
+      - PROCAT_SCRIPT_NAME
     command:
       - sh
       - -c
@@ -69,6 +70,7 @@ services:
     environment:
       - HOST=web
       - PORT=8000
+      - PROCAT_SCRIPT_NAME
     ports:
       - 80:80
     restart: unless-stopped
