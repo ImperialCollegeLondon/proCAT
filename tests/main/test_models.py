@@ -402,8 +402,26 @@ class TestProject:
         days_left = round(left, 1), round(left / project.total_effort * 100, 1)
         assert project.days_left == days_left
 
-    def test_days_left_maintenance_phase_started(self, user, department, analysis_code):
-        """Test the days_left method for Maintenance projects that have started.
+    @pytest.mark.parametrize(
+        "days_end_phase1, hours_to_log, expected",
+        [
+            # Each phase has 73 calendar days --> 44 working days
+            # C1: 26cd; 47/73=0.644 of cd remain | 44wd*0.644=28.3wd (exp. days left)
+            #     no_logged_hr -> 44-max([44-28.3],0)=28.3 --> 28.3*100/44=64.4%
+            pytest.param(-27, 0, (28.3, 64.4), id="Partly through maintenance"),
+            # C2: phase not started, 44wd and 100% left
+            pytest.param(10, 0, (44, 100.0), id="Maintenance not started"),
+            # C3: phase has finished, no time remains
+            pytest.param(-80, 0, (0, 0.0), id="Maintenance complete"),
+            # C4: same as C1 but logged 140h/7=20wd
+            #     44-max([44-28.3],20) | 44-20=24wd --> 24*100/44=54.5%
+            pytest.param(-27, 140, (24.0, 54.5), id="Partly through with logged time"),
+        ],
+    )
+    def test_days_left_maintenance_phase(
+        self, days_end_phase1, hours_to_log, expected, user, department, analysis_code
+    ):
+        """Test the days_left method for Maintenance projects across phase states.
 
         At the moment, projects with status "Maintenance" compute days left
         assuming "Maintenance" is the last phase. The maximum of the elapsed pro-rata
@@ -413,17 +431,17 @@ class TestProject:
 
         today = timezone.now().date()
         project_start = today - timedelta(days=100)
-        end_phase1 = today - timedelta(days=27)
-        project_end = today + timedelta(days=47)
+        end_phase1 = today + timedelta(days=days_end_phase1)
+        project_end = end_phase1 + timedelta(days=74)
 
-        # Start a project with 147cd as "Active"
+        # Start project as "Tentative", they cannot be started as "Active"
         project = models.Project.objects.create(
             name="ProCAT",
             department=department,
             lead=user,
             start_date=project_start,
             end_date=project_end,
-            status="Active",
+            status="Tentative",
             charging="Actual",
         )
 
@@ -446,83 +464,31 @@ class TestProject:
             value=1,
             start_date=project_start,
             end_date=end_phase1,
-        )  # 73cd -> 44 working days
+        )
         models.ProjectPhase.objects.create(
             project=project,
             value=1,
             start_date=end_phase1 + timedelta(days=1),
             end_date=project_end,
-        )  # 73cd -> 44 working days (maintenance phase)
+        )
+
+        # Log time if needed
+        if hours_to_log:
+            # Add timezone awareness to avoid warnings
+            start_time = timezone.make_aware(
+                datetime.combine(today, datetime.min.time())
+            )
+            models.TimeEntry.objects.create(
+                user=user,
+                project=project,
+                start_time=start_time,
+                end_time=start_time + timedelta(hours=hours_to_log),
+            )
 
         # Set status to "Maintenance"
         project.status = "Maintenance"
         assert project.phases.count() == 2
-
-        # Today is 26cd into 73cd "Maintenance" phase (35.6% gone; 47/73 remain)
-        # No time entries created, so 0 hours logged
-        # We expect "days_left" to return 28.3 working days let (~64.4% cd time remains)
-        assert project.days_left == (28.3, 64.4)
-
-    def test_days_left_maintenance_phase_not_started(
-        self, user, department, analysis_code
-    ):
-        """Test the days_left method for Maintenance projects that have not started yet.
-
-        At the moment, projects with status "Maintenance" compute days left
-        assuming "Maintenance" is the last phase. The maximum of the elapsed pro-rata
-        and the actual time logged is used to calculate the days left.
-        """
-        from main import models
-
-        today = timezone.now().date()
-        project_start = today - timedelta(days=20)
-        end_phase1 = today + timedelta(days=53)
-        project_end = today + timedelta(days=127)
-
-        # Start a project with 147cd as "Active"
-        project = models.Project.objects.create(
-            name="ProCAT-NotStarted",
-            department=department,
-            lead=user,
-            start_date=project_start,
-            end_date=project_end,
-            status="Active",
-            charging="Actual",
-        )
-
-        # Add funding
-        models.Funding.objects.create(
-            project=project,
-            source="Internal",
-            cost_centre="centre",
-            activity="G12345",
-            analysis_code=analysis_code,
-            budget=10000.00,
-            daily_rate=50.00,
-            expiry_date=project_end,
-        )
-
-        # Create two non-overlapping phases for the duration of the project
-        # The last phase is assumed to be the "Maintenance" phase
-        models.ProjectPhase.objects.create(
-            project=project,
-            value=1,
-            start_date=project_start,
-            end_date=end_phase1,
-        )  # 73cd -> 44 working days
-        models.ProjectPhase.objects.create(
-            project=project,
-            value=1,
-            start_date=end_phase1 + timedelta(days=1),
-            end_date=project_end,
-        )  # 73cd -> 44 working days (maintenance phase, not started)
-
-        # Set status to "Maintenance"
-        project.status = "Maintenance"
-        assert project.phases.count() == 2
-
-        # We expect 44 wd (100% cd time) to remain as this phase has not started yet
-        assert project.days_left == (44.0, 100.0)
+        assert project.days_left == expected
 
     @pytest.mark.parametrize(
         ["status", "start_date", "end_date", "output"],
