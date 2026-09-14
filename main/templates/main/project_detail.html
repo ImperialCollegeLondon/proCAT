@@ -28,7 +28,8 @@
     <form method="post" action="{% url 'main:project_default_phase_create' %}">
       {% csrf_token %}
       <input type="text" name="project_name" value="{{ project_name }}" hidden>
-      <a class="btn btn-primary" href="{% url 'main:project_phase_create' %}">+ Create Project Phase</a>
+      <a class="btn btn-primary"
+         href="{% url 'main:project_phase_create' %}">+ Create Project Phase</a>
       {% bootstrap_button button_type="submit" button_class="btn btn-secondary" content="+ Create Default Phase" %}
     </form>
   {% endif %}
@@ -36,7 +37,8 @@
   <!-- Funding table -->
   <h2>Funding sources:</h2>
   <div class="text-start">
-    <a href="{% url 'main:funding_create' %}" class="btn btn-primary">+ Create Funding</a>
+    <a href="{% url 'main:funding_create' %}"
+       class="btn btn-primary">+ Create Funding</a>
   </div>
   {% render_table funding_table %}
 {% endblock content %}
