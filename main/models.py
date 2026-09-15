@@ -325,9 +325,15 @@ class Project(Warning, models.Model):
     def total_effort(self) -> float | None:
         """Provide the total days worth of effort available from funding.
 
+        For projects in maintenance mode, the total effort is the one associated to the
+        maintenance phase.
+
         Returns:
             The total number of days effort, or None if there is no funding information.
         """
+        if maint := self.maintenance_phase():
+            return maint.days
+
         if self.funding_source.exists():
             total = sum([funding.effort for funding in self.funding_source.all()])
             return total
@@ -338,10 +344,17 @@ class Project(Warning, models.Model):
     def total_funding_left(self) -> Decimal | None:
         """Provide the total funding left after deducting confirmed charges.
 
+        In maintenance mode or if the project is finished, this is not relevant, despite
+        having a funding source. For all other statuses, if there's funding information,
+        it should be calculated out of it.
+
         Returns:
             The total monetary amount of funding left, or none if there is no funding
             information.
         """
+        if self.status in ("Maintenance", "Finished"):
+            return None
+
         if self.funding_source.exists():
             total = sum(
                 [funding.funding_left for funding in self.funding_source.all()],
@@ -375,19 +388,31 @@ class Project(Warning, models.Model):
         if not self.total_effort:
             return None
 
-        time_entries = self.timeentry_set.all()
-        hours_logged = get_logged_hours(time_entries)[0]
-
         if self.status != "Maintenance":
+            time_entries = self.timeentry_set.all()
+            hours_logged = get_logged_hours(time_entries)[0]
             left = self.total_effort - (hours_logged / 7)
             return round(left, 1), round(left / self.total_effort * 100, 1)
 
-        # Projects with status 'Maintenance' always have (at least) two phases
-        maint_phase = self.phases.order_by("start_date").last()
+        maint_phase = self.maintenance_phase()
         assert maint_phase is not None
+        time_entries = self.timeentry_set.filter(start_time__gte=maint_phase.start_date)
+        hours_logged = get_logged_hours(time_entries)[0]
         pro_rata_used_maint = maint_phase.days - maint_phase.expected_days_left
         left = maint_phase.days - max(pro_rata_used_maint, (hours_logged / 7))
         return round(left, 1), round(left / maint_phase.days * 100, 1)
+
+    def maintenance_phase(self) -> ProjectPhase | None:
+        """Provide the maintenance phase of the project.
+
+        We assume, it is the last one of those available, for now.
+
+        Returns:
+            The maintenance phase, or None if there is no maintenance phase.
+        """
+        if self.status == "Maintenance":
+            return self.phases.order_by("start_date").last()
+        return None
 
     def check_and_notify_status(self) -> None:
         """Check the project status and notify accordingly."""

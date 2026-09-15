@@ -30,7 +30,9 @@ class ProjectTable(tables.Table):
             "th": {
                 "title": "The total effort in days available,\n"
                 "including all funding sources,\n"
-                "before any deductions are made."
+                "before any deductions are made.\n"
+                "For projects in Maintenance, this\n"
+                "accounts only for that phase.\n"
             }
         },
     )
@@ -40,8 +42,10 @@ class ProjectTable(tables.Table):
         attrs={
             "th": {
                 "title": "The total days remaining,\n"
-                "after deducting all logged\n"
-                "Clockify hours."
+                "after deducting all logged hours.\n"
+                "For projects in Maintenance, this \n"
+                "accunts for the time logged and the\n"
+                "time that has passed in the phase, pro-rata.\n"
             }
         },
     )
