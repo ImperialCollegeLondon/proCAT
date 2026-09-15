@@ -512,6 +512,10 @@ class TestProjectsPhaseDetailView(PermissionRequiredMixin, TemplateOkMixin):
             assert form.fields[field].widget.attrs["disabled"]
             assert form.fields[field].widget.attrs["readonly"]
 
+        # The 'days' and FTE 'value' fields should be displayed with 2 decimals
+        assert form.initial["days"] == f"{phase.days:.2f}"
+        assert form.initial["value"] == f"{phase.value:.2f}"
+
 
 @pytest.mark.usefixtures("funding")
 class TestFundingDetailView(PermissionRequiredMixin, TemplateOkMixin):

@@ -125,3 +125,32 @@ class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
             "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
             "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
         }
+
+
+class ProjectPhaseDetailForm(forms.ModelForm):  # type: ignore [type-arg]
+    """Read-only form to display Project Phase details.
+
+    Adds the 'days' field (not a model field, so it is not shown otherwise) and
+    formats it, along with the FTE 'value', to two decimal places for display.
+    """
+
+    days = forms.CharField(required=False, help_text="Number of days for the phase.")
+    value = forms.CharField(required=False, label="FTE value")
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[explicit-any]
+        """Override init to populate 'days' and format 'value' for display."""
+        super().__init__(*args, **kwargs)
+        if self.instance.start_date and self.instance.end_date:
+            self.initial["days"] = f"{self.instance.days:.2f}"
+        if self.instance.value is not None:
+            self.initial["value"] = f"{self.instance.value:.2f}"
+
+    class Meta:
+        """Meta class for the form."""
+
+        model = models.ProjectPhase
+        fields = ("project", "days", "value", "start_date", "end_date")
+        widgets: ClassVar = {
+            "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
+            "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
+        }
