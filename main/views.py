@@ -347,6 +347,8 @@ class ProjectPhaseDetailView(PermissionRequiredMixin, CustomBaseDetailView):
     template_name = "main/project_phase_detail.html"
     permission_required = "main.view_project_phase"
     raise_exception = False
+    fields = None  # type: ignore
+    form_class = forms.ProjectPhaseDetailForm
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
         """Add project name and funding table to the context.
