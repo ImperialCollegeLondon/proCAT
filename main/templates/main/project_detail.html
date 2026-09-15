@@ -1,6 +1,7 @@
 {% extends "main/base.html" %}
 {% load django_bootstrap5 %}
 {% load django_tables2 %}
+{% load crispy_forms_tags %}
 {% block content %}
 
   {% if messages %}
@@ -23,6 +24,43 @@
   </div>
   <!-- Phases table -->
   <h2>Project Phases:</h2>
+  {% if perms.main.change_project_phase %}
+    <form method="post">
+      {% csrf_token %}
+      {{ phase_form.management_form }}
+      {{ phase_form.non_form_errors }}
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th scope="col">Start date</th>
+              <th scope="col">End date</th>
+              <th scope="col">FTE value</th>
+              {% if perms.main.delete_project_phase %}
+                <th scope="col">Delete</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody data-phase-form-rows>
+            {% for phase in phase_form %}
+              <tr>
+                {% for hidden_field in phase.hidden_fields %}
+                  {{ hidden_field }}
+                {% endfor %}
+                <td>{{ phase.start_date|as_crispy_field }}</td>
+                <td>{{ phase.end_date|as_crispy_field }}</td>
+                <td>{{ phase.value|as_crispy_field }}</td>
+                {% if perms.main.delete_project_phase %}
+                  <td>{{ phase.DELETE|as_crispy_field }}</td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% bootstrap_button button_type="submit" button_class="btn btn-primary" content="Save Project Phases" %}
+    </form>
+  {% endif %}
   {% if perms.main.create_project_phase %}
 
     <form method="post" action="{% url 'main:project_default_phase_create' %}">
@@ -32,7 +70,6 @@
       {% bootstrap_button button_type="submit" button_class="btn btn-secondary" content="+ Create Default Phase" %}
     </form>
   {% endif %}
-  {% render_table phase_table %}
   <!-- Funding table -->
   <h2>Funding sources:</h2>
   <div class="text-start">
