@@ -392,3 +392,33 @@ def test_format_currency():
     from main.utils import format_currency
 
     assert format_currency(Decimal("23.4567")) == "£23.46"
+
+
+def test_days_to_fte():
+    """Test the days_to_fte function."""
+    from main.utils import days_to_fte
+
+    # 365 calendar days at 220 working days/year: 220 days of effort is 1.0 FTE
+    assert days_to_fte(365, 220) == pytest.approx(1.0)
+    # Half the working days is a 0.5 FTE
+    assert days_to_fte(365, 110) == pytest.approx(0.5)
+
+
+def test_fte_to_days():
+    """Test the fte_to_days function."""
+    from main.utils import fte_to_days
+
+    # A 1.0 FTE over 365 calendar days is 220 working days of effort
+    assert fte_to_days(365, 1.0) == pytest.approx(220)
+    assert fte_to_days(365, 0.5) == pytest.approx(110)
+
+
+def test_days_to_fte_and_fte_to_days_are_inverses():
+    """Test that days_to_fte and fte_to_days round-trip each other."""
+    from main.utils import days_to_fte, fte_to_days
+
+    date_difference = 200
+    days = 42.0
+
+    fte = days_to_fte(date_difference, days)
+    assert fte_to_days(date_difference, fte) == pytest.approx(days)

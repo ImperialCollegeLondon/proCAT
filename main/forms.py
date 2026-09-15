@@ -7,9 +7,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 
-from procat.settings.settings import WORKING_DAYS
-
 from . import models
+from .utils import days_to_fte
 
 
 class CustomUserCreationForm(UserCreationForm):  # type: ignore [type-arg]
@@ -104,13 +103,7 @@ class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
             self.initial["days"] = self.instance.days
 
     def clean(self) -> dict[str, Any] | None:  # type: ignore[explicit-any]
-        """Convert the 'days' field into the model's 'value' (FTE) field.
-
-        'days' is not a model field, so ModelForm never assigns it to the instance.
-        This must happen here, in 'clean', rather than in 'save', because the model's
-        own validation (checking 'value') already runs as part of form validation,
-        before 'save' is ever called.
-        """
+        """Convert the 'days' field into the model's 'value' (FTE) field."""
         cleaned_data = super().clean() or {}
 
         days = cleaned_data.get("days")
@@ -119,8 +112,7 @@ class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
 
         if days is not None and start_date and end_date and end_date > start_date:
             date_difference = (end_date - start_date).days
-            day_difference = date_difference * WORKING_DAYS / 365
-            self.instance.value = days / day_difference
+            self.instance.value = days_to_fte(date_difference, days)
 
         return cleaned_data
 
