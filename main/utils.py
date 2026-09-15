@@ -12,6 +12,8 @@ from django.db.models import Case, When
 from django.db.models.query import QuerySet
 from django.utils import timezone
 
+from procat.settings.settings import WORKING_DAYS
+
 from . import models
 from .models import Funding, Project, TimeEntry
 
@@ -277,3 +279,35 @@ def get_financial_year_dates() -> tuple[datetime, datetime]:
 def format_currency(value: Decimal) -> str:
     """Format a float value as a GBP currency with two decimal places."""
     return f"£{value:.2f}"
+
+
+def days_to_fte(date_difference: int, days: float) -> float:
+    """Convert a number of days of effort into an FTE value over a date range.
+
+    Args:
+        date_difference: The number of calendar days in the period over which the
+            effort is spread.
+        days: The number of (working) days of effort within that period.
+
+    Returns:
+        The FTE (full-time-equivalent) value equivalent to `days` of effort spread
+        over `date_difference` calendar days.
+    """
+    working_days_in_period = date_difference * WORKING_DAYS / 365
+    return days / working_days_in_period
+
+
+def fte_to_days(date_difference: int, fte: float) -> float:
+    """Convert an FTE value over a date range into a number of days of effort.
+
+    Args:
+        date_difference: The number of calendar days in the period over which the
+            FTE is spread.
+        fte: The FTE (full-time-equivalent) value.
+
+    Returns:
+        The number of (working) days of effort equivalent to `fte` spread over
+        `date_difference` calendar days.
+    """
+    working_days_in_period = date_difference * WORKING_DAYS / 365
+    return fte * working_days_in_period
