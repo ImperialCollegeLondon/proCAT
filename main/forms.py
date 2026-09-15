@@ -1,11 +1,13 @@
 """Forms needed by ProCAT."""
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
+
+from procat.settings.settings import WORKING_DAYS
 
 from . import models
 
@@ -89,11 +91,44 @@ class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
 class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
     """Form to create and edit Project Phase instances."""
 
+    days = forms.FloatField(
+        min_value=0,
+        required=True,
+        help_text="Number of days for the phase.",
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[explicit-any]
+        """Override init to populate 'days', if available."""
+        super().__init__(*args, **kwargs)
+        if self.instance.start_date:
+            self.initial["days"] = self.instance.days
+
+    def clean(self) -> dict[str, Any] | None:  # type: ignore[explicit-any]
+        """Convert the 'days' field into the model's 'value' (FTE) field.
+
+        'days' is not a model field, so ModelForm never assigns it to the instance.
+        This must happen here, in 'clean', rather than in 'save', because the model's
+        own validation (checking 'value') already runs as part of form validation,
+        before 'save' is ever called.
+        """
+        cleaned_data = super().clean() or {}
+
+        days = cleaned_data.get("days")
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+
+        if days is not None and start_date and end_date and end_date > start_date:
+            date_difference = (end_date - start_date).days
+            day_difference = date_difference * WORKING_DAYS / 365
+            self.instance.value = days / day_difference
+
+        return cleaned_data
+
     class Meta:
         """Meta class for the form."""
 
         model = models.ProjectPhase
-        fields = "__all__"
+        fields = ("project", "days", "start_date", "end_date")
         widgets: ClassVar = {
             "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
             "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
