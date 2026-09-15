@@ -688,7 +688,7 @@ class TestProjectPhaseCreateView(PermissionRequiredMixin, TemplateOkMixin):
             "project": project_static.pk,
             "start_date": project_static.start_date,
             "end_date": project_static.end_date,
-            "value": 1.0,
+            "days": 100,
         }
 
         post = admin_client.post("/project-phase/create/", expected_phase_entry)
@@ -700,7 +700,7 @@ class TestProjectPhaseCreateView(PermissionRequiredMixin, TemplateOkMixin):
         assert new_phase.project == project_static
         assert new_phase.start_date == expected_phase_entry["start_date"]
         assert new_phase.end_date == expected_phase_entry["end_date"]
-        assert new_phase.value == expected_phase_entry["value"]
+        assert new_phase.days == expected_phase_entry["days"]
 
         # Check submission rendered in projects view
         response = admin_client.get(reverse("main:projects"))
@@ -822,7 +822,7 @@ class TestProjectPhaseUpdateView(PermissionRequiredMixin, TemplateOkMixin):
             "project": project_static.pk,
             "start_date": project_static.start_date,
             "end_date": project_static.end_date,
-            "value": 2.0,
+            "days": 200,
         }
 
         post = admin_client.post(
@@ -838,7 +838,7 @@ class TestProjectPhaseUpdateView(PermissionRequiredMixin, TemplateOkMixin):
 
         # Check submission made it to DB
         phase.refresh_from_db()
-        assert phase.value == 2.0
+        assert phase.days == expected_phase_update["days"]
 
 
 @pytest.mark.django_db()
