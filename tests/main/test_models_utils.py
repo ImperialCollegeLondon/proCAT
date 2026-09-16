@@ -51,7 +51,7 @@ class TestProjectWarnings:
         days and avoid triggering the `_warn_phase_days` warning.
         """
         from main import models
-        from main.utils import fte_to_days
+        from main.utils import days_to_fte
 
         project_static = models.Project.objects.get(name="ProCATv2")
 
@@ -65,9 +65,14 @@ class TestProjectWarnings:
                 pk=first_phase.pk
             )
         )
+        assert project_static.total_working_days is not None
         needed_days = project_static.total_working_days - other_days
-        value = needed_days / fte_to_days(
-            first_phase.start_date, first_phase.end_date, 1
+        # `end_date` is inclusive, hence the `+ timedelta(days=1)`, matching how
+        # `ProjectPhase.days` computes its own value.
+        value = days_to_fte(
+            first_phase.start_date,
+            first_phase.end_date + timedelta(days=1),
+            needed_days,
         )
         models.ProjectPhase.objects.filter(pk=first_phase.pk).update(value=value)
 
@@ -89,6 +94,6 @@ class TestProjectWarnings:
         )
 
         assert project.warnings == [
-            "Project days (25.3) do not match Phase days (22.8)."
+            "Project days (25.9) do not match Phase days (23.3)."
         ]
         assert project.has_warnings
