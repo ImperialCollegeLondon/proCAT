@@ -119,7 +119,7 @@ def create_actual_monthly_charges(
                 break
 
             days_deduce = min(total_days, funding.effort_left)
-            amount = round(days_deduce * float(funding.daily_rate), 1)
+            amount = round(days_deduce * float(funding.daily_rate), 2)
             charge = models.MonthlyCharge.objects.create(
                 project=project,
                 funding=funding,

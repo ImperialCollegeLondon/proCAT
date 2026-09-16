@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from datetime import UTC, date, timedelta
 from typing import Any, cast
 
@@ -236,9 +237,11 @@ class Project(Warning, models.Model):
             return "Phases do not span project lifetime."
         return None
 
-    def _warn_wrong_days_sum(self) -> None | str:
+    def _warn_wrong_days_sum(self) -> str | None:
         """Warns if the phases do not sum to the total working days for the project."""
         project_days = self.total_working_days
+        if project_days is None:
+            return None
 
         # get query for project name
         phase_days = sum(
@@ -246,9 +249,10 @@ class Project(Warning, models.Model):
         )
 
         # do the check
-        if project_days != phase_days:
+        if not math.isclose(project_days, phase_days, abs_tol=1e-6):
             return (
-                f"Project days ({project_days}) do not match Phase days ({phase_days})."
+                f"Project days ({project_days:.1f}) do not match "
+                f"Phase days ({phase_days:.1f})."
             )
         return None
 
@@ -717,7 +721,7 @@ class Funding(models.Model):
             funding=self, status="Confirmed"
         ).aggregate(Sum("amount"))["amount__sum"]
         if funding_spent:
-            return self.budget - funding_spent
+            return float(self.budget - funding_spent)
         return float(self.budget)
 
     @property
@@ -727,7 +731,7 @@ class Funding(models.Model):
         Returns:
             The number of days worth of effort left.
         """
-        return float(self.funding_left / self.daily_rate)
+        return self.funding_left / float(self.daily_rate)
 
     def monthly_pro_rata_charge(self, date: date) -> float | None:
         """Calculate the charge per month if the project has Pro-rata charging.

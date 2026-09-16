@@ -26,7 +26,7 @@ from main.tasks import (
             50,
             10,
             "\nDear Project Lead,\n\n"
-            "The project TestProject has 50% effort left (10 days)."
+            "The project TestProject has 50% effort left (10.0 days)."
             "\nPlease check the project status and update your time spent on it."
             "\n\nBest regards,\nProCAT\n",
         ),
@@ -35,7 +35,7 @@ from main.tasks import (
             30,
             4,
             "\nDear Project Lead,\n\n"
-            "The project TestProject has 30% weeks left (4 weeks)."
+            "The project TestProject has 30% weeks left (4.0 weeks)."
             "\nPlease check the project status and update your time spent on it."
             "\n\nBest regards,\nProCAT\n",
         ),
@@ -204,7 +204,8 @@ def test_funding_expired_but_has_budget(funding, project):
     expected_message = (
         f"\nDear {funding.project.lead.get_full_name()},\n\n"
         f"The project {project.name} has expired, but there is still unspent "
-        f"funds of\n£{funding.funding_left} available (£{funding.budget} total).\n\n"
+        f"funds of\n£{funding.funding_left:.2f} available "
+        f"(£{funding.budget:.2f} total).\n\n"
         f"Please check the funding status and take necessary actions.\n\n"
         f"Best regards,\nProCAT\n"
     )
