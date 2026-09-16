@@ -1,5 +1,6 @@
 """Forms needed by ProCAT."""
 
+from datetime import timedelta
 from typing import Any, ClassVar
 
 from django import forms
@@ -111,7 +112,10 @@ class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
         end_date = cleaned_data.get("end_date")
 
         if days is not None and start_date and end_date and end_date > start_date:
-            self.instance.value = days_to_fte(start_date, end_date, days)
+            # `end_date` is an inclusive calendar date, hence the `+ timedelta(days=1)`.
+            self.instance.value = days_to_fte(
+                start_date, end_date + timedelta(days=1), days
+            )
 
         return cleaned_data
 

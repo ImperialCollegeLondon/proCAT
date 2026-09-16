@@ -202,15 +202,9 @@ class TestProject:
         )
         # Assert total number of phases required to set project to Maintenance status
         assert project.phases.count() == 2
-        # Assert sum of total working days (not calendar days) is right, save for the
-        # single calendar day gap mandated between two non-overlapping phases (the
-        # end_date of one phase and the start_date of the next must differ by more
-        # than one day), which is not counted as part of either phase.
-        from procat.settings.settings import WORKING_DAYS
-
-        gap_working_days = (1 / 365) * WORKING_DAYS
+        # Assert sum of total working days (not calendar days) is right
         assert sum(p.days for p in project.phases.all()) == pytest.approx(
-            project.total_working_days - gap_working_days
+            project.total_working_days
         )
         # Status is still 'Maintenance', check should not fail now
         project.clean()
@@ -415,17 +409,31 @@ class TestProject:
     @pytest.mark.parametrize(
         "days_end_phase1, hours_to_log, expected",
         [
-            # Each phase has 73 calendar days --> 44 working days
-            # C1: 26cd; 47/73=0.644 of cd remain | 44wd*0.644=28.3wd (exp. days left)
-            #     no_logged_hr -> 44-max([44-28.3],0)=28.3 --> 28.3*100/44=64.4%
-            pytest.param(-27, 0, (28.3, 64.4), id="Partly through maintenance"),
-            # C2: phase not started, 44wd and 100% left
-            pytest.param(10, 0, (44, 100.0), id="Maintenance not started"),
+            # Each phase has 74 calendar days (inclusive) --> 44.6 working days
+            # C1: 26cd elapsed; 47/73=0.644 of cd remain (`expected_days_left` still
+            #     uses exclusive calendar days internally) | 44.6wd*0.644=28.7wd
+            #     (exp. days left); no_logged_hr -> 44.6-max([44.6-28.7],0)=28.7
+            #     --> 28.7*100/44.6=64.4%
+            pytest.param(
+                -27,
+                0,
+                (28.716832426346407, 64.38356164383562),
+                id="Partly through maintenance",
+            ),
+            # C2: phase not started, 44.6wd and 100% left
+            pytest.param(
+                10, 0, (44.602739726027394, 100.0), id="Maintenance not started"
+            ),
             # C3: phase has finished, no time remains
             pytest.param(-80, 0, (0, 0.0), id="Maintenance complete"),
             # C4: same as C1 but logged 140h/7=20wd
-            #     44-max([44-28.3],20) | 44-20=24wd --> 24*100/44=54.5%
-            pytest.param(-27, 140, (24.0, 54.5), id="Partly through with logged time"),
+            #     44.6-max([44.6-28.7],20) | 44.6-20=24.6wd --> 24.6*100/44.6=55.2%
+            pytest.param(
+                -27,
+                140,
+                (24.602739726027394, 55.159705159705155),
+                id="Partly through with logged time",
+            ),
         ],
     )
     def test_days_left_maintenance_phase(
@@ -508,7 +516,7 @@ class TestProject:
                 "Active",
                 date(2025, 7, 1),
                 date(2025, 8, 14),
-                44 / 365 * 220,
+                45 / 365 * 220,
             ],
         ],
     )
@@ -1169,7 +1177,7 @@ class TestProjectPhase:
             pytest.param(
                 220,
                 datetime(2025, 1, 1).date(),
-                datetime(2026, 1, 1).date(),
+                datetime(2025, 12, 31).date(),
                 1,
                 None,
                 id="1 year, v=1",
@@ -1177,7 +1185,7 @@ class TestProjectPhase:
             pytest.param(
                 55,
                 datetime(2025, 1, 1).date(),
-                datetime(2025, 7, 1).date(),
+                datetime(2025, 6, 30).date(),
                 55 / (181 * 220 / 365),
                 None,
                 id="6 months, v≈0.5",
@@ -1225,14 +1233,14 @@ class TestProjectPhase:
             pytest.param(
                 1,
                 datetime(2025, 1, 1).date(),
-                datetime(2026, 1, 1).date(),
+                datetime(2025, 12, 31).date(),
                 220,
                 id="1 year @ 1 FTE",
             ),
             pytest.param(
                 0.5,
                 datetime(2025, 1, 1).date(),
-                datetime(2026, 1, 1).date(),
+                datetime(2025, 12, 31).date(),
                 110,
                 id="181 days @ 0.5 FTE",
             ),
@@ -1240,7 +1248,7 @@ class TestProjectPhase:
                 2.3,
                 datetime(2025, 7, 1).date(),
                 datetime(2026, 8, 16).date(),
-                569.7698630136986,
+                571.1561643835616,
                 id="1 year & 46 days @ 2.3 FTE",
             ),
         ),

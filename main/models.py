@@ -478,7 +478,9 @@ class Project(Warning, models.Model):
             Number of working days between the project start and end date.
         """
         if self.start_date and self.end_date:
-            days = (self.end_date - self.start_date).days
+            # `start_date`/`end_date` are an inclusive calendar range (both days
+            # count towards the project), hence the `+ 1`.
+            days = (self.end_date - self.start_date).days + 1
             return (days / 365) * WORKING_DAYS
         return None
 
@@ -984,9 +986,11 @@ class FullTimeEquivalent(models.Model):
         """Creates an FTE object given a number of days time period."""
         from .utils import days_to_fte
 
-        # FTE will then be the # of days work / the (weighted) time period in days
+        # FTE will then be the # of days work / the (weighted) time period in days.
+        # `start_date`/`end_date` are an inclusive calendar range (both days count
+        # towards the period), hence the `+ timedelta(days=1)`.
         obj = cls(
-            value=days_to_fte(start_date, end_date, days),
+            value=days_to_fte(start_date, end_date + timedelta(days=1), days),
             start_date=start_date,
             end_date=end_date,
             **kwargs,
@@ -999,7 +1003,11 @@ class FullTimeEquivalent(models.Model):
         """Convert FTE to days using the working days in a year in the settings."""
         from .utils import fte_to_days
 
-        return fte_to_days(self.start_date, self.end_date, self.value)
+        # `start_date`/`end_date` are an inclusive calendar range (both days count
+        # towards the period), hence the `+ timedelta(days=1)`.
+        return fte_to_days(
+            self.start_date, self.end_date + timedelta(days=1), self.value
+        )
 
     def trace(self, timerange: pd.DatetimeIndex | None = None) -> pd.Series[float]:
         """Convert the FTE to a dataframe.
@@ -1044,7 +1052,7 @@ class ProjectPhase(FullTimeEquivalent):
         """String representation of the ProjectPhase object."""
         return f"{self.project.name} - {self.start_date} -> {self.end_date}"
 
-    def save(self, **kwargs: Any) -> None:  # type: ignore
+    def save(self, **kwargs: Any) -> None:  # type: ignore[explicit-any]
         """Saves the object to the database.
 
         This overwrites models.Model.save() to keep the days constant if the start or
@@ -1064,7 +1072,10 @@ class ProjectPhase(FullTimeEquivalent):
             # get old date (from DB)
             old_days = ProjectPhase.objects.get(pk=self.pk).days
             # update the value keeping the days constant by updating FTE value
-            self.value = days_to_fte(self.start_date, self.end_date, old_days)
+            # `end_date` is inclusive, hence the `+ timedelta(days=1)`.
+            self.value = days_to_fte(
+                self.start_date, self.end_date + timedelta(days=1), old_days
+            )
             kwargs["update_fields"] = {"value"}.union(update_fields)
 
         super().save(**kwargs)
