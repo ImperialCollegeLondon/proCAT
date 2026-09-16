@@ -202,8 +202,16 @@ class TestProject:
         )
         # Assert total number of phases required to set project to Maintenance status
         assert project.phases.count() == 2
-        # Assert sum of total working days (not calendar days) is right
-        assert sum(p.days for p in project.phases.all()) == project.total_working_days
+        # Assert sum of total working days (not calendar days) is right, save for the
+        # single calendar day gap mandated between two non-overlapping phases (the
+        # end_date of one phase and the start_date of the next must differ by more
+        # than one day), which is not counted as part of either phase.
+        from procat.settings.settings import WORKING_DAYS
+
+        gap_working_days = (1 / 365) * WORKING_DAYS
+        assert sum(p.days for p in project.phases.all()) == pytest.approx(
+            project.total_working_days - gap_working_days
+        )
         # Status is still 'Maintenance', check should not fail now
         project.clean()
 
@@ -218,7 +226,7 @@ class TestProject:
                 "Confirmed",
                 timezone.now().date(),
                 timezone.now().date() + timedelta(days=1),
-                (0, 100.0),
+                (1 / 7, 100.0),
             ],
         ],
     )
@@ -229,7 +237,9 @@ class TestProject:
         project = models.Project(
             name="ProCAT", status=status, start_date=start_date, end_date=end_date
         )
-        assert project.weeks_to_deadline == output
+        assert project.weeks_to_deadline == (
+            pytest.approx(output) if output is not None else None
+        )
 
     @pytest.mark.django_db
     @pytest.mark.usefixtures("department", "user", "analysis_code")
@@ -399,8 +409,8 @@ class TestProject:
 
         # Check days_left has been updated
         left = funding.effort - 2.5
-        days_left = round(left, 1), round(left / project.total_effort * 100, 1)
-        assert project.days_left == days_left
+        days_left = left, left / project.total_effort * 100
+        assert project.days_left == pytest.approx(days_left)
 
     @pytest.mark.parametrize(
         "days_end_phase1, hours_to_log, expected",
@@ -488,7 +498,7 @@ class TestProject:
         # Set status to "Maintenance"
         project.status = "Maintenance"
         assert project.phases.count() == 2
-        assert project.days_left == expected
+        assert project.days_left == pytest.approx(expected, abs=0.05)
 
     @pytest.mark.parametrize(
         ["status", "start_date", "end_date", "output"],
@@ -498,7 +508,7 @@ class TestProject:
                 "Active",
                 date(2025, 7, 1),
                 date(2025, 8, 14),
-                27,
+                44 / 365 * 220,
             ],
         ],
     )
@@ -689,7 +699,7 @@ class TestFunding:
         from main import models
 
         funding = models.Funding(budget=10000.00, daily_rate=389.00)
-        assert funding.effort == 25.7
+        assert funding.effort == pytest.approx(10000.00 / 389.00)
 
     def test_is_complete_when_internal(self):
         """Test the is_complete method."""
@@ -878,7 +888,7 @@ class TestFunding:
         effort_left = float(
             (funding.budget - monthly_charge.amount) / funding.daily_rate
         )
-        assert funding.effort_left == round(effort_left, 1)
+        assert funding.effort_left == pytest.approx(effort_left)
 
     @pytest.mark.django_db
     def test_monthly_pro_rata_charge_is_none(self, user, department, analysis_code):
@@ -1230,7 +1240,7 @@ class TestProjectPhase:
                 2.3,
                 datetime(2025, 7, 1).date(),
                 datetime(2026, 8, 16).date(),
-                570,
+                569.7698630136986,
                 id="1 year & 46 days @ 2.3 FTE",
             ),
         ),
@@ -1241,7 +1251,7 @@ class TestProjectPhase:
         phase.start_date = start_date
         phase.end_date = end_date
 
-        assert phase.days == expected_days
+        assert phase.days == pytest.approx(expected_days)
 
     @pytest.mark.parametrize(
         "value,start_date,end_date,validation_error,message",

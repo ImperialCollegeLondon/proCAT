@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 _template = """
 Dear {project_leader},
 
-The project {project_name} has {threshold}% {threshold_type} left ({value} {unit}).
+The project {project_name} has {threshold}% {threshold_type} left ({value:.1f} {unit}).
 Please check the project status and update your time spent on it.
 
 Best regards,
@@ -39,7 +39,7 @@ def notify_left_threshold_logic(
     project_name: str,
     threshold_type: str,
     threshold: int,
-    value: int,
+    value: float,
 ) -> None:
     """Logic for notifying the lead about project status."""
     if threshold_type not in ("effort", "weeks"):
@@ -65,7 +65,7 @@ def notify_left_threshold(
     project_name: str,
     threshold_type: str,
     threshold: int,
-    value: int,
+    value: float,
 ) -> None:
     """Huey task wrapper that calls the core notify logic."""
     notify_left_threshold_logic(
@@ -393,8 +393,8 @@ Dear {lead},
 
 The total days used for project {project_name} has exceeded the total budget.
 
-Days left: {days_left}
-Total days for project: {total_effort}
+Days left: {days_left:.1f}
+Total days for project: {total_effort:.1f}
 
 Please review the project budget and take necessary actions.
 

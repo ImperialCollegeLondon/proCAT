@@ -51,11 +51,25 @@ class TestProjectWarnings:
         days and avoid triggering the `_warn_phase_days` warning.
         """
         from main import models
+        from main.utils import fte_to_days
 
         project_static = models.Project.objects.get(name="ProCATv2")
 
-        # Patch first phase to have a value which passes phase days warning
-        models.ProjectPhase.objects.filter(pk=1).update(value=10.9)
+        # Patch first phase to have a value which passes the phase days warning, i.e.
+        # so that the sum of both phases' days matches the project's total working
+        # days exactly.
+        first_phase = models.ProjectPhase.objects.get(pk=1)
+        other_days = sum(
+            p.days
+            for p in models.ProjectPhase.objects.filter(project=project_static).exclude(
+                pk=first_phase.pk
+            )
+        )
+        needed_days = project_static.total_working_days - other_days
+        value = needed_days / fte_to_days(
+            first_phase.start_date, first_phase.end_date, 1
+        )
+        models.ProjectPhase.objects.filter(pk=first_phase.pk).update(value=value)
 
         assert project_static.warnings == ["Phases do not span project lifetime."]
         assert project_static.has_warnings
@@ -74,5 +88,7 @@ class TestProjectWarnings:
             end_date=timezone.now().date() + timedelta(days=42),
         )
 
-        assert project.warnings == ["Project days (25) do not match Phase days (23)."]
+        assert project.warnings == [
+            "Project days (25.3) do not match Phase days (22.8)."
+        ]
         assert project.has_warnings
