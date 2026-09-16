@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, date, timedelta
-from decimal import Decimal
 from typing import Any, cast
 
 import pandas as pd
@@ -302,7 +301,7 @@ class Project(Warning, models.Model):
             )
 
     @property
-    def weeks_to_deadline(self) -> tuple[int, float] | None:
+    def weeks_to_deadline(self) -> tuple[float, float] | None:
         """Provide the number of weeks left until project deadline.
 
         Only relevant for projects in Active, Confirmed, and Maintenance statuses.
@@ -317,7 +316,7 @@ class Project(Warning, models.Model):
         ):
             left = (self.end_date - timezone.now().date()).days / 7
             total = (self.end_date - self.start_date).days / 7
-            return int(left), round(left / total * 100, 1)
+            return left, left / total * 100
 
         return None
 
@@ -341,7 +340,7 @@ class Project(Warning, models.Model):
         return None
 
     @property
-    def total_funding_left(self) -> Decimal | None:
+    def total_funding_left(self) -> float | None:
         """Provide the total funding left after deducting confirmed charges.
 
         In maintenance mode or if the project is finished, this is not relevant, despite
@@ -358,7 +357,7 @@ class Project(Warning, models.Model):
         if self.funding_source.exists():
             total = sum(
                 [funding.funding_left for funding in self.funding_source.all()],
-                Decimal(0),
+                0,
             )
             return total
 
@@ -392,7 +391,7 @@ class Project(Warning, models.Model):
             time_entries = self.timeentry_set.all()
             hours_logged = get_logged_hours(time_entries)[0]
             left = self.total_effort - (hours_logged / 7)
-            return round(left, 1), round(left / self.total_effort * 100, 1)
+            return left, left / self.total_effort * 100
 
         maint_phase = self.maintenance_phase()
         assert maint_phase is not None
@@ -400,7 +399,7 @@ class Project(Warning, models.Model):
         hours_logged = get_logged_hours(time_entries)[0]
         pro_rata_used_maint = maint_phase.days - maint_phase.expected_days_left
         left = maint_phase.days - max(pro_rata_used_maint, (hours_logged / 7))
-        return round(left, 1), round(left / maint_phase.days * 100, 1)
+        return left, left / maint_phase.days * 100
 
     def maintenance_phase(self) -> ProjectPhase | None:
         """Provide the maintenance phase of the project.
@@ -468,7 +467,7 @@ class Project(Warning, models.Model):
             self.save(update_fields=["notifications_effort", "notifications_weeks"])
 
     @property
-    def total_working_days(self) -> int | None:
+    def total_working_days(self) -> float | None:
         """Provide the total number of working (business) days given the dates.
 
         Returns:
@@ -476,7 +475,7 @@ class Project(Warning, models.Model):
         """
         if self.start_date and self.end_date:
             days = (self.end_date - self.start_date).days
-            return round((days / 365) * WORKING_DAYS)
+            return (days / 365) * WORKING_DAYS
         return None
 
     @property
@@ -703,11 +702,10 @@ class Funding(models.Model):
         Returns:
             The total number of days of effort provided by the funding.
         """
-        days_effort = round(self.budget / self.daily_rate, 1)
-        return float(days_effort)
+        return float(self.budget / self.daily_rate)
 
     @property
-    def funding_left(self) -> Decimal:
+    def funding_left(self) -> float:
         """Provide the funding left in currency.
 
         Funding left is calculated based on 'Confirmed' monthly charges.
@@ -720,7 +718,7 @@ class Funding(models.Model):
         ).aggregate(Sum("amount"))["amount__sum"]
         if funding_spent:
             return self.budget - funding_spent
-        return self.budget
+        return float(self.budget)
 
     @property
     def effort_left(self) -> float:
@@ -729,7 +727,7 @@ class Funding(models.Model):
         Returns:
             The number of days worth of effort left.
         """
-        return float(round(self.funding_left / self.daily_rate, 1))
+        return float(self.funding_left / self.daily_rate)
 
     def monthly_pro_rata_charge(self, date: date) -> float | None:
         """Calculate the charge per month if the project has Pro-rata charging.
@@ -993,11 +991,11 @@ class FullTimeEquivalent(models.Model):
         obj.save()
 
     @property
-    def days(self) -> int:
+    def days(self) -> float:
         """Convert FTE to days using the working days in a year in the settings."""
         from .utils import fte_to_days
 
-        return round(fte_to_days(self.start_date, self.end_date, self.value))
+        return fte_to_days(self.start_date, self.end_date, self.value)
 
     def trace(self, timerange: pd.DatetimeIndex | None = None) -> pd.Series[float]:
         """Convert the FTE to a dataframe.
