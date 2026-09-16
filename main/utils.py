@@ -17,6 +17,8 @@ from procat.settings.settings import WORKING_DAYS
 from . import models
 from .models import Funding, Project, TimeEntry
 
+SECONDS_PER_DAY = 24 * 60 * 60
+
 ANALYSIS_CODES = (
     {
         "code": 182130,
@@ -281,33 +283,43 @@ def format_currency(value: Decimal) -> str:
     return f"£{value:.2f}"
 
 
-def days_to_fte(date_difference: int, days: float) -> float:
+def days_to_fte(start_date: date, end_date: date, days: float) -> float:
     """Convert a number of days of effort into an FTE value over a date range.
 
+    The period is measured in seconds internally, so fractional days (e.g. if
+    `start_date`/`end_date` are datetimes with a time component) are handled
+    correctly.
+
     Args:
-        date_difference: The number of calendar days in the period over which the
-            effort is spread.
+        start_date: The start of the period over which the effort is spread.
+        end_date: The end of the period over which the effort is spread.
         days: The number of (working) days of effort within that period.
 
     Returns:
         The FTE (full-time-equivalent) value equivalent to `days` of effort spread
-        over `date_difference` calendar days.
+        over the period from `start_date` to `end_date`.
     """
+    date_difference = (end_date - start_date).total_seconds() / SECONDS_PER_DAY
     working_days_in_period = date_difference * WORKING_DAYS / 365
-    return days / working_days_in_period
+    return float(days / working_days_in_period)
 
 
-def fte_to_days(date_difference: int, fte: float) -> float:
+def fte_to_days(start_date: date, end_date: date, fte: float) -> float:
     """Convert an FTE value over a date range into a number of days of effort.
 
+    The period is measured in seconds internally, so fractional days (e.g. if
+    `start_date`/`end_date` are datetimes with a time component) are handled
+    correctly.
+
     Args:
-        date_difference: The number of calendar days in the period over which the
-            FTE is spread.
+        start_date: The start of the period over which the FTE is spread.
+        end_date: The end of the period over which the FTE is spread.
         fte: The FTE (full-time-equivalent) value.
 
     Returns:
         The number of (working) days of effort equivalent to `fte` spread over
-        `date_difference` calendar days.
+        the period from `start_date` to `end_date`.
     """
+    date_difference = (end_date - start_date).total_seconds() / SECONDS_PER_DAY
     working_days_in_period = date_difference * WORKING_DAYS / 365
-    return fte * working_days_in_period
+    return float(fte * working_days_in_period)

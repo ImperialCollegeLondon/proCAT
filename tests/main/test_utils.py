@@ -398,27 +398,52 @@ def test_days_to_fte():
     """Test the days_to_fte function."""
     from main.utils import days_to_fte
 
+    start_date = date(2025, 1, 1)
+    end_date = start_date + timedelta(days=365)
+
     # 365 calendar days at 220 working days/year: 220 days of effort is 1.0 FTE
-    assert days_to_fte(365, 220) == pytest.approx(1.0)
+    assert days_to_fte(start_date, end_date, 220) == pytest.approx(1.0)
     # Half the working days is a 0.5 FTE
-    assert days_to_fte(365, 110) == pytest.approx(0.5)
+    assert days_to_fte(start_date, end_date, 110) == pytest.approx(0.5)
 
 
 def test_fte_to_days():
     """Test the fte_to_days function."""
     from main.utils import fte_to_days
 
+    start_date = date(2025, 1, 1)
+    end_date = start_date + timedelta(days=365)
+
     # A 1.0 FTE over 365 calendar days is 220 working days of effort
-    assert fte_to_days(365, 1.0) == pytest.approx(220)
-    assert fte_to_days(365, 0.5) == pytest.approx(110)
+    assert fte_to_days(start_date, end_date, 1.0) == pytest.approx(220)
+    assert fte_to_days(start_date, end_date, 0.5) == pytest.approx(110)
+
+
+def test_days_to_fte_and_fte_to_days_handle_fractional_days():
+    """Test that fractional (sub-day) periods are handled correctly."""
+    from main.utils import days_to_fte, fte_to_days
+
+    start = datetime(2025, 1, 1, 0, 0, 0)
+    half_day_end = start + timedelta(hours=12)
+    full_day_end = start + timedelta(days=1)
+
+    # The same 1 day of effort spread over half a day is twice the FTE than
+    # spreading it over a full day.
+    half_day_fte = days_to_fte(start, half_day_end, 1)
+    full_day_fte = days_to_fte(start, full_day_end, 1)
+    assert half_day_fte == pytest.approx(full_day_fte * 2)
+
+    # Round-tripping back to days should recover the original value.
+    assert fte_to_days(start, half_day_end, half_day_fte) == pytest.approx(1)
 
 
 def test_days_to_fte_and_fte_to_days_are_inverses():
     """Test that days_to_fte and fte_to_days round-trip each other."""
     from main.utils import days_to_fte, fte_to_days
 
-    date_difference = 200
+    start_date = date(2025, 1, 1)
+    end_date = start_date + timedelta(days=200)
     days = 42.0
 
-    fte = days_to_fte(date_difference, days)
-    assert fte_to_days(date_difference, fte) == pytest.approx(days)
+    fte = days_to_fte(start_date, end_date, days)
+    assert fte_to_days(start_date, end_date, fte) == pytest.approx(days)
