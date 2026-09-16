@@ -44,7 +44,7 @@ def get_actual_chargeable_days(
         return None, None
 
     hours, _ = utils.get_logged_hours(time_entries)
-    total_days = round(hours / 7, 1)
+    total_days = hours / 7
     return total_days, pks
 
 
