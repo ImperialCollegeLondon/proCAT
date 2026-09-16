@@ -1,6 +1,5 @@
 """Tables needed by ProCAT."""
 
-from decimal import Decimal
 from typing import ClassVar
 
 import django_tables2 as tables
@@ -83,7 +82,7 @@ class ProjectTable(tables.Table):
         queryset = order_queryset_by_property(queryset, "days_left", is_descending)
         return (queryset, True)
 
-    def render_total_funding_left(self, value: Decimal) -> str:
+    def render_total_funding_left(self, value: float) -> str:
         """Render the total funding left as a monetary value."""
         return format_currency(value)
 
@@ -144,15 +143,15 @@ class ProjectTable(tables.Table):
 
         if frac <= 10:
             return mark_safe(
-                f'<span class="{base_class} bg-danger">{num} ({frac}%)</span>'
+                f'<span class="{base_class} bg-danger">{num:.1f} ({frac:.1f}%)</span>'
             )
         elif frac <= 30:
             return mark_safe(
-                f'<span class="{base_class} bg-warning">{num} ({frac}%)</span>'
+                f'<span class="{base_class} bg-warning">{num:.1f} ({frac:.1f}%)</span>'
             )
 
         return mark_safe(
-            f'<span class="{base_class} bg-success">{num} ({frac}%)</span>'
+            f'<span class="{base_class} bg-success">{num:.1f} ({frac:.1f}%)</span>'
         )
 
 
@@ -200,7 +199,7 @@ class FundingTable(tables.Table):
         },
     )
 
-    def render_budget(self, value: Decimal) -> str:
+    def render_budget(self, value: float) -> str:
         """Render the budget as a monetary value."""
         return format_currency(value)
 
@@ -218,7 +217,7 @@ class FundingTable(tables.Table):
         queryset = order_queryset_by_property(queryset, "effort_left", is_descending)
         return (queryset, True)
 
-    def render_funding_left(self, value: Decimal) -> str:
+    def render_funding_left(self, value: float) -> str:
         """Render the funding left as a monetary value."""
         return format_currency(value)
 
@@ -311,7 +310,7 @@ class CapacityTable(tables.Table):
             "class": "table table-striped table-hover table-responsive",
         }
 
-    def render_value(self, value: Decimal) -> str:
+    def render_value(self, value: float) -> str:
         """Render the value as a percentage."""
         return f"{value * 100:.0f}%"
 
