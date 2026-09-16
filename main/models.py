@@ -575,6 +575,71 @@ class Project(Warning, models.Model):
         return output
 
 
+class DailyRate(models.Model):
+    """Historical record of the standard daily rate used for funding.
+
+    Rather than storing a single mutable value, each change to the standard
+    rate is recorded as a new entry, effective from a given date. This keeps
+    an audit trail of how the standard rate has changed over time, and lets a
+    new rate be scheduled ahead of its effective date if needed.
+
+    This only supplies the *default* value proposed when a new `Funding`
+    record is created (see `get_current_daily_rate`). Each `Funding.daily_rate`
+    remains independently editable, so funding sources that use a bespoke rate
+    (different from the standard one at that point in time) can simply have
+    their rate set accordingly, and it won't be affected by later additions
+    here.
+    """
+
+    rate = models.DecimalField(
+        "Daily rate",
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text="The standard daily rate, effective from 'Effective date'.",
+    )
+
+    effective_date = models.DateField(
+        "Effective date",
+        default=timezone.now,
+        help_text="The date from which this daily rate applies.",
+    )
+
+    class Meta:
+        """Meta class for the model."""
+
+        ordering = ("-effective_date",)
+        verbose_name_plural = "daily rates"
+
+    def __str__(self) -> str:
+        """String representation of the DailyRate object."""
+        return f"£{self.rate:.2f} (from {self.effective_date})"
+
+
+# Used as a last resort by `get_current_daily_rate` if no `DailyRate` has been
+# created yet, e.g. on a fresh database before the initial one is seeded.
+FALLBACK_DAILY_RATE = 450.00
+
+
+def get_current_daily_rate() -> float:
+    """Provide the currently applicable standard daily rate.
+
+    Used as the default value for new `Funding` records. Existing records are
+    unaffected by later changes to the standard rate, since `daily_rate` is
+    stored on each `Funding` individually rather than looked up live.
+
+    Returns:
+        The rate of the most recent `DailyRate` whose `effective_date` is not
+        in the future, or `FALLBACK_DAILY_RATE` if none exists yet.
+    """
+    current = (
+        DailyRate.objects.filter(effective_date__lte=timezone.now().date())
+        .order_by("-effective_date", "-pk")
+        .first()
+    )
+    return float(current.rate) if current is not None else FALLBACK_DAILY_RATE
+
+
 class Funding(models.Model):
     """Funding associated with a project."""
 
@@ -648,13 +713,15 @@ class Funding(models.Model):
 
     daily_rate = models.DecimalField(
         "Daily rate",
-        default=389.00,
+        default=get_current_daily_rate,
         blank=False,
         null=False,
         max_digits=12,
         decimal_places=2,
         validators=[MinValueValidator(0)],
-        help_text="The current daily rate, which defaults to 389.00.",
+        help_text="The daily rate for this funding. Defaults to the current "
+        "standard rate (see the 'Daily rates' admin section), but can be "
+        "overridden for funding sources that use a different, bespoke rate.",
     )
 
     class Meta:
