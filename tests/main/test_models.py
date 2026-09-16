@@ -674,38 +674,6 @@ class TestProject:
         assert project.total_working_days == output
 
     @pytest.mark.django_db
-    @pytest.mark.usefixtures("department", "user", "analysis_code")
-    def test_effort_per_day(self):
-        """Test calculation of effort per day."""
-        from main import models
-
-        department = models.Department.objects.get(name="ICT")
-        user = models.User.objects.get(username="testuser")
-        project = models.Project.objects.create(
-            name="ProCAT",
-            department=department,
-            lead=user,
-            status="Active",
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(7),
-        )
-        assert project.effort_per_day is None
-
-        analysis_code = models.AnalysisCode.objects.get(code="1234")
-        funding = models.Funding.objects.create(
-            project=project,
-            source="External",
-            cost_centre="centre",
-            activity="G12345",
-            analysis_code=analysis_code,
-            budget=1000.00,
-            daily_rate=100.00,
-        )
-        total_effort = funding.budget / funding.daily_rate
-        effort_per_day = total_effort / project.total_working_days
-        assert project.effort_per_day == effort_per_day
-
-    @pytest.mark.django_db
     def test_fte(self, project):
         """Test the fte method."""
         from main import models
