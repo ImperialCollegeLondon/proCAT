@@ -10,6 +10,20 @@ from .models import Capacity, Funding, MonthlyCharge, Project, ProjectPhase
 from .utils import format_currency, order_queryset_by_property
 
 
+def render_boolean(value: bool) -> str:
+    """Render a boolean value as a green tick or red cross.
+
+    Args:
+        value: The boolean value to render.
+
+    Returns:
+        Safe HTML string with a colored tick or cross.
+    """
+    if value:
+        return mark_safe('<span class="fs-5">&#9989;&#65039;</span>')
+    return mark_safe('<span class="fs-5">&#10060;&#65039;</span>')
+
+
 class ProjectTable(tables.Table):
     """Table for Project listing."""
 
@@ -282,6 +296,11 @@ class ProjectPhaseTable(tables.Table):
         attrs={"th": {"title": "The FTE associated to the phase."}},
     )
 
+    is_maintenance = tables.Column(
+        verbose_name="Maintenance",
+        attrs={"th": {"title": "Whether this is the project's maintenance phase."}},
+    )
+
     def render_value(self, value: float) -> str:
         """Render the FTE value with just two decimals."""
         return str(round(value, 2))
@@ -289,6 +308,10 @@ class ProjectPhaseTable(tables.Table):
     def render_days(self, value: float) -> str:
         """Render the days with just two decimals."""
         return str(round(value, 2))
+
+    def render_is_maintenance(self, value: bool) -> str:
+        """Render is_maintenance as a green tick or red cross, instead of text."""
+        return render_boolean(value)
 
     class Meta:
         """Meta class for the table."""
@@ -300,6 +323,7 @@ class ProjectPhaseTable(tables.Table):
             "end_date",
             "days",
             "value",
+            "is_maintenance",
         )
         attrs: ClassVar[dict[str, str]] = {
             "class": "table table-striped table-hover table-responsive",

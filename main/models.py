@@ -296,12 +296,15 @@ class Project(Warning, models.Model):
                 )
                 raise ValidationError([message, *self.warnings])
 
-        # Check that a project has two phaess before updating its status to
-        # 'Maintenance'
-        if self.status == "Maintenance" and self.phases.count() < 2:
+        # Check that a project has two phases and one maintenance phase if it is set
+        # to Maintenance status.
+        if self.status == "Maintenance" and (
+            not self.phases.filter(is_maintenance=True).exists()
+            or self.phases.count() < 2
+        ):
             raise ValidationError(
                 "Projects cannot be set to Maintenance status unless there "
-                "are two phases."
+                "is exactly one maintenance phase and at least 2 phases."
             )
 
     @property
@@ -334,8 +337,9 @@ class Project(Warning, models.Model):
         Returns:
             The total number of days effort, or None if there is no funding information.
         """
-        if maint := self.maintenance_phase():
-            return maint.days
+        if self.status == "Maintenance":
+            maint = self.maintenance_phase()
+            return maint.days if maint is not None else None
 
         if self.funding_source.exists():
             total = sum([funding.effort for funding in self.funding_source.all()])
@@ -398,7 +402,8 @@ class Project(Warning, models.Model):
             return left, left / self.total_effort * 100
 
         maint_phase = self.maintenance_phase()
-        assert maint_phase is not None
+        if maint_phase is None:
+            return None
         time_entries = self.timeentry_set.filter(start_time__gte=maint_phase.start_date)
         hours_logged = get_logged_hours(time_entries)[0]
         pro_rata_used_maint = maint_phase.days - maint_phase.expected_days_left
@@ -408,13 +413,11 @@ class Project(Warning, models.Model):
     def maintenance_phase(self) -> ProjectPhase | None:
         """Provide the maintenance phase of the project.
 
-        We assume, it is the last one of those available, for now.
-
         Returns:
             The maintenance phase, or None if there is no maintenance phase.
         """
         if self.status == "Maintenance":
-            return self.phases.order_by("start_date").last()
+            return self.phases.filter(is_maintenance=True).first()
         return None
 
     def check_and_notify_status(self) -> None:
@@ -1048,6 +1051,12 @@ class ProjectPhase(FullTimeEquivalent):
         Project, related_name="phases", on_delete=models.PROTECT
     )
 
+    is_maintenance = models.BooleanField(
+        "Is maintenance phase",
+        default=False,
+        help_text="Indicates if this phase is the maintenance phase of the project.",
+    )
+
     def __str__(self) -> str:
         """String representation of the ProjectPhase object."""
         return f"{self.project.name} - {self.start_date} -> {self.end_date}"
@@ -1148,6 +1157,19 @@ class ProjectPhase(FullTimeEquivalent):
                 "Project must have associated funding before phases can be added."
             )
 
+    def check_only_one_maintenance_phase(self) -> None:
+        """Ensure only one maintenance phase exists for the project."""
+        if not self.is_maintenance:
+            return
+
+        existing_maintenance = ProjectPhase.objects.filter(
+            project=self.project, is_maintenance=True
+        )
+        if self.pk:
+            existing_maintenance = existing_maintenance.exclude(pk=self.pk)
+        if existing_maintenance.exists():
+            raise ValidationError("Only one maintenance phase is allowed per project.")
+
     def clean(self) -> None:
         """Ensures that phase dates are sensible.
 
@@ -1164,6 +1186,7 @@ class ProjectPhase(FullTimeEquivalent):
         self.check_overlapping_phases()
         self.check_phase_alignment()
         self.check_project_funding()
+        self.check_only_one_maintenance_phase()
 
     @property
     def expected_days_left(self) -> float:
