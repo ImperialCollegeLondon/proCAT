@@ -10,6 +10,7 @@ from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 from .models import (
     AnalysisCode,
     Capacity,
+    DailyRate,
     Department,
     Funding,
     MonthlyCharge,
@@ -32,6 +33,20 @@ class CapacityAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "user",
         "value",
         "start_date",
+    )
+
+
+@admin.register(DailyRate)
+class DailyRateAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    """Admin class for the DailyRate model.
+
+    Adding a new entry here changes the default rate proposed for new
+    `Funding` records going forward; it does not affect existing ones.
+    """
+
+    list_display = (
+        "rate",
+        "effective_date",
     )
 
 

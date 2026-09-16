@@ -783,6 +783,55 @@ def make_timerange(
     )
 
 
+class TestDailyRate:
+    """Tests for the DailyRate model and get_current_daily_rate."""
+
+    def test_model_str(self):
+        """Test the object string for the daily rate model."""
+        from main import models
+
+        daily_rate = models.DailyRate(rate=389.00, effective_date=date(2000, 1, 1))
+        assert str(daily_rate) == "£389.00 (from 2000-01-01)"
+
+    @pytest.mark.django_db
+    def test_get_current_daily_rate_fallback(self):
+        """Test the fallback value is used when no DailyRate exists."""
+        from main import models
+
+        models.DailyRate.objects.all().delete()
+        assert models.get_current_daily_rate() == models.FALLBACK_DAILY_RATE
+
+    @pytest.mark.django_db
+    def test_get_current_daily_rate_picks_latest_applicable(self):
+        """Test the most recent, non-future, DailyRate is picked."""
+        from main import models
+
+        today = timezone.now().date()
+        models.DailyRate.objects.create(
+            rate=389.00, effective_date=today - timedelta(days=365)
+        )
+        current = models.DailyRate.objects.create(
+            rate=405.00, effective_date=today - timedelta(days=1)
+        )
+        # Scheduled ahead of time, so should not be picked up yet.
+        models.DailyRate.objects.create(
+            rate=420.00, effective_date=today + timedelta(days=1)
+        )
+
+        assert models.get_current_daily_rate() == current.rate
+
+    @pytest.mark.django_db
+    def test_get_current_daily_rate_tie_break_by_pk(self):
+        """Test ties on effective_date are broken by the most recently created."""
+        from main import models
+
+        today = timezone.now().date()
+        models.DailyRate.objects.create(rate=389.00, effective_date=today)
+        latest = models.DailyRate.objects.create(rate=405.00, effective_date=today)
+
+        assert models.get_current_daily_rate() == latest.rate
+
+
 class TestFunding:
     """Tests for the funding model."""
 
@@ -792,18 +841,42 @@ class TestFunding:
 
         project = models.Project(name="ProCAT")
         funding = models.Funding(
-            project=project, budget=10000.00, cost_centre="centre", activity="G12345"
+            project=project,
+            budget=10000.00,
+            cost_centre="centre",
+            activity="G12345",
+            daily_rate=389.00,
         )
         assert str(funding) == "ProCAT - £10000.00 - centre_G12345"
+
+    @pytest.mark.django_db
+    def test_daily_rate_defaults_to_current_standard_rate(self, project):
+        """Test that a new Funding defaults to the current standard rate."""
+        from main import models
+
+        models.DailyRate.objects.create(
+            rate=405.00, effective_date=timezone.now().date()
+        )
+        funding = models.Funding(project=project, budget=10000.00)
+        assert funding.daily_rate == 405.00
+
+    def test_daily_rate_can_be_overridden_with_a_bespoke_rate(self):
+        """Test that a Funding can use a rate that differs from the standard one."""
+        from main import models
+
+        funding = models.Funding(budget=10000.00, daily_rate=450.00)
+        assert funding.daily_rate == 450.00
 
     def test_project_code(self):
         """Test project code generated from cost centre and activity."""
         from main import models
 
-        funding = models.Funding()
+        funding = models.Funding(daily_rate=389.00)
         assert funding.project_code == "None"
 
-        funding = models.Funding(cost_centre="centre", activity="G12345")
+        funding = models.Funding(
+            cost_centre="centre", activity="G12345", daily_rate=389.00
+        )
         assert funding.project_code == "centre_G12345"
 
     def test_effort(self):
@@ -817,7 +890,7 @@ class TestFunding:
         """Test the is_complete method."""
         from main import models
 
-        funding = models.Funding(source="Internal")
+        funding = models.Funding(source="Internal", daily_rate=389.00)
         assert funding.is_complete()
 
     def test_is_complete_when_external(self):
@@ -825,7 +898,7 @@ class TestFunding:
         from main import models
 
         # test with missing fields
-        funding = models.Funding(source="External")
+        funding = models.Funding(source="External", daily_rate=389.00)
         assert not funding.is_complete()
 
         # all fields present
@@ -840,6 +913,7 @@ class TestFunding:
             activity="G12345",
             analysis_code=analysis_code,
             expiry_date=timezone.now().date(),
+            daily_rate=389.00,
         )
         funding.is_complete()
 
@@ -855,6 +929,7 @@ class TestFunding:
             cost_centre="centre",
             activity="G12345",
             source="External",
+            daily_rate=389.00,
         )
         funding.clean()
 
