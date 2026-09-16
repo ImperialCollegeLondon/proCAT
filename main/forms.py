@@ -123,7 +123,7 @@ class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
         """Meta class for the form."""
 
         model = models.ProjectPhase
-        fields = ("project", "days", "start_date", "end_date")
+        fields = ("project", "days", "start_date", "end_date", "is_maintenance")
         widgets: ClassVar = {
             "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
             "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
@@ -152,7 +152,14 @@ class ProjectPhaseDetailForm(forms.ModelForm):  # type: ignore [type-arg]
         """Meta class for the form."""
 
         model = models.ProjectPhase
-        fields = ("project", "days", "value", "start_date", "end_date")
+        fields = (
+            "project",
+            "days",
+            "value",
+            "start_date",
+            "end_date",
+            "is_maintenance",
+        )
         widgets: ClassVar = {
             "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
             "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
