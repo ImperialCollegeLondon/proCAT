@@ -329,17 +329,32 @@ class Project(Warning, models.Model):
 
     @property
     def total_effort(self) -> float | None:
-        """Provide the total days worth of effort available from funding.
+        """Provide the total days worth of effort available.
 
-        For projects in maintenance mode, the total effort is the one associated to the
-        maintenance phase.
+        For projects in Maintenance status, the total effort is the one associated to
+        the maintenance phase. For projects in Active status, the total effort is the
+        sum of the days associated to all non-maintenance phases (this deliberately
+        excludes a maintenance phase that may already have been set up in
+        preparation for a future transition to Maintenance status). If an Active
+        project has no phases defined yet, funding is used instead: this preserves the
+        prior behaviour for projects that don't use the phases feature, and avoids a
+        circular dependency when creating the very first phase for a project (see
+        `create_default_project_phase`, which relies on `total_effort` to seed the
+        phase it creates). For all other statuses, the total effort is derived from
+        the funding sources, as before.
 
         Returns:
-            The total number of days effort, or None if there is no funding information.
+            The total number of days effort, or None if there is no relevant
+            information (funding or phases, depending on status) to derive it from.
         """
         if self.status == "Maintenance":
             maint = self.maintenance_phase()
             return maint.days if maint is not None else None
+
+        if self.status == "Active":
+            non_maintenance_phases = self.phases.filter(is_maintenance=False)
+            if non_maintenance_phases.exists():
+                return sum(phase.days for phase in non_maintenance_phases)
 
         if self.funding_source.exists():
             total = sum([funding.effort for funding in self.funding_source.all()])
@@ -397,6 +412,15 @@ class Project(Warning, models.Model):
 
         if self.status != "Maintenance":
             time_entries = self.timeentry_set.all()
+
+            # If an Active project already has a phase flagged for a future
+            # transition to Maintenance, only entries logged before that phase
+            # starts should count towards the (non-maintenance) total_effort.
+            if self.status == "Active" and (maint_phase := self.maintenance_phase()):
+                time_entries = time_entries.filter(
+                    start_time__lt=maint_phase.start_date
+                )
+
             hours_logged = get_logged_hours(time_entries)[0]
             left = self.total_effort - (hours_logged / 7)
             return left, left / self.total_effort * 100
@@ -411,14 +435,16 @@ class Project(Warning, models.Model):
         return left, left / maint_phase.days * 100
 
     def maintenance_phase(self) -> ProjectPhase | None:
-        """Provide the maintenance phase of the project.
+        """Provide the phase flagged as the maintenance phase of the project, if any.
+
+        This is not restricted to projects currently in Maintenance status: an Active
+        project may already have a phase flagged in preparation for a future
+        transition to Maintenance.
 
         Returns:
             The maintenance phase, or None if there is no maintenance phase.
         """
-        if self.status == "Maintenance":
-            return self.phases.filter(is_maintenance=True).first()
-        return None
+        return self.phases.filter(is_maintenance=True).first()
 
     def check_and_notify_status(self) -> None:
         """Check the project status and notify accordingly."""

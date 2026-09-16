@@ -283,6 +283,129 @@ class TestProject:
         assert project.total_effort == total_effort
 
     @pytest.mark.django_db
+    def test_total_effort_active_status(self, department, user, analysis_code):
+        """Test the total_effort method for projects in Active status.
+
+        Active projects should use funding as a fallback when no phases have been
+        defined yet (e.g. before the very first phase is created), but should use the
+        sum of the non-maintenance phases' days once phases exist, excluding any
+        phase flagged as the (future) maintenance phase.
+        """
+        from main import models
+
+        start_date = timezone.now().date()
+        end_date = start_date + timedelta(days=39)
+        project = models.Project.objects.create(
+            name="ProCAT",
+            department=department,
+            lead=user,
+            start_date=start_date,
+            end_date=end_date,
+            status="Active",
+        )
+
+        # No funding and no phases: total_effort is None.
+        assert project.total_effort is None
+
+        funding = models.Funding.objects.create(
+            project=project,
+            source="External",
+            cost_centre="centre",
+            activity="G12345",
+            analysis_code=analysis_code,
+            budget=10000.00,
+        )
+
+        # No phases yet: falls back to funding.
+        assert project.total_effort == funding.effort
+
+        # Add a non-maintenance phase covering the first half of the project.
+        mid = start_date + timedelta(days=19)
+        phase1 = models.ProjectPhase.objects.create(
+            project=project,
+            value=1,
+            start_date=start_date,
+            end_date=mid,
+        )
+
+        # Now that a phase exists, total_effort is phase-based, not funding-based.
+        assert project.total_effort == pytest.approx(phase1.days)
+        assert project.total_effort != funding.effort
+
+        # Add a phase flagged as the (future) maintenance phase for the second half.
+        phase2 = models.ProjectPhase.objects.create(
+            project=project,
+            value=1,
+            start_date=mid + timedelta(days=1),
+            end_date=end_date,
+            is_maintenance=True,
+        )
+
+        # The maintenance phase is excluded from the Active total_effort.
+        assert project.total_effort == pytest.approx(phase1.days)
+        assert project.total_effort != pytest.approx(phase1.days + phase2.days)
+
+    @pytest.mark.django_db
+    def test_days_left_active_with_future_maintenance_phase(self, department, user):
+        """Test days_left excludes time logged after a future maintenance phase.
+
+        An Active project may already have a phase flagged for a future transition
+        to Maintenance. Since total_effort for Active projects excludes that
+        phase's days, days_left must also exclude time logged against that future
+        period.
+        """
+        from main import models
+
+        start_date = timezone.now().date()
+        end_date = start_date + timedelta(days=39)
+        mid = start_date + timedelta(days=19)
+        maintenance_start = mid + timedelta(days=1)
+
+        project = models.Project.objects.create(
+            name="ProCAT",
+            department=department,
+            lead=user,
+            start_date=start_date,
+            end_date=end_date,
+            status="Active",
+        )
+
+        phase1 = models.ProjectPhase.objects.create(
+            project=project,
+            value=1,
+            start_date=start_date,
+            end_date=mid,
+        )
+        models.ProjectPhase.objects.create(
+            project=project,
+            value=1,
+            start_date=maintenance_start,
+            end_date=end_date,
+            is_maintenance=True,
+        )
+
+        # An entry logged before the maintenance phase starts: should count.
+        models.TimeEntry.objects.create(
+            user=user,
+            project=project,
+            start_time=datetime.combine(start_date, datetime.min.time()),
+            end_time=datetime.combine(start_date, datetime.min.time())
+            + timedelta(hours=7),
+        )  # 7 hours -> 1 day
+
+        # An entry logged on/after the maintenance phase starts: excluded.
+        models.TimeEntry.objects.create(
+            user=user,
+            project=project,
+            start_time=datetime.combine(maintenance_start, datetime.min.time()),
+            end_time=datetime.combine(maintenance_start, datetime.min.time())
+            + timedelta(hours=14),
+        )  # 14 hours -> 2 days, must NOT be counted
+
+        left = phase1.days - 1
+        assert project.days_left == pytest.approx((left, left / phase1.days * 100))
+
+    @pytest.mark.django_db
     def test_total_funding_left(self, project, analysis_code):
         """Test the total_funding_left method."""
         from main import models

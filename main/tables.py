@@ -46,6 +46,9 @@ class ProjectTable(tables.Table):
                 "before any deductions are made.\n"
                 "For projects in Maintenance, this\n"
                 "accounts only for that phase.\n"
+                "For projects in Active status with\n"
+                "phases defined, this accounts only\n"
+                "for the non-maintenance phases.\n"
             }
         },
     )
