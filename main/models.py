@@ -513,19 +513,6 @@ class Project(Warning, models.Model):
             return (days / 365) * WORKING_DAYS
         return None
 
-    @property
-    def effort_per_day(self) -> float | None:
-        """Calculate the estimated effort per day.
-
-        Considers only working (business) days.
-
-        Returns:
-            Float representing the estimated effort per day over project lifespan.
-        """
-        if self.total_effort and self.total_working_days:
-            return self.total_effort / self.total_working_days
-        return None
-
     def fte(self, timerange: pd.DatetimeIndex | None = None) -> pd.Series:  # type: ignore[explicit-any]
         """Calculate the FTE trace for the project over a given timerange.
 

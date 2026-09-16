@@ -154,7 +154,7 @@ def test_get_effort_timeseries_status_filter(
         daily_rate=400.00,
     )
 
-    # Check effort_per_day is totalled over all projects with no status filter
+    # Check effort is totalled over all projects with no status filter
     ts = timeseries.get_effort_timeseries(start_date, end_date)
     assert ts.iloc[0] == active_project.fte().iloc[0] + tentative_project.fte().iloc[0]
 
