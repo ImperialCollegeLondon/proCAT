@@ -111,8 +111,7 @@ class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
         end_date = cleaned_data.get("end_date")
 
         if days is not None and start_date and end_date and end_date > start_date:
-            date_difference = (end_date - start_date).days
-            self.instance.value = days_to_fte(date_difference, days)
+            self.instance.value = days_to_fte(start_date, end_date, days)
 
         return cleaned_data
 

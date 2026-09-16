@@ -546,10 +546,9 @@ class Project(Warning, models.Model):
 
         # Period to use them
         now = timezone.now()
-        date_difference = (self.end_date - now.date()).days
 
         # Actual excess full time equivalent needed to use those days over the time left
-        excess_fte = days_to_fte(date_difference, excess_left)
+        excess_fte = days_to_fte(now.date(), self.end_date, excess_left)
         output.loc[now : pd.Timestamp(self.end_date, tz=UTC)] = excess_fte
 
         return output
@@ -983,11 +982,9 @@ class FullTimeEquivalent(models.Model):
         """Creates an FTE object given a number of days time period."""
         from .utils import days_to_fte
 
-        # get date difference in fractional days
-        date_difference = (end_date - start_date).days
         # FTE will then be the # of days work / the (weighted) time period in days
         obj = cls(
-            value=days_to_fte(date_difference, days),
+            value=days_to_fte(start_date, end_date, days),
             start_date=start_date,
             end_date=end_date,
             **kwargs,
@@ -1000,9 +997,7 @@ class FullTimeEquivalent(models.Model):
         """Convert FTE to days using the working days in a year in the settings."""
         from .utils import fte_to_days
 
-        date_difference = (self.end_date - self.start_date).days
-
-        return round(fte_to_days(date_difference, self.value))
+        return round(fte_to_days(self.start_date, self.end_date, self.value))
 
     def trace(self, timerange: pd.DatetimeIndex | None = None) -> pd.Series[float]:
         """Convert the FTE to a dataframe.
@@ -1067,8 +1062,7 @@ class ProjectPhase(FullTimeEquivalent):
             # get old date (from DB)
             old_days = ProjectPhase.objects.get(pk=self.pk).days
             # update the value keeping the days constant by updating FTE value
-            date_difference = (self.end_date - self.start_date).days
-            self.value = days_to_fte(date_difference, old_days)
+            self.value = days_to_fte(self.start_date, self.end_date, old_days)
             kwargs["update_fields"] = {"value"}.union(update_fields)
 
         super().save(**kwargs)
