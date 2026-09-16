@@ -146,8 +146,8 @@ class TestProject:
     def test_clean_when_maintenance_not_two_phases(self, user, department):
         """Reject setting a project to Maintenance without two phases.
 
-        Updating the status of a project to 'Maintenance' without two phases must
-        not be possible.
+        Updating the status of a project to 'Maintenance' without two phases, or
+        without one of them marked as the maintenance phase, must not be possible.
         """
         from main import models
 
@@ -194,7 +194,7 @@ class TestProject:
         phase1.end_date = mid
         phase1.value = 1
         phase1.save(update_fields=["end_date", "value"])
-        models.ProjectPhase.objects.create(
+        phase2 = models.ProjectPhase.objects.create(
             project=project,
             value=1,
             start_date=mid + timedelta(days=1),
@@ -206,6 +206,18 @@ class TestProject:
         assert sum(p.days for p in project.phases.all()) == pytest.approx(
             project.total_working_days
         )
+
+        # Still cannot be set to Maintenance without a phase marked as such
+        with pytest.raises(
+            ValidationError,
+            match="set to Maintenance status unless",
+        ):
+            project.clean()
+
+        # Mark the second phase as the maintenance phase
+        phase2.is_maintenance = True
+        phase2.save(update_fields=["is_maintenance"])
+
         # Status is still 'Maintenance', check should not fail now
         project.clean()
 
@@ -476,7 +488,7 @@ class TestProject:
         )
 
         # Create two non-overlapping phases for the duration of the project
-        # The last phase is assumed to be the "Maintenance" phase
+        # The last phase is marked as the "Maintenance" phase
         models.ProjectPhase.objects.create(
             project=project,
             value=1,
@@ -488,6 +500,7 @@ class TestProject:
             value=1,
             start_date=end_phase1 + timedelta(days=1),
             end_date=project_end,
+            is_maintenance=True,
         )
 
         # Log time if needed
