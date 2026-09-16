@@ -203,6 +203,14 @@ class FundingTable(tables.Table):
         """Render the budget as a monetary value."""
         return format_currency(value)
 
+    def render_effort(self, value: float) -> str:
+        """Render the effort with just two decimals."""
+        return str(round(value, 2))
+
+    def render_effort_left(self, value: float) -> str:
+        """Render the effort left with just two decimals."""
+        return str(round(value, 2))
+
     def order_effort(
         self, queryset: QuerySet[Funding], is_descending: bool
     ) -> tuple[QuerySet[Funding], bool]:
@@ -233,10 +241,10 @@ class FundingTable(tables.Table):
 
         model = Funding
         fields = (
+            "project_code",
             "project",
             "funding_body",
             "source",
-            "project_code",
             "expiry_date",
             "budget",
             "effort",
@@ -276,6 +284,10 @@ class ProjectPhaseTable(tables.Table):
 
     def render_value(self, value: float) -> str:
         """Render the FTE value with just two decimals."""
+        return str(round(value, 2))
+
+    def render_days(self, value: float) -> str:
+        """Render the days with just two decimals."""
         return str(round(value, 2))
 
     class Meta:
