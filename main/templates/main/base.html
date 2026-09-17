@@ -17,6 +17,17 @@
     {% load django_bootstrap5 %}
     {% bootstrap_css %}
     {% bootstrap_javascript %}
+    <style>
+      /* Marks fields that are always mandatory (not just conditionally,
+         depending e.g. on a Project's status) with a red asterisk after
+         their label. Applied via BOOTSTRAP5["required_css_class"] in
+         settings.py, added automatically to any form field whose
+         underlying model field has blank=False. */
+      .requiredField label::after {
+        content: " *";
+        color: #dc3545;
+      }
+    </style>
   </head>
   <body>
     {% include "main/navbar.html" %}
