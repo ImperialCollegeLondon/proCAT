@@ -4,10 +4,9 @@ from typing import ClassVar
 
 import django_tables2 as tables
 from django.db.models import QuerySet
-from django.utils.safestring import mark_safe
 
 from .models import Capacity, Project
-from .utils import format_currency, order_queryset_by_property
+from .utils import format_currency, order_queryset_by_property, style_fraction_badge
 
 
 class ProjectTable(tables.Table):
@@ -120,42 +119,15 @@ class ProjectTable(tables.Table):
 
     def render_weeks_to_deadline(self, value: tuple[int, float]) -> str:
         """Render the weeks_to_deadline with Bootstrap badge classes."""
-        return self._style_fraction(value)
+        return style_fraction_badge(value)
 
     def render_days_left(self, value: tuple[int, float]) -> str:
         """Render the days_left with Bootstrap badge classes."""
-        return self._style_fraction(value)
+        return style_fraction_badge(value)
 
     def render_total_effort(self, value: float) -> str:
         """Render the total effort left with just two decimals."""
         return str(round(value, 2))
-
-    def _style_fraction(self, value: tuple[int, float]) -> str:
-        """Render the fraction of days with Bootstrap badge classes.
-
-        Args:
-            value: The value to use to decide on the styling as a tuple. The first
-            element is the absolute number, while the second is the fraction in %,
-            actually used for styling.
-
-        Return:
-            Safe HTML string with the appropriate styling.
-        """
-        base_class = "badge text-white fs-5 opacity-75 px-3 py-2"
-        num, frac = value
-
-        if frac <= 10:
-            return mark_safe(
-                f'<span class="{base_class} bg-danger">{num:.1f} ({frac:.1f}%)</span>'
-            )
-        elif frac <= 30:
-            return mark_safe(
-                f'<span class="{base_class} bg-warning">{num:.1f} ({frac:.1f}%)</span>'
-            )
-
-        return mark_safe(
-            f'<span class="{base_class} bg-success">{num:.1f} ({frac:.1f}%)</span>'
-        )
 
 
 class CapacityTable(tables.Table):

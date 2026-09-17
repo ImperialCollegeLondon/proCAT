@@ -19,6 +19,7 @@ from django_filters.views import FilterView
 from django_tables2 import RequestConfig, SingleTableMixin
 
 from . import forms, models, plots, report, tables
+from .utils import format_currency, style_fraction_badge, style_plain_badge
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -315,6 +316,18 @@ class ProjectDetailInlineView(PermissionRequiredMixin, View):
 
         context = {
             "project": project,
+            "total_funding_badge": style_plain_badge(
+                project.total_funding_left, format_currency, size_class="fs-4"
+            ),
+            "total_days_badge": style_plain_badge(
+                project.total_effort, lambda value: f"{value:.2f}", size_class="fs-4"
+            ),
+            "weeks_to_deadline_badge": style_fraction_badge(
+                project.weeks_to_deadline, size_class="fs-4"
+            ),
+            "days_left_badge": style_fraction_badge(
+                project.days_left, size_class="fs-4"
+            ),
             "project_form": self._disable(forms.ProjectForm(instance=project)),
             "funding_header_form": forms.FundingInlineForm(),
             "funding_forms": [
