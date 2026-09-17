@@ -1,13 +1,16 @@
 """Tests for the forms module."""
 
 from datetime import date
+from typing import Any
 
 import pytest
 
 from main import forms
 
 
-def _phase_formset_data(prefix: str, rows: list[dict]) -> dict:
+def _phase_formset_data(  # type: ignore[explicit-any]
+    prefix: str, rows: list[dict[str, Any]]
+) -> dict[str, str]:
     """Build POST-like data for the ProjectPhaseInlineFormSet management + rows."""
     data = {
         f"{prefix}-TOTAL_FORMS": str(len(rows)),
