@@ -1,0 +1,108 @@
+{% extends "main/base.html" %}
+{% load django_bootstrap5 %}
+{% load static %}
+
+{% block content %}
+
+  <!--
+  Creates or updates a Project together with all of its Funding and Phase
+  rows in a single submission. This is the only way to create or edit a
+  Project, Funding or Project Phase: there are no standalone Funding/Phase
+  views, they only ever exist attached to a Project.
+
+  Shared markup with the read-only project_inline_detail.html page (the
+  "Project" fields, and the Funding/Phases tables) lives in the
+  _project_inline_fields.html, _inline_section_table.html,
+  _inline_table_header.html and _inline_table_row.html partials, so both
+  pages stay visually consistent. Shared CSS/JS live in
+  static/css/project_inline.css and static/js/project_inline_formset.js.
+-->
+
+  <h2>{% if project %}Update{% else %}Create{% endif %} a Project</h2>
+
+  <p>
+    Fill in the project details below, together with its funding source(s)
+    and phase(s), and save everything in one go. Use the "Add funding" /
+    "Add phase" buttons to add more rows, and tick a row's "Delete" checkbox
+    to remove it on save.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="text-left">{% bootstrap_button button_type="submit" content="🖫 Save" %}</div>
+    <p>&nbsp;</p>
+
+    <div class="section-box">
+      <h4 class="section-header">Project</h4>
+      <div class="section-body">{% include "main/_project_inline_fields.html" %}</div>
+    </div>
+
+    <div class="section-box">
+      <h4 class="section-header">Funding</h4>
+      <div class="section-body">
+        {% with formset=funding_formset %}
+          <!--
+          One table row per Funding form in the formset, so multiple
+          funding sources can be reviewed and edited at a glance. Ticking
+          a row's "DELETE" checkbox removes that Funding record on save.
+        -->
+          {{ formset.non_form_errors }}
+          {{ formset.management_form }}
+          {% include "main/_inline_section_table.html" with header_fields=formset.empty_form.visible_fields rows=formset tbody_id="funding-forms" empty_message="" %}
+          <button type="button" class="btn btn-secondary btn-sm" id="add-funding">+ Add funding</button>
+          <!--
+          Hidden template row, cloned by JavaScript (see
+          static/js/project_inline_formset.js) whenever "Add funding" is
+          clicked. Never displayed directly, hence the "d-none" class on
+          this table.
+        -->
+          <table class="d-none">
+            <tbody id="empty-funding-form">
+              <tr>{% include "main/_inline_table_row.html" with form=formset.empty_form %}</tr>
+            </tbody>
+          </table>
+        {% endwith %}
+      </div>
+    </div>
+
+    <div class="section-box">
+      <h4 class="section-header">Phases</h4>
+      <div class="section-body">
+        {% with formset=phase_formset %}
+          <!--
+          Same one-row-per-form table layout as the Funding section above.
+          Group-level validation (no overlapping phases, phases must span
+          the project without gaps, and at most one maintenance phase) is
+          performed once, across every row still present after any
+          deletions, and any resulting errors are shown here as
+          formset-level (non-row-specific) errors.
+        -->
+          {{ formset.non_form_errors }}
+          {{ formset.management_form }}
+          {% include "main/_inline_section_table.html" with header_fields=formset.empty_form.visible_fields rows=formset tbody_id="phase-forms" empty_message="" %}
+          <button type="button" class="btn btn-secondary btn-sm" id="add-phase">+ Add phase</button>
+          <!--
+          Hidden template row, cloned by JavaScript whenever "Add phase"
+          is clicked. Never displayed directly, hence "d-none" above.
+        -->
+          <table class="d-none">
+            <tbody id="empty-phase-form">
+              <tr>{% include "main/_inline_table_row.html" with form=formset.empty_form %}</tr>
+            </tbody>
+          </table>
+        {% endwith %}
+      </div>
+    </div>
+
+    <div class="text-left">{% bootstrap_button button_type="submit" content="🖫 Save" %}</div>
+  </form>
+
+{% endblock content %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/project_inline.css' %}">
+{% endblock extra_css %}
+
+{% block extra_js %}
+  <script src="{% static 'js/project_inline_formset.js' %}"></script>
+{% endblock extra_js %}

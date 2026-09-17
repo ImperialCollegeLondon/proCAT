@@ -14,7 +14,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 
-from main.models import Funding, Project, ProjectPhase
+from main.models import Project
 
 from .view_utils import LoginRequiredMixin, PermissionRequiredMixin, TemplateOkMixin
 
@@ -245,66 +245,6 @@ class TestProjectsListView(LoginRequiredMixin, TemplateOkMixin):
             assert order_mock.call_args.args[2]
 
 
-class TestFundingListView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the funding view."""
-
-    _template_name = "main/funding.html"
-
-    def _get_url(self):
-        return reverse("main:funding")
-
-    @pytest.mark.django_db
-    def test_order_effort(self, admin_client):
-        """Test the order_effort method."""
-        with patch("main.tables.order_queryset_by_property") as order_mock:
-            endpoint = reverse("main:funding")
-            order_mock.return_value = Funding.objects.all()
-
-            # Test ascending sort
-            admin_client.get(endpoint, {"sort": "effort"})
-            order_mock.assert_called()
-            assert order_mock.call_args.args[1] == "effort"
-            assert not order_mock.call_args.args[2]
-
-            # Test descending sort
-            admin_client.get(endpoint, {"sort": "-effort"})
-            assert order_mock.call_args.args[2]
-
-    @pytest.mark.django_db
-    def test_order_effort_left(self, admin_client):
-        """Test the order_effort_left method."""
-        with patch("main.tables.order_queryset_by_property") as order_mock:
-            endpoint = reverse("main:funding")
-            order_mock.return_value = Funding.objects.all()
-
-            # Test ascending sort
-            admin_client.get(endpoint, {"sort": "effort_left"})
-            order_mock.assert_called()
-            assert order_mock.call_args.args[1] == "effort_left"
-            assert not order_mock.call_args.args[2]
-
-            # Test descending sort
-            admin_client.get(endpoint, {"sort": "-effort_left"})
-            assert order_mock.call_args.args[2]
-
-    @pytest.mark.django_db
-    def test_order_funding_left(self, admin_client):
-        """Test the order_funding_left method."""
-        with patch("main.tables.order_queryset_by_property") as order_mock:
-            endpoint = reverse("main:funding")
-            order_mock.return_value = Funding.objects.all()
-
-            # Test ascending sort
-            admin_client.get(endpoint, {"sort": "funding_left"})
-            order_mock.assert_called()
-            assert order_mock.call_args.args[1] == "funding_left"
-            assert not order_mock.call_args.args[2]
-
-            # Test descending sort
-            admin_client.get(endpoint, {"sort": "-funding_left"})
-            assert order_mock.call_args.args[2]
-
-
 class TestCapacitiesListView(
     PermissionRequiredMixin, LoginRequiredMixin, TemplateOkMixin
 ):
@@ -316,50 +256,86 @@ class TestCapacitiesListView(
         return reverse("main:capacities")
 
 
-@pytest.mark.django_db()
-class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the Project Create view."""
+class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Create (with Funding/Phase details) view."""
 
-    _template_name = "main/project_form.html"
+    _template_name = "main/project_inline_form.html"
 
     def _get_url(self):
         return reverse("main:project_create")
 
-    def test_post(self, admin_client, department, user):
-        """Tests the post method to update the model and render the created object."""
-        expected_project_entry = {
-            "name": "Project 123",
+    def test_post_creates_project_funding_and_phase_together(
+        self, admin_client, department, user
+    ):
+        """A single POST creates the Project, its Funding and its Phase rows."""
+        data = {
+            "name": "Inline Project",
             "nature": "Support",
             "pi": "John Smith",
             "department": department.pk,
             "lead": user.pk,
-            "start_date": timezone.now().date(),
-            "end_date": timezone.now().date() + timedelta(days=42),
-            # Use 'Tentative' as 'Active' projects cannot be created without funding
+            "start_date": "2025-01-01",
+            "end_date": "2025-12-31",
             "status": "Tentative",
             "charging": "Actual",
+            "funding-TOTAL_FORMS": "1",
+            "funding-INITIAL_FORMS": "0",
+            "funding-MIN_NUM_FORMS": "0",
+            "funding-MAX_NUM_FORMS": "1000",
+            "funding-0-source": "Internal",
+            "funding-0-budget": "1000",
+            "funding-0-daily_rate": "389",
+            "phase-TOTAL_FORMS": "1",
+            "phase-INITIAL_FORMS": "0",
+            "phase-MIN_NUM_FORMS": "0",
+            "phase-MAX_NUM_FORMS": "1000",
+            "phase-0-days": "100",
+            "phase-0-start_date": "2025-01-01",
+            "phase-0-end_date": "2025-12-31",
         }
 
-        post = admin_client.post("/projects/create/", expected_project_entry)
+        response = admin_client.post(self._get_url(), data)
 
-        # Check we got redirect URL (not a refresh 200)
-        assert post.status_code == HTTPStatus.FOUND
-        # Check submission made it to DB
-        new_object = Project.objects.get(name=expected_project_entry["name"])
-        assert new_object.nature == expected_project_entry["nature"]
-        assert new_object.pi == expected_project_entry["pi"]
-        assert new_object.lead == user
-        assert new_object.department == department
-        assert new_object.start_date == expected_project_entry["start_date"]
-        assert new_object.end_date == expected_project_entry["end_date"]
-        assert new_object.status == expected_project_entry["status"]
-        assert new_object.charging == expected_project_entry["charging"]
+        # Check we got a redirect URL (not a re-render with errors)
+        assert response.status_code == HTTPStatus.FOUND
 
-        # Check submission rendered in projects view
-        response = admin_client.get(reverse("main:projects"))
+        project = Project.objects.get(name="Inline Project")
+        assert project.funding_source.count() == 1
+        assert project.phases.count() == 1
+
+    def test_post_with_invalid_phase_rolls_back_everything(
+        self, admin_client, department, user
+    ):
+        """If the phase formset is invalid, nothing should be persisted at all."""
+        data = {
+            "name": "Should Not Be Created",
+            "nature": "Support",
+            "pi": "John Smith",
+            "department": department.pk,
+            "lead": user.pk,
+            "start_date": "2025-01-01",
+            "end_date": "2025-12-31",
+            "status": "Tentative",
+            "charging": "Actual",
+            "funding-TOTAL_FORMS": "0",
+            "funding-INITIAL_FORMS": "0",
+            "funding-MIN_NUM_FORMS": "0",
+            "funding-MAX_NUM_FORMS": "1000",
+            "phase-TOTAL_FORMS": "1",
+            "phase-INITIAL_FORMS": "0",
+            "phase-MIN_NUM_FORMS": "0",
+            "phase-MAX_NUM_FORMS": "1000",
+            # Outside the project's own start/end dates: rejected per-row.
+            "phase-0-days": "10",
+            "phase-0-start_date": "2020-01-01",
+            "phase-0-end_date": "2020-01-31",
+        }
+
+        response = admin_client.post(self._get_url(), data)
+
+        # Invalid formset: the page is re-rendered with errors, not a redirect.
         assert response.status_code == HTTPStatus.OK
-        projects = response.context["project_list"].values("name")[0]
-        assert "Project 123" in projects["name"]
+        assert not Project.objects.filter(name="Should Not Be Created").exists()
 
     def test_post_active_without_funding_rejected(self, admin_client, department, user):
         """Creating a project directly as 'Active' (no funding) must not be possible."""
@@ -373,184 +349,146 @@ class TestProjectCreateView(PermissionRequiredMixin, TemplateOkMixin):
             "end_date": timezone.now().date() + timedelta(days=42),
             "status": "Active",
             "charging": "Actual",
+            "funding-TOTAL_FORMS": "0",
+            "funding-INITIAL_FORMS": "0",
+            "funding-MIN_NUM_FORMS": "0",
+            "funding-MAX_NUM_FORMS": "1000",
+            "phase-TOTAL_FORMS": "0",
+            "phase-INITIAL_FORMS": "0",
+            "phase-MIN_NUM_FORMS": "0",
+            "phase-MAX_NUM_FORMS": "1000",
         }
 
-        # Simulate admin logs in and tries to create form defined in `data`
-        response = admin_client.post("/projects/create/", data)
-        # Form is now invalid, post should not be saved
+        response = admin_client.post(self._get_url(), data)
+
+        # Form is invalid: the page is re-rendered with errors, not a redirect.
         assert response.status_code == HTTPStatus.OK
-        # 200 is expected, nothing should be found in the db
         assert not Project.objects.filter(name="Should Fail").exists()
         # Check that the expected error is shown to the user
         assert b"Projects cannot be created directly in" in response.content
 
 
-@pytest.mark.usefixtures("project")
-class TestProjectUpdateView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the Project Update view."""
+@pytest.mark.usefixtures("project_static")
+class TestProjectUpdateInlineView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Update (with Funding/Phase details) view."""
 
-    _template_name = "main/project_update.html"
+    _template_name = "main/project_inline_form.html"
 
     def _get_url(self):
         from main import models
 
-        project = models.Project.objects.get(name="ProCAT")
+        project = models.Project.objects.get(name="ProCATv2")
 
         return reverse("main:project_update", kwargs={"pk": project.pk})
 
-    def test_post(self, admin_client, project, funding):
-        """Tests the post method to update the model and render the updated object."""
-        # Create the (full) initial db entry and link a funding source
-        project.nature = "Support"
-        project.pi = "John Smith"
-        project.charging = "Actual"
-        project.notifications_effort = {}
-        project.notifications_weeks = {}
-        project.clockify_id = ""
-        assert project.name == "ProCAT"
+    def test_post_adds_funding_and_phase_to_existing_project(
+        self, admin_client, project_static
+    ):
+        """Editing the project can add new Funding/Phase rows in one go."""
+        existing_funding_count = project_static.funding_source.count()
 
-        # update values (a form submission requires all fields sent)
-        expected_project_update = {
-            "name": "Project 123",
-            "nature": project.nature,
-            "pi": project.pi,
-            "department": project.department.pk,
-            "lead": project.lead.pk,
-            "start_date": project.start_date,
-            "end_date": project.end_date,
-            "status": project.status,
-            "charging": project.charging,
-            "notifications_effort": project.notifications_effort,
-            "notifications_weeks": project.notifications_weeks,
-            "clockify_id": project.clockify_id,
+        data = {
+            "name": "Renamed ProCATv2",
+            "nature": "Support",
+            "pi": "Jane Doe",
+            "department": project_static.department.pk,
+            "lead": project_static.lead.pk,
+            "start_date": project_static.start_date,
+            "end_date": project_static.end_date,
+            "status": project_static.status,
+            "charging": project_static.charging,
+            "funding-TOTAL_FORMS": "1",
+            "funding-INITIAL_FORMS": "0",
+            "funding-MIN_NUM_FORMS": "0",
+            "funding-MAX_NUM_FORMS": "1000",
+            "funding-0-source": "Internal",
+            "funding-0-budget": "1000",
+            "funding-0-daily_rate": "389",
+            "phase-TOTAL_FORMS": "1",
+            "phase-INITIAL_FORMS": "0",
+            "phase-MIN_NUM_FORMS": "0",
+            "phase-MAX_NUM_FORMS": "1000",
+            "phase-0-days": "50",
+            "phase-0-start_date": "2025-01-01",
+            "phase-0-end_date": "2025-06-30",
         }
 
-        post = admin_client.post(
-            reverse("main:project_update", kwargs={"pk": project.pk}),
-            expected_project_update,
-        )
+        response = admin_client.post(self._get_url(), data)
 
-        # Check we got redirect URL (not a refresh 200)
-        assert post.status_code == HTTPStatus.FOUND
+        assert response.status_code == HTTPStatus.FOUND
 
-        # Check submission made it to DB
-        project.refresh_from_db()
-        assert project.name == expected_project_update["name"]
+        project_static.refresh_from_db()
+        assert project_static.name == "Renamed ProCATv2"
+        assert project_static.funding_source.count() == existing_funding_count + 1
+        assert project_static.phases.count() == 1
 
-        # Check submission rendered in project detail view and # main projects view
-        for url in [post.url, reverse("main:projects")]:
-            response = admin_client.get(url)
-            assert response.status_code == HTTPStatus.OK
-            assert expected_project_update["name"] in response.content.decode()
+        # Check the update is reflected on the (new, inline) project detail page
+        # and on the main projects view.
+        for url in [response.url, reverse("main:projects")]:
+            page = admin_client.get(url)
+            assert page.status_code == HTTPStatus.OK
+            assert "Renamed ProCATv2" in page.content.decode()
 
 
-@pytest.mark.usefixtures("project")
-class TestProjectsDetailView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the projects view."""
+@pytest.mark.usefixtures("project_static", "phase")
+class TestProjectDetailInlineView(PermissionRequiredMixin, TemplateOkMixin):
+    """Test suite for the Project Detail (with Funding/Phase details) view."""
 
-    _template_name = "main/project_detail.html"
+    _template_name = "main/project_inline_detail.html"
 
     def _get_url(self):
         from main import models
 
-        project = models.Project.objects.get(name="ProCAT")
+        project = models.Project.objects.get(name="ProCATv2")
 
         return reverse("main:project_detail", kwargs={"pk": project.pk})
 
-    def test_get(self, admin_client, project):
-        """Tests the get method and the data provided."""
-        from main import tables
+    def test_get_shows_project_funding_and_phase_details(
+        self, admin_client, project_static, phase
+    ):
+        """The page shows the Project's existing Funding and Phase rows."""
+        response = admin_client.get(self._get_url())
 
-        endpoint = reverse("main:project_detail", kwargs={"pk": project.pk})
-
-        response = admin_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
-        assert "form" in response.context
-        assert response.context["project_name"] == project.name
-        assert isinstance(response.context["funding_table"], tables.FundingTable)
 
-        # The form should be readonly
-        form = response.context["form"]
-        for field in form.fields.keys():
-            assert form.fields[field].widget.attrs["disabled"]
-            assert form.fields[field].widget.attrs["readonly"]
+        content = response.content.decode()
+        assert project_static.name in content
 
+        funding = project_static.funding_source.first()
+        assert funding is not None
+        assert str(funding.budget) in content
 
-@pytest.mark.usefixtures("project", "phase")
-class TestProjectsPhaseDetailView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the projects view."""
+        project_phase = project_static.phases.first()
+        assert project_phase is not None
+        assert str(project_phase.start_date) in content
 
-    _template_name = "main/project_phase_detail.html"
+        # The forms in context should all be disabled/read-only.
+        project_form = response.context["project_form"]
+        for field in project_form.fields.keys():
+            assert project_form.fields[field].widget.attrs["disabled"]
+            assert project_form.fields[field].widget.attrs["readonly"]
 
-    def _get_url(self):
+        for form in [
+            *response.context["funding_forms"],
+            *response.context["phase_forms"],
+        ]:
+            for field in form.fields.keys():
+                assert form.fields[field].widget.attrs["disabled"]
+                assert form.fields[field].widget.attrs["readonly"]
+
+    def test_get_with_no_funding_or_phases(self, admin_client, project_static):
+        """The page renders gracefully when there is no Funding/Phase yet."""
         from main import models
 
-        project_phase = models.ProjectPhase.objects.first()
-        assert project_phase
-        project = project_phase.project
+        # Remove the funding/phases created by the project_static/phase fixtures.
+        models.Funding.objects.filter(project=project_static).delete()
+        models.ProjectPhase.objects.filter(project=project_static).delete()
 
-        return reverse(
-            "main:project_phase_detail",
-            kwargs={"project_pk": project.pk, "pk": project_phase.pk},
-        )
+        response = admin_client.get(self._get_url())
 
-    def test_get(self, admin_client, project_static, phase):
-        """Tests the get method and the data provided."""
-        endpoint = reverse(
-            "main:project_phase_detail",
-            kwargs={"project_pk": project_static.pk, "pk": phase.pk},
-        )
-
-        response = admin_client.get(endpoint)
         assert response.status_code == HTTPStatus.OK
-        assert "form" in response.context
-        assert response.context["project_name"] == project_static.name
-
-        # The form should be readonly
-        form = response.context["form"]
-        for field in form.fields.keys():
-            assert form.fields[field].widget.attrs["disabled"]
-            assert form.fields[field].widget.attrs["readonly"]
-
-        # The 'days' and FTE 'value' fields should be displayed with 2 decimals
-        assert form.initial["days"] == f"{phase.days:.2f}"
-        assert form.initial["value"] == f"{phase.value:.2f}"
-
-
-@pytest.mark.usefixtures("funding")
-class TestFundingDetailView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the funding view."""
-
-    _template_name = "main/funding_detail.html"
-
-    def _get_url(self):
-        from main import models
-
-        funding = models.Funding.objects.get(activity="G12345")
-
-        return reverse("main:funding_detail", kwargs={"pk": funding.pk})
-
-    def test_get(self, admin_client, funding):
-        """Tests the get method and the data provided."""
-        from main import tables
-
-        endpoint = reverse("main:funding_detail", kwargs={"pk": funding.pk})
-
-        response = admin_client.get(endpoint)
-        assert response.status_code == HTTPStatus.OK
-        assert "form" in response.context
-        assert response.context["funding_name"] == str(funding)
-
-        assert "monthly_charges_table" in response.context
-        assert isinstance(
-            response.context["monthly_charges_table"], tables.MonthlyChargeTable
-        )
-
-        # The form should be readonly
-        form = response.context["form"]
-        for field in form.fields.keys():
-            assert form.fields[field].widget.attrs["disabled"]
-            assert form.fields[field].widget.attrs["readonly"]
+        assert response.context["funding_forms"] == []
+        assert response.context["phase_forms"] == []
 
 
 class TestCapacityPlanningView(LoginRequiredMixin, TemplateOkMixin):
@@ -630,275 +568,3 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         response = views.CostRecoveryView.as_view()(request)
         assert response.headers["Content-Type"] == "text/csv"
         assert f"charges_report_{month}-{year}.csv" in response["Content-Disposition"]
-
-
-class TestFundingCreateView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the Funding Create view."""
-
-    _template_name = "main/funding_form.html"
-
-    def _get_url(self):
-        return reverse("main:funding_create")
-
-    def test_post(self, admin_client, project, analysis_code):
-        """Tests the post method to create a Funding record."""
-        expected_funding_entry = {
-            "project": project.pk,
-            "source": "External",
-            "funding_body": "UKRI",
-            "cost_centre": "CC123",
-            "activity": "P12345",
-            "analysis_code": analysis_code.pk,
-            "expiry_date": timezone.now().date() + timedelta(days=365),
-            "budget": "100000.00",
-            "daily_rate": "400.00",
-        }
-
-        post = admin_client.post(self._get_url(), expected_funding_entry)
-
-        # Check we got redirect URL (not a refresh 200)
-        assert post.status_code == HTTPStatus.FOUND
-
-        # Check submission made it to DB
-        new_object = Funding.objects.get(project=project)
-        assert new_object.source == expected_funding_entry["source"]
-        assert new_object.funding_body == expected_funding_entry["funding_body"]
-        assert new_object.cost_centre == expected_funding_entry["cost_centre"]
-        assert new_object.activity == expected_funding_entry["activity"]
-        assert new_object.analysis_code == analysis_code
-        assert new_object.expiry_date == expected_funding_entry["expiry_date"]
-        assert str(new_object.budget) == expected_funding_entry["budget"]
-        assert str(new_object.daily_rate) == expected_funding_entry["daily_rate"]
-
-        # Check submission rendered in funding list view
-        response = admin_client.get(reverse("main:funding"))
-        assert response.status_code == HTTPStatus.OK
-        funding_list = response.context["funding_list"].values("project")[0]
-        assert project.pk == funding_list["project"]
-
-
-@pytest.mark.django_db()
-class TestProjectPhaseCreateView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the Project Phase Create view."""
-
-    _template_name = "main/project_phase_form.html"
-
-    def _get_url(self):
-        return reverse("main:project_phase_create")
-
-    def test_post(self, admin_client, project_static):
-        """Tests the post method to create a project phase."""
-        expected_phase_entry = {
-            "project": project_static.pk,
-            "start_date": project_static.start_date,
-            "end_date": project_static.end_date,
-            "days": 100,
-        }
-
-        post = admin_client.post("/project-phase/create/", expected_phase_entry)
-
-        # Check we got redirect URL (not a refresh 200)
-        assert post.status_code == HTTPStatus.FOUND
-        # Check submission made it to DB
-        new_phase = ProjectPhase.objects.get(project=project_static)
-        assert new_phase.project == project_static
-        assert new_phase.start_date == expected_phase_entry["start_date"]
-        assert new_phase.end_date == expected_phase_entry["end_date"]
-        assert new_phase.days == expected_phase_entry["days"]
-
-        # Check submission rendered in projects view
-        response = admin_client.get(reverse("main:projects"))
-        assert response.status_code == HTTPStatus.OK
-
-
-@pytest.mark.usefixtures("funding")
-class TestFundingUpdateView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the Funding Update view."""
-
-    _template_name = "main/funding_update.html"
-
-    def _get_url(self):
-        from main import models
-
-        funding = models.Funding.objects.first()
-        assert funding
-
-        return reverse("main:funding_update", kwargs={"pk": funding.pk})
-
-    def test_post(self, admin_client, funding, analysis_code):
-        """Tests the post method to update the model and render the updated object."""
-        # Create the initial db entry
-        funding.source = "External"
-        funding.funding_body = "UKRI"
-        funding.cost_centre = "CC123"
-        funding.activity = "P12345"
-
-        # update values (a form submission requires all fields sent)
-        expected_funding_update = {
-            "project": funding.project.pk,
-            "source": funding.source,
-            "funding_body": "EPSRC",
-            "cost_centre": funding.cost_centre,
-            "activity": funding.activity,
-            "analysis_code": analysis_code.pk,
-            "expiry_date": funding.expiry_date,
-            "budget": funding.budget,
-            "daily_rate": funding.daily_rate,
-        }
-
-        post = admin_client.post(
-            reverse("main:funding_update", kwargs={"pk": funding.pk}),
-            expected_funding_update,
-        )
-
-        # Check we got redirect URL (not a refresh 200)
-        assert post.status_code == HTTPStatus.FOUND
-
-        # Check submission made it to DB
-        funding.refresh_from_db()
-        assert funding.funding_body == expected_funding_update["funding_body"]
-
-        # Check submission rendered in funding detail view and main funding view
-        for url in [post.url, reverse("main:funding")]:
-            response = admin_client.get(url)
-            assert response.status_code == HTTPStatus.OK
-            assert expected_funding_update["funding_body"] in response.content.decode()
-
-
-@pytest.mark.usefixtures("phase")
-@pytest.mark.django_db()
-class TestProjectPhaseDeleteView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the Project Phase Delete view."""
-
-    _template_name = "main/project_phase_delete.html"
-
-    def _get_url(self):
-        from main import models
-
-        project_phase = models.ProjectPhase.objects.first()
-        assert project_phase
-        return reverse(
-            "main:project_phase_delete",
-            kwargs={"project_pk": project_phase.project.pk, "pk": project_phase.pk},
-        )
-
-    def test_post(self, admin_client, project_static):
-        """Tests the post method deletes the project phase."""
-        phase = ProjectPhase.objects.first()
-        phase_pk = phase.pk
-
-        post = admin_client.post(
-            reverse(
-                "main:project_phase_delete",
-                kwargs={"project_pk": project_static.pk, "pk": phase_pk},
-            ),
-        )
-
-        # Check we got redirect URL
-        assert post.status_code == HTTPStatus.FOUND
-
-        # Check phase was deleted from DB
-        assert not ProjectPhase.objects.filter(pk=phase_pk).exists()
-
-
-@pytest.mark.usefixtures("phase")
-@pytest.mark.django_db()
-class TestProjectPhaseUpdateView(PermissionRequiredMixin, TemplateOkMixin):
-    """Test suite for the Project Phase Update view."""
-
-    _template_name = "main/project_phase_update.html"
-
-    def _get_url(self):
-        from main import models
-
-        project_phase = models.ProjectPhase.objects.first()
-        assert project_phase
-        return reverse(
-            "main:project_phase_update",
-            kwargs={"project_pk": project_phase.project.pk, "pk": project_phase.pk},
-        )
-
-    def test_post(self, admin_client, project_static):
-        """Tests the post method to update a project phase."""
-        phase = ProjectPhase.objects.first()
-
-        expected_phase_update = {
-            "project": project_static.pk,
-            "start_date": project_static.start_date,
-            "end_date": project_static.end_date,
-            "days": 200,
-        }
-
-        post = admin_client.post(
-            reverse(
-                "main:project_phase_update",
-                kwargs={"project_pk": project_static.pk, "pk": phase.pk},
-            ),
-            expected_phase_update,
-        )
-
-        # Check we got redirect URL (not a refresh 200)
-        assert post.status_code == HTTPStatus.FOUND
-
-        # Check submission made it to DB
-        phase.refresh_from_db()
-        assert phase.days == expected_phase_update["days"]
-
-
-@pytest.mark.django_db()
-class TestCreateDefaultPhaseView(PermissionRequiredMixin):
-    """Test suite for the Create Default Phase view."""
-
-    _template_name = "main/project_detail.html"
-
-    def _get_url(self):
-        return reverse("main:project_default_phase_create")
-
-    def test_post_phase_added(self, admin_client, project_static):
-        """Tests the post method to create a default project phase.
-
-        Tests that when the form is submitted, a default project phase is created for
-        the specified project and the user is redirected to the project detail page.
-        """
-        post = admin_client.post(
-            reverse("main:project_default_phase_create"),
-            {"project_name": project_static.name},
-        )
-
-        # Check we got redirect URL (not a refresh 200)
-        assert post.status_code == HTTPStatus.FOUND
-        assert post.url == reverse(
-            "main:project_detail", kwargs={"pk": project_static.pk}
-        )
-
-        # Check a new phase was created in DB with the correct values
-        new_phase = ProjectPhase.objects.filter(project=project_static).last()
-        assert new_phase is not None
-        assert new_phase.project == project_static
-        assert new_phase.start_date == project_static.start_date
-        assert new_phase.end_date == project_static.end_date
-        assert new_phase.value < 1.0
-
-    def test_post_no_effort(self, admin_client, project_static):
-        """Tests the post method when the project has no total effort defined.
-
-        Tests that when the form is submitted for a project with no total effort, no
-        phase is created and the user is redirected to the project detail page.
-        """
-        # Remove funding sources, so there's no effort
-        project_static.funding_source.all().delete()
-
-        post = admin_client.post(
-            reverse("main:project_default_phase_create"),
-            {"project_name": project_static.name},
-        )
-
-        # Check we got redirect URL (not a refresh 200)
-        assert post.status_code == HTTPStatus.FOUND
-        assert post.url == reverse(
-            "main:project_detail", kwargs={"pk": project_static.pk}
-        )
-
-        # Check no new phase was created in DB
-        phases = ProjectPhase.objects.filter(project=project_static)
-        assert not phases.exists()

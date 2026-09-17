@@ -1,0 +1,18 @@
+<!--
+  Shared table-header partial for the Funding/Phases sections of the
+  Project "inline" pages (project_inline_form.html and
+  project_inline_detail.html). Renders one <th> per visible field of
+  `header_fields` (a form's `visible_fields`, e.g. a formset's
+  `empty_form.visible_fields`, or a plain unbound form used only to
+  supply column labels). Fields that are always mandatory are marked
+  with a red "*", since their own per-row label is hidden
+  (show_label=False) when the row itself is rendered.
+-->
+{% for field in header_fields %}
+  <th>
+    {{ field.label }}
+    {% if field.field.required %}
+      <span class="text-danger">*</span>
+    {% endif %}
+  </th>
+{% endfor %}

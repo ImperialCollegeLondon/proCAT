@@ -1,0 +1,45 @@
+{% extends "main/base.html" %}
+{% load django_bootstrap5 %}
+{% load static %}
+
+{% block content %}
+
+  <!--
+  Read-only counterpart of project_inline_form.html (used by
+  ProjectCreateInlineView / ProjectUpdateInlineView): shows a Project
+  together with all of its Funding and Phase rows on one page, but with
+  every field disabled and none of the editing affordances (no form tag,
+  no CSRF token, no Save/Add buttons, no JavaScript).
+
+  Shared markup/CSS with project_inline_form.html is described in that
+  template's own top comment.
+-->
+
+  <h2>Project details</h2>
+
+  <div class="section-box">
+    <h4 class="section-header">Project</h4>
+    <div class="section-body">{% include "main/_project_inline_fields.html" %}</div>
+  </div>
+
+  <div class="section-box">
+    <h4 class="section-header">Funding</h4>
+    <div class="section-body">
+      <!-- One table row per existing Funding record. -->
+      {% include "main/_inline_section_table.html" with header_fields=funding_header_form.visible_fields rows=funding_forms empty_message="No funding entries." %}
+    </div>
+  </div>
+
+  <div class="section-box">
+    <h4 class="section-header">Phases</h4>
+    <div class="section-body">
+      <!-- One table row per existing Phase record. -->
+      {% include "main/_inline_section_table.html" with header_fields=phase_header_form.visible_fields rows=phase_forms empty_message="No phases." %}
+    </div>
+  </div>
+
+{% endblock content %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/project_inline.css' %}">
+{% endblock extra_css %}

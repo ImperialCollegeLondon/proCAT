@@ -1,0 +1,15 @@
+{% load django_bootstrap5 %}
+<!--
+  Shared table-row partial for the Funding/Phases sections of the
+  Project "inline" pages. Renders a single `form` (a formset row, a
+  formset's empty_form used as a hidden JS-cloning template, or a plain
+  per-instance ModelForm on the read-only detail page) as the contents
+  of a <tr>: any hidden fields first (e.g. a formset row's primary key),
+  then one <td> per visible field.
+-->
+{% for hidden in form.hidden_fields %}
+  {{ hidden }}
+{% endfor %}
+{% for field in form.visible_fields %}
+  <td>{% bootstrap_field field show_label=False show_help=False %}</td>
+{% endfor %}
