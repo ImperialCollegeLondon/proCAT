@@ -38,7 +38,7 @@ dev = [
     "pytest-django",
     "pytest-mock",
     "django-stubs[compatible-mypy]",
-    "djlint",
+    "djlint==1.45.2",  # keep in sync with the rev pinned in .pre-commit-config.yaml
     "pandas-stubs",
 ]
 doc = [

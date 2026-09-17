@@ -2,7 +2,8 @@
 {% load static %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{% url 'main:home' %}"><!-- djlint:off -->
+    <a class="navbar-brand"
+       href="{% url 'main:home' %}"><!-- djlint:off -->
       <img src="{% static 'ProCAT_logo_inline.png' %}"
            alt=""
            class="img-fluid"
@@ -19,7 +20,8 @@
           <a class="nav-link" href="{% url 'main:projects' %}">Projects</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'main:capacity_planning' %}">Capacity planning</a>
+          <a class="nav-link"
+             href="{% url 'main:capacity_planning' %}">Capacity planning</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{% url 'main:cost_recovery' %}">Cost recovery</a>

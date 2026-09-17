@@ -15,7 +15,9 @@
 -->
 <table class="table table-sm align-middle">
   <thead class="table-light">
-    <tr>{% include "main/_inline_table_header.html" with header_fields=header_fields %}</tr>
+    <tr>
+      {% include "main/_inline_table_header.html" with header_fields=header_fields %}
+    </tr>
   </thead>
   <tbody{% if tbody_id %} id="{{ tbody_id }}"{% endif %}>
     {% for form in rows %}
