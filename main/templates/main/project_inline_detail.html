@@ -17,10 +17,46 @@
 
   <h2>Project details</h2>
 
-  {% if perms.main.change_project and perms.main.change_funding and perms.main.change_project_phase %}
-    <a class="btn btn-primary mb-3"
-       href="{% url 'main:project_update' pk=project.pk %}">Edit Project</a>
-  {% endif %}
+  <!--
+  The Edit button (left) and the at-a-glance summary badges (right) share
+  one row: "justify-content-between" pushes the badges flush to the right
+  regardless of whether the Edit button is shown, since the flex item
+  ordering (not its size) determines the left/right split.
+
+  The badges are computed from the Project model's own properties (see
+  main/views.py, ProjectDetailInlineView.get()). "N/A" is shown instead of
+  a value when a metric isn't relevant for the project's current status
+  (e.g. weeks/days left aren't tracked for a Tentative project with no
+  dates yet). Weeks/days left are colour-graded (red/amber/green) by how
+  much of each is remaining; funding and total days are shown in a
+  neutral colour since they don't have a "good/bad" fraction.
+-->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      {% if perms.main.change_project and perms.main.change_funding and perms.main.change_project_phase %}
+        <a class="btn btn-primary"
+           href="{% url 'main:project_update' pk=project.pk %}">Edit Project</a>
+      {% endif %}
+    </div>
+    <div class="d-flex flex-wrap gap-4">
+      <div class="text-center">
+        <div class="fs-4 text-muted mb-1">Total Funding</div>
+        {{ total_funding_badge }}
+      </div>
+      <div class="text-center">
+        <div class="fs-4 text-muted mb-1">Total Days</div>
+        {{ total_days_badge }}
+      </div>
+      <div class="text-center">
+        <div class="fs-4 text-muted mb-1">Weeks to Deadline</div>
+        {{ weeks_to_deadline_badge }}
+      </div>
+      <div class="text-center">
+        <div class="fs-4 text-muted mb-1">Days Left</div>
+        {{ days_left_badge }}
+      </div>
+    </div>
+  </div>
 
   <div class="section-box">
     <h4 class="section-header">Project</h4>

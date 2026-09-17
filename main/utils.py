@@ -1,7 +1,7 @@
 """General utilities for ProCAT."""
 
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import date, datetime, timedelta
 from typing import Any, cast
 
@@ -10,6 +10,7 @@ from django.contrib.auth.management import create_permissions
 from django.db.models import Case, When
 from django.db.models.query import QuerySet
 from django.utils import timezone
+from django.utils.safestring import SafeString, mark_safe
 
 from procat.settings.settings import WORKING_DAYS
 
@@ -322,3 +323,76 @@ def fte_to_days(start_date: date, end_date: date, fte: float) -> float:
     date_difference = (end_date - start_date).total_seconds() / SECONDS_PER_DAY
     working_days_in_period = date_difference * WORKING_DAYS / 365
     return float(fte * working_days_in_period)
+
+
+_BADGE_BASE_CLASS = "badge text-white {size_class} opacity-75 px-3 py-2"
+
+
+def style_fraction_badge(
+    value: tuple[float, float] | None, size_class: str = "fs-5"
+) -> SafeString:
+    """Render a number/percentage pair as a colour-graded Bootstrap badge.
+
+    Used for metrics where the percentage indicates how much of a resource is
+    left (e.g. days or weeks remaining): green when comfortably placed, amber
+    when getting low, and red when critical. If there is no value to show
+    (e.g. the metric isn't relevant for the project's current status), a
+    neutral grey 'N/A' badge is returned instead.
+
+    Args:
+        value: A tuple of (absolute number, percentage), or None if not
+            applicable.
+        size_class: The Bootstrap font-size utility class to use for the
+            badge text (e.g. 'fs-5', the default used in the Project list
+            table, or 'fs-4' for the bigger badges on the Project detail
+            page).
+
+    Returns:
+        Safe HTML string with the appropriate Bootstrap badge styling.
+    """
+    base_class = _BADGE_BASE_CLASS.format(size_class=size_class)
+
+    if value is None:
+        return mark_safe(f'<span class="{base_class} bg-secondary">N/A</span>')
+
+    num, frac = value
+    if frac <= 10:
+        colour = "bg-danger"
+    elif frac <= 30:
+        colour = "bg-warning"
+    else:
+        colour = "bg-success"
+
+    return mark_safe(
+        f'<span class="{base_class} {colour}">{num:.1f} ({frac:.1f}%)</span>'
+    )
+
+
+def style_plain_badge(
+    value: float | None, formatter: Callable[[float], str], size_class: str = "fs-5"
+) -> SafeString:
+    """Render a single value as a neutral 'big badge' span.
+
+    Used for metrics that don't have a good/bad fraction associated with them
+    (e.g. total funding, total effort), so they are always styled the same,
+    neutral colour instead of the red/amber/green grading used by
+    `style_fraction_badge`.
+
+    Args:
+        value: The value to display inside the badge, or None if not
+            applicable.
+        formatter: A function that turns `value` into the text to display
+            inside the badge (e.g. `format_currency`).
+        size_class: The Bootstrap font-size utility class to use for the
+            badge text (e.g. 'fs-5', the default, or 'fs-4' for the bigger
+            badges on the Project detail page).
+
+    Returns:
+        Safe HTML string with the appropriate Bootstrap badge styling.
+    """
+    base_class = _BADGE_BASE_CLASS.format(size_class=size_class)
+
+    if value is None:
+        return mark_safe(f'<span class="{base_class} bg-secondary">N/A</span>')
+
+    return mark_safe(f'<span class="{base_class} bg-primary">{formatter(value)}</span>')

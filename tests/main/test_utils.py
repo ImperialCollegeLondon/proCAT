@@ -437,6 +437,76 @@ def test_days_to_fte_and_fte_to_days_handle_fractional_days():
     assert fte_to_days(start, half_day_end, half_day_fte) == pytest.approx(1)
 
 
+class TestStyleFractionBadge:
+    """Tests for the style_fraction_badge function."""
+
+    def test_none_renders_na_badge(self):
+        """A None value should render a neutral 'N/A' badge."""
+        from main.utils import style_fraction_badge
+
+        assert style_fraction_badge(None) == (
+            '<span class="badge text-white fs-5 opacity-75 px-3 py-2 '
+            'bg-secondary">N/A</span>'
+        )
+
+    @pytest.mark.parametrize(
+        "frac,colour",
+        [
+            (10, "bg-danger"),
+            (30, "bg-warning"),
+            (30.1, "bg-success"),
+        ],
+    )
+    def test_colour_graded_by_fraction(self, frac, colour):
+        """The badge colour should reflect how much of the resource is left."""
+        from main.utils import style_fraction_badge
+
+        assert style_fraction_badge((12.3, frac)) == (
+            f'<span class="badge text-white fs-5 opacity-75 px-3 py-2 {colour}">'
+            f"12.3 ({frac:.1f}%)</span>"
+        )
+
+    def test_custom_size_class(self):
+        """A custom size_class should be used instead of the fs-5 default."""
+        from main.utils import style_fraction_badge
+
+        assert style_fraction_badge((12.3, 60), size_class="fs-4") == (
+            '<span class="badge text-white fs-4 opacity-75 px-3 py-2 bg-success">'
+            "12.3 (60.0%)</span>"
+        )
+
+
+class TestStylePlainBadge:
+    """Tests for the style_plain_badge function."""
+
+    def test_none_renders_na_badge(self):
+        """A None value should render a neutral 'N/A' badge."""
+        from main.utils import style_plain_badge
+
+        assert style_plain_badge(None, str) == (
+            '<span class="badge text-white fs-5 opacity-75 px-3 py-2 '
+            'bg-secondary">N/A</span>'
+        )
+
+    def test_value_rendered_with_formatter(self):
+        """The value should be formatted with the given formatter function."""
+        from main.utils import style_plain_badge
+
+        assert style_plain_badge(1234.5, lambda value: f"{value:.2f}") == (
+            '<span class="badge text-white fs-5 opacity-75 px-3 py-2 '
+            'bg-primary">1234.50</span>'
+        )
+
+    def test_custom_size_class(self):
+        """A custom size_class should be used instead of the fs-5 default."""
+        from main.utils import style_plain_badge
+
+        assert style_plain_badge(1234.5, str, size_class="fs-4") == (
+            '<span class="badge text-white fs-4 opacity-75 px-3 py-2 '
+            'bg-primary">1234.5</span>'
+        )
+
+
 def test_days_to_fte_and_fte_to_days_are_inverses():
     """Test that days_to_fte and fte_to_days round-trip each other."""
     from main.utils import days_to_fte, fte_to_days

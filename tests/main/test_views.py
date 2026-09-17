@@ -560,6 +560,58 @@ class TestProjectDetailInlineView(PermissionRequiredMixin, TemplateOkMixin):
         assert response.context["funding_forms"] == []
         assert response.context["phase_forms"] == []
 
+    def test_get_shows_summary_badges(self, admin_client, project_static, phase):
+        """The page shows the 4 summary badges, computed from the Project."""
+        response = admin_client.get(self._get_url())
+
+        assert response.status_code == HTTPStatus.OK
+        content = response.content.decode()
+
+        assert "Total Funding" in content
+        assert "Total Days" in content
+        assert "Weeks to Deadline" in content
+        assert "Days Left" in content
+
+        # The badges themselves are pre-rendered, safe HTML in the context.
+        for key in (
+            "total_funding_badge",
+            "total_days_badge",
+            "weeks_to_deadline_badge",
+            "days_left_badge",
+        ):
+            assert str(response.context[key]) in content
+
+    def test_get_shows_na_badges_when_not_applicable(
+        self, admin_client, department, user, project
+    ):
+        """Badges show 'N/A' gracefully when a metric isn't applicable yet."""
+        from main import models
+
+        na_badge = (
+            '<span class="badge text-white fs-4 opacity-75 px-3 py-2 '
+            'bg-secondary">N/A</span>'
+        )
+
+        # A Tentative project has no dates, so weeks_to_deadline is None.
+        tentative = models.Project.objects.create(
+            name="Tentative project", department=department, lead=user
+        )
+        response = admin_client.get(
+            reverse("main:project_detail", kwargs={"pk": tentative.pk})
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["weeks_to_deadline_badge"] == na_badge
+
+        # An Active project with no funding/phases has no total_effort, so
+        # days_left (which is derived from it) is None too.
+        response = admin_client.get(
+            reverse("main:project_detail", kwargs={"pk": project.pk})
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["total_funding_badge"] == na_badge
+        assert response.context["total_days_badge"] == na_badge
+        assert response.context["days_left_badge"] == na_badge
+
 
 class TestCapacityPlanningView(LoginRequiredMixin, TemplateOkMixin):
     """Test suite for the Capacity Planning view."""
