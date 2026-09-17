@@ -139,7 +139,7 @@ FundingInlineFormSet = forms.inlineformset_factory(
     models.Project,
     models.Funding,
     form=FundingInlineForm,
-    extra=1,
+    extra=0,
     can_delete=True,
 )
 
@@ -222,6 +222,6 @@ ProjectPhaseInlineFormSet = forms.inlineformset_factory(
     models.ProjectPhase,
     form=ProjectPhaseInlineForm,
     formset=ProjectPhaseInlineFormSetBase,
-    extra=1,
+    extra=0,
     can_delete=True,
 )
