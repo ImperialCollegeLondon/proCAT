@@ -1632,22 +1632,113 @@ class TestProjectPhase:
             phase.check_phase_alignment()
         assert message is None or message in str(e)
 
-    def test_check_project_funding(self, project):
-        """Test the check_project_funding method."""
+    def test_check_overlapping_phases_with_explicit_siblings(self, project_static):
+        """check_overlapping_phases should accept an explicit siblings list.
+
+        This is what allows several new phases to be validated together (see
+        `ProjectPhaseInlineFormSet`), without requiring the siblings to have
+        already been saved to the database.
+        """
         from main import models
 
-        phase = models.ProjectPhase(
-            project=project,
+        existing = models.ProjectPhase(
+            project=project_static,
             value=1,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=12),
+            start_date=datetime(2025, 1, 1).date(),
+            end_date=datetime(2025, 6, 30).date(),
+        )
+        new_phase = models.ProjectPhase(
+            project=project_static,
+            value=1,
+            start_date=datetime(2025, 6, 30).date(),
+            end_date=datetime(2025, 12, 31).date(),
         )
 
-        with pytest.raises(
-            ValidationError,
-            match=r"Project must have associated funding before phases can be added.",
-        ):
-            phase.check_project_funding()
+        # Neither phase is in the database, so the default (DB-backed) check
+        # would not detect the overlap.
+        new_phase.check_overlapping_phases()
+
+        with pytest.raises(ValidationError, match="must not overlap"):
+            new_phase.check_overlapping_phases(siblings=[existing])
+
+    def test_check_phase_alignment_with_explicit_siblings(self, project_static):
+        """check_phase_alignment should accept an explicit siblings list."""
+        from main import models
+
+        existing = models.ProjectPhase(
+            project=project_static,
+            value=1,
+            start_date=datetime(2025, 1, 1).date(),
+            end_date=datetime(2025, 6, 29).date(),
+        )
+        new_phase = models.ProjectPhase(
+            project=project_static,
+            value=1,
+            start_date=datetime(2025, 6, 30).date(),
+            end_date=datetime(2025, 12, 31).date(),
+        )
+
+        # Neither phase is in the database, so the default (DB-backed) check
+        # would not find `existing` and would fail, as it does not touch the
+        # project's own start or end date either.
+        with pytest.raises(ValidationError, match="must align"):
+            new_phase.check_phase_alignment()
+
+        # But it aligns fine with `existing`, once passed explicitly.
+        new_phase.check_phase_alignment(siblings=[existing])
+
+    def test_check_only_one_maintenance_phase_with_explicit_siblings(
+        self, project_static
+    ):
+        """check_only_one_maintenance_phase should accept an explicit siblings list."""
+        from main import models
+
+        existing = models.ProjectPhase(
+            project=project_static,
+            value=1,
+            is_maintenance=True,
+            start_date=datetime(2025, 1, 1).date(),
+            end_date=datetime(2025, 6, 30).date(),
+        )
+        new_phase = models.ProjectPhase(
+            project=project_static,
+            value=1,
+            is_maintenance=True,
+            start_date=datetime(2025, 7, 1).date(),
+            end_date=datetime(2025, 12, 31).date(),
+        )
+
+        # Neither phase is in the database, so the default (DB-backed) check
+        # does not see a conflict.
+        new_phase.check_only_one_maintenance_phase()
+
+        with pytest.raises(ValidationError, match="Only one maintenance phase"):
+            new_phase.check_only_one_maintenance_phase(siblings=[existing])
+
+    def test_clean_skips_sibling_checks_when_validated_by_formset(self, phase):
+        """clean() should skip the sibling-dependent checks when instructed to.
+
+        `ProjectPhaseInlineFormSet` sets `_validated_by_formset` on each phase
+        instance and performs these checks itself instead (see `forms.py`).
+        """
+        from main import models
+
+        # Overlaps with the existing phase (2027-02-10 -> 2027-03-09).
+        overlapping = models.ProjectPhase(
+            project=phase.project,
+            value=1,
+            start_date=datetime(2027, 3, 1).date(),
+            end_date=datetime(2027, 3, 15).date(),
+        )
+
+        # Without the flag, the (DB-backed) overlap check runs as part of clean().
+        with pytest.raises(ValidationError, match="must not overlap"):
+            overlapping.clean()
+
+        # With the flag, clean() only runs check_phase_in_project() and leaves
+        # the sibling checks to the caller.
+        overlapping._validated_by_formset = True
+        overlapping.clean()
 
     @pytest.mark.parametrize(
         "value,start_date,end_date,validation_error,message",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from datetime import UTC, date, timedelta
 from typing import Any, cast
 
@@ -11,7 +12,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Q, Sum
+from django.db.models import Sum
 from django.utils import timezone
 
 from procat.settings.settings import (
@@ -338,10 +339,10 @@ class Project(Warning, models.Model):
         preparation for a future transition to Maintenance status). If an Active
         project has no phases defined yet, funding is used instead: this preserves the
         prior behaviour for projects that don't use the phases feature, and avoids a
-        circular dependency when creating the very first phase for a project (see
-        `create_default_project_phase`, which relies on `total_effort` to seed the
-        phase it creates). For all other statuses, the total effort is derived from
-        the funding sources, as before.
+        circular dependency when creating the very first phase for a project (since
+        `total_effort` may be used to seed the initial phase created for a project).
+        For all other statuses, the total effort is derived from the funding sources,
+        as before.
 
         Returns:
             The total number of days effort, or None if there is no relevant
@@ -1182,47 +1183,68 @@ class ProjectPhase(FullTimeEquivalent):
                 f"{self.project.start_date} -> {self.project.end_date}"
             )
 
-    def check_overlapping_phases(self) -> None:
-        """Check the phase doesn't overlap with another phase (by 1 day)."""
-        # check start within Phases_starts ≤ Phase_new_start ≤ Phases_ends
-        overlapping_start = ProjectPhase.objects.filter(
-            project=self.project,
-            start_date__lte=self.start_date,
-            end_date__gte=self.start_date,
-        )
-        # check end within phase Phases_starts ≤ Phase_new_end ≤ Phases_ends
-        overlapping_end = ProjectPhase.objects.filter(
-            project=self.project,
-            start_date__lte=self.end_date,
-            end_date__gte=self.end_date,
-        )
-        # combine querysets
-        overlapping = (overlapping_start | overlapping_end).distinct()
+    def check_overlapping_phases(
+        self, siblings: Iterable[ProjectPhase] | None = None
+    ) -> None:
+        """Check the phase doesn't overlap with another phase (by 1 day).
 
-        # Exclude self if this is an update (not a new instance)
-        if self.pk:
-            overlapping = overlapping.exclude(pk=self.pk)
+        Args:
+            siblings: The other phases of the same project to check against. If
+                not given (the default), the project's other phases are fetched
+                from the database, which is the correct behaviour when
+                validating a single phase on its own (e.g. from the admin, the
+                API, or a direct `save()`/`full_clean()` call). An explicit list
+                can be passed instead to validate against phases that have not
+                been persisted yet, e.g. when several phases belonging to the
+                same project are being created or edited together (see
+                `ProjectPhaseInlineFormSet`, in `forms.py`).
+        """
+        if siblings is None:
+            siblings = ProjectPhase.objects.filter(project=self.project)
+            if self.pk:
+                siblings = siblings.exclude(pk=self.pk)
 
-        if overlapping.exists():
-            first_conflict = overlapping.first()
+        # check start within Phases_starts ≤ Phase_new_start ≤ Phases_ends, or
+        # end within Phases_starts ≤ Phase_new_end ≤ Phases_ends
+        conflict = next(
+            (
+                sibling
+                for sibling in siblings
+                if sibling is not self
+                and (
+                    sibling.start_date <= self.start_date <= sibling.end_date
+                    or sibling.start_date <= self.end_date <= sibling.end_date
+                )
+            ),
+            None,
+        )
+
+        if conflict is not None:
             raise ValidationError(
                 "Phase period must not overlap with other phase periods for the same "
-                f"project: {first_conflict.start_date} -> "  # type: ignore [union-attr]
-                f"{first_conflict.end_date} vs. {self.start_date} -> {self.end_date}"  # type: ignore [union-attr]
+                f"project: {conflict.start_date} -> "
+                f"{conflict.end_date} vs. {self.start_date} -> {self.end_date}"
             )
 
-    def check_phase_alignment(self) -> None:
-        """Ensures phases are aligned but separated by 1 day."""
-        touching = ProjectPhase.objects.filter(
-            Q(project=self.project)
-            & (
-                Q(start_date=self.end_date + timedelta(days=1))
-                | Q(end_date=self.start_date - timedelta(days=1))
-            )
+    def check_phase_alignment(
+        self, siblings: Iterable[ProjectPhase] | None = None
+    ) -> None:
+        """Ensures phases are aligned but separated by 1 day.
+
+        Args:
+            siblings: See `check_overlapping_phases`.
+        """
+        if siblings is None:
+            siblings = ProjectPhase.objects.filter(project=self.project)
+
+        touching = any(
+            sibling.start_date == self.end_date + timedelta(days=1)
+            or sibling.end_date == self.start_date - timedelta(days=1)
+            for sibling in siblings
         )
 
         if not (
-            touching.exists()
+            touching
             or self.start_date == self.project.start_date
             or self.end_date == self.project.end_date
         ):
@@ -1230,24 +1252,30 @@ class ProjectPhase(FullTimeEquivalent):
                 "Phase period must align with the start or end of a project or phase."
             )
 
-    def check_project_funding(self) -> None:
-        """Check the project has funding before the phase can be added."""
-        if not self.project.funding_source.exists():
-            raise ValidationError(
-                "Project must have associated funding before phases can be added."
-            )
+    def check_only_one_maintenance_phase(
+        self, siblings: Iterable[ProjectPhase] | None = None
+    ) -> None:
+        """Ensure only one maintenance phase exists for the project.
 
-    def check_only_one_maintenance_phase(self) -> None:
-        """Ensure only one maintenance phase exists for the project."""
+        Args:
+            siblings: See `check_overlapping_phases`.
+        """
         if not self.is_maintenance:
             return
 
-        existing_maintenance = ProjectPhase.objects.filter(
-            project=self.project, is_maintenance=True
-        )
-        if self.pk:
-            existing_maintenance = existing_maintenance.exclude(pk=self.pk)
-        if existing_maintenance.exists():
+        if siblings is None:
+            existing_maintenance = ProjectPhase.objects.filter(
+                project=self.project, is_maintenance=True
+            )
+            if self.pk:
+                existing_maintenance = existing_maintenance.exclude(pk=self.pk)
+            has_other_maintenance = existing_maintenance.exists()
+        else:
+            has_other_maintenance = any(
+                sibling.is_maintenance for sibling in siblings if sibling is not self
+            )
+
+        if has_other_maintenance:
             raise ValidationError("Only one maintenance phase is allowed per project.")
 
     def clean(self) -> None:
@@ -1258,14 +1286,23 @@ class ProjectPhase(FullTimeEquivalent):
         Ensures the phase isn't covered by any other phases.
         Ensures at least phase start or end date aligns with other phases or project
             dates.
-        Ensures project has funding before phase added.
+
+        The sibling-dependent checks (overlap, alignment, single maintenance
+        phase) are skipped here if `_validated_by_formset` has been set on this
+        instance: in that case, `ProjectPhaseInlineFormSet.clean()` (see
+        `forms.py`) performs them itself, once, against the complete in-memory
+        set of phases being submitted together, rather than one at a time
+        against the database.
         """
         super().clean()
 
         self.check_phase_in_project()
+
+        if getattr(self, "_validated_by_formset", False):
+            return
+
         self.check_overlapping_phases()
         self.check_phase_alignment()
-        self.check_project_funding()
         self.check_only_one_maintenance_phase()
 
     @property
