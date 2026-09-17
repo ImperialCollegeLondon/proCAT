@@ -1,0 +1,34 @@
+<!--
+  Shared "one row per record" table for the Funding/Phases sections of
+  the Project "inline" pages. Used both for the editable formset rows
+  on project_inline_form.html and the plain read-only forms on
+  project_inline_detail.html.
+
+  Expects in context:
+  - header_fields: visible fields to build the <th> row from.
+  - rows: an iterable of forms, one per table row (a formset, or a
+    plain list of ModelForm instances).
+  - tbody_id (optional): id attribute for the <tbody>, used by the
+    create/update page's JavaScript to find where to insert new rows.
+  - empty_message (optional): text shown in a single row when `rows`
+    is empty.
+-->
+<table class="table table-sm align-middle">
+  <thead class="table-light">
+    <tr>{% include "main/_inline_table_header.html" with header_fields=header_fields %}</tr>
+  </thead>
+  <tbody{% if tbody_id %} id="{{ tbody_id }}"{% endif %}>
+    {% for form in rows %}
+      <tr>{% include "main/_inline_table_row.html" %}</tr>
+      {% if form.non_field_errors %}
+        <tr>
+          <td colspan="100">{{ form.non_field_errors }}</td>
+        </tr>
+      {% endif %}
+    {% empty %}
+      <tr>
+        <td colspan="100">{{ empty_message }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

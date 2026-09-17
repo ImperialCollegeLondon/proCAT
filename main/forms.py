@@ -6,6 +6,7 @@ from typing import Any, ClassVar
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from . import models
@@ -59,19 +60,6 @@ class CostRecoveryForm(forms.Form):
         coerce=int,
         help_text="Year for which to generate the charges report.",
     )
-
-
-class FundingForm(forms.ModelForm):  # type: ignore [type-arg]
-    """Form to create and edit funding instances."""
-
-    class Meta:
-        """Meta class for the form."""
-
-        model = models.Funding
-        fields = "__all__"
-        widgets: ClassVar = {
-            "expiry_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
-        }
 
 
 class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
@@ -130,37 +118,110 @@ class ProjectPhaseForm(forms.ModelForm):  # type: ignore [type-arg]
         }
 
 
-class ProjectPhaseDetailForm(forms.ModelForm):  # type: ignore [type-arg]
-    """Read-only form to display Project Phase details.
+class FundingInlineForm(forms.ModelForm):  # type: ignore [type-arg]
+    """Form to create and edit a Funding row inline, as part of a Project form.
 
-    Adds the 'days' field (not a model field, so it is not shown otherwise) and
-    formats it, along with the FTE 'value', to two decimal places for display.
+    The `project` field is left out, since it is supplied automatically by
+    the enclosing formset (see `FundingInlineFormSet`).
     """
 
-    days = forms.CharField(required=False, help_text="Number of days for the phase.")
-    value = forms.CharField(required=False, label="FTE value")
+    class Meta:
+        """Meta class for the form."""
+
+        model = models.Funding
+        exclude = ("project",)
+        widgets: ClassVar = {
+            "expiry_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
+        }
+
+
+FundingInlineFormSet = forms.inlineformset_factory(
+    models.Project,
+    models.Funding,
+    form=FundingInlineForm,
+    extra=1,
+    can_delete=True,
+)
+
+
+class ProjectPhaseInlineForm(ProjectPhaseForm):
+    """Form to create and edit a Project Phase row inline, as part of a Project form.
+
+    Identical to `ProjectPhaseForm`, except that:
+
+    - the `project` field is left out, since it is supplied automatically by
+      the enclosing formset (see `ProjectPhaseInlineFormSet`);
+    - the database-backed sibling checks (phase overlap, alignment, and
+      single maintenance phase - see `models.ProjectPhase.clean()`) are
+      skipped during the normal per-row validation. Instead,
+      `ProjectPhaseInlineFormSetBase.clean()` performs them once, together,
+      against the complete, in-memory set of phases being submitted, once all
+      rows have passed their individual field-level validation.
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[explicit-any]
-        """Override init to populate 'days' and format 'value' for display."""
+        """Override init to flag the instance as validated by the formset."""
         super().__init__(*args, **kwargs)
-        if self.instance.start_date and self.instance.end_date:
-            self.initial["days"] = f"{self.instance.days:.2f}"
-        if self.instance.value is not None:
-            self.initial["value"] = f"{self.instance.value:.2f}"
+        self.instance._validated_by_formset = True
 
     class Meta:
         """Meta class for the form."""
 
         model = models.ProjectPhase
-        fields = (
-            "project",
-            "days",
-            "value",
-            "start_date",
-            "end_date",
-            "is_maintenance",
-        )
+        fields = ("days", "start_date", "end_date", "is_maintenance")
         widgets: ClassVar = {
             "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
             "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
         }
+
+
+class ProjectPhaseInlineFormSetBase(forms.BaseInlineFormSet):  # type: ignore [type-arg]
+    """Inline formset to create/edit all Project Phases of a Project together.
+
+    Validates the phases as a group (overlap, alignment, single maintenance
+    phase) against their complete, in-memory candidate set - i.e. every
+    surviving (not deleted, not blank) row, whether new or pre-existing -
+    rather than one row at a time against the database. This allows several
+    new and/or edited phases to be submitted together in a single request.
+    """
+
+    def clean(self) -> None:
+        """Validate the whole set of (surviving) phases together."""
+        super().clean()
+
+        if any(self.errors):
+            # Individual rows already have errors; the group-level checks
+            # below need every row's data to already be well-formed.
+            return
+
+        candidates = [
+            form.instance
+            for form in self.forms
+            if form not in self.deleted_forms and form.cleaned_data
+        ]
+
+        errors: list[str] = []
+        for candidate in candidates:
+            others = [c for c in candidates if c is not candidate]
+            try:
+                candidate.check_overlapping_phases(siblings=others)
+                candidate.check_phase_alignment(siblings=others)
+                candidate.check_only_one_maintenance_phase(siblings=others)
+            except ValidationError as e:
+                errors.extend(e.messages)
+
+        if errors:
+            # De-duplicate while preserving order: the same message can be
+            # raised more than once, e.g. the alignment error is identically
+            # worded for every phase that fails it.
+            raise forms.ValidationError(list(dict.fromkeys(errors)))
+
+
+ProjectPhaseInlineFormSet = forms.inlineformset_factory(
+    models.Project,
+    models.ProjectPhase,
+    form=ProjectPhaseInlineForm,
+    formset=ProjectPhaseInlineFormSetBase,
+    extra=1,
+    can_delete=True,
+)

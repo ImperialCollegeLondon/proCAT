@@ -1,0 +1,30 @@
+{% load django_bootstrap5 %}
+<!--
+  Shared "Project" section fields for the Project "inline" pages
+  (project_inline_form.html and project_inline_detail.html). Fields
+  are split into two columns to keep the section compact:
+  identifying/organisational details on the left, and the
+  date/status/charging fields (which tend to be reviewed and changed
+  together) on the right. If a new field is added to the Project
+  model/form, it must also be added to one of these two columns
+  explicitly, or it will not be shown on these pages.
+-->
+{{ project_form.non_field_errors }}
+<div class="row">
+  <div class="col-md-4">
+    {% bootstrap_field project_form.name layout='horizontal' %}
+    {% bootstrap_field project_form.nature layout='horizontal' %}
+    {% bootstrap_field project_form.pi layout='horizontal' %}
+    {% bootstrap_field project_form.department layout='horizontal' %}
+  </div>
+  <div class="col-md-4">
+    {% bootstrap_field project_form.lead layout='horizontal' %}
+    {% bootstrap_field project_form.charging layout='horizontal' %}
+    {% bootstrap_field project_form.clockify_id layout='horizontal' %}
+  </div>
+  <div class="col-md-4">
+    {% bootstrap_field project_form.start_date layout='horizontal' %}
+    {% bootstrap_field project_form.end_date layout='horizontal' %}
+    {% bootstrap_field project_form.status layout='horizontal' %}
+  </div>
+</div>
