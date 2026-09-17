@@ -32,8 +32,13 @@ repos:
     hooks:
       - id: codespell
         args: [-I, .codespell_ignore.txt]
+  # Keep this in sync with the "djlint" version resolved in uv.lock (dev
+  # dependency group). djlint's formatting heuristics have changed between
+  # releases, so running a different version here than what's installed
+  # locally (`.venv/bin/djlint --version`) can make it flip-flop the same
+  # lines back and forth across commits.
   - repo: https://github.com/djlint/djLint
-    rev: v1.41.0
+    rev: v1.45.2
     hooks:
       - id: djlint-reformat-django
       - id: djlint-django

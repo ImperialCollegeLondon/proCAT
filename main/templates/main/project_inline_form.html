@@ -58,7 +58,9 @@
           {{ formset.non_form_errors }}
           {{ formset.management_form }}
           {% include "main/_inline_section_table.html" with header_fields=formset.empty_form.visible_fields rows=formset tbody_id="funding-forms" empty_message="" %}
-          <button type="button" class="btn btn-secondary btn-sm" id="add-funding">+ Add funding</button>
+          <button type="button"
+                  class="btn btn-secondary btn-sm"
+                  id="add-funding">+ Add funding</button>
           <!--
           Hidden template row, cloned by JavaScript (see
           static/js/project_inline_formset.js) whenever "Add funding" is
@@ -89,7 +91,9 @@
           {{ formset.non_form_errors }}
           {{ formset.management_form }}
           {% include "main/_inline_section_table.html" with header_fields=formset.empty_form.visible_fields rows=formset tbody_id="phase-forms" empty_message="" %}
-          <button type="button" class="btn btn-secondary btn-sm" id="add-phase">+ Add phase</button>
+          <button type="button"
+                  class="btn btn-secondary btn-sm"
+                  id="add-phase">+ Add phase</button>
           <!--
           Hidden template row, cloned by JavaScript whenever "Add phase"
           is clicked. Never displayed directly, hence "d-none" above.
