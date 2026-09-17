@@ -9,7 +9,7 @@ from typing import Any, cast
 
 import pandas as pd
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Sum
@@ -736,9 +736,14 @@ class Funding(models.Model):
 
     def clean(self) -> None:
         """Ensure that the activity code has a valid value."""
+        try:
+            project = self.project
+        except ObjectDoesNotExist:
+            project = None
+
         if (
-            self.project
-            and self.project.status in ("Active", "Confirmed", "Maintenance")
+            project
+            and project.status in ("Active", "Confirmed", "Maintenance")
             and not self.is_complete()
         ):
             raise ValidationError(
@@ -1172,8 +1177,10 @@ class ProjectPhase(FullTimeEquivalent):
 
     def check_phase_in_project(self) -> None:
         """Ensure the start phase dates are within the project dates."""
-        assert self.project.start_date is not None
-        assert self.project.end_date is not None
+        if self.project.start_date is None or self.project.end_date is None:
+            raise ValidationError(
+                "Phases cannot be added until the project has a start and end date."
+            )
         if (
             self.project.start_date > self.start_date
             or self.project.end_date < self.end_date
@@ -1295,6 +1302,17 @@ class ProjectPhase(FullTimeEquivalent):
         against the database.
         """
         super().clean()
+
+        try:
+            self.project
+        except ObjectDoesNotExist:
+            # Nothing else can be checked without a project to check against.
+            # Django's own required-field validation will already flag the
+            # missing `project` field separately (e.g. when this is used as a
+            # standalone form, or when the inline Project/Phase form
+            # redisplays phase rows after the Project itself failed
+            # validation, before either has been saved).
+            return
 
         self.check_phase_in_project()
 

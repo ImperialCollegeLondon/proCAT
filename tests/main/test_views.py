@@ -374,6 +374,51 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
         # Check that the expected error is shown to the user
         assert b"Projects cannot be created directly in" in response.content
 
+    def test_post_with_invalid_project_and_filled_funding_phase_does_not_crash(
+        self, admin_client, department, user
+    ):
+        """An invalid Project must not crash while redisplaying Funding/Phase rows.
+
+        Regression test: the Project form is invalid (end date before start
+        date), so the Funding/Phase formsets are rebuilt without a saved
+        Project to attach to. Rendering the page (which validates every
+        formset to show its errors) used to crash with
+        `RelatedObjectDoesNotExist` when a Funding/Phase row's own `clean()`
+        accessed its (unset) `project`.
+        """
+        data = {
+            "name": "Should Not Crash",
+            "nature": "Support",
+            "pi": "John Smith",
+            "department": department.pk,
+            "lead": user.pk,
+            "start_date": "2025-12-31",
+            "end_date": "2025-01-01",  # Before start_date: invalid Project.
+            "status": "Confirmed",
+            "charging": "Actual",
+            "funding-TOTAL_FORMS": "1",
+            "funding-INITIAL_FORMS": "0",
+            "funding-MIN_NUM_FORMS": "0",
+            "funding-MAX_NUM_FORMS": "1000",
+            "funding-0-source": "Internal",
+            "funding-0-budget": "1000",
+            "funding-0-daily_rate": "389",
+            "phase-TOTAL_FORMS": "1",
+            "phase-INITIAL_FORMS": "0",
+            "phase-MIN_NUM_FORMS": "0",
+            "phase-MAX_NUM_FORMS": "1000",
+            "phase-0-days": "100",
+            "phase-0-start_date": "2025-01-01",
+            "phase-0-end_date": "2025-12-31",
+        }
+
+        response = admin_client.post(self._get_url(), data)
+
+        # The page must be re-rendered gracefully with errors, not crash.
+        assert response.status_code == HTTPStatus.OK
+        assert not Project.objects.filter(name="Should Not Crash").exists()
+        assert b"The end date must be after the start date." in response.content
+
 
 @pytest.mark.usefixtures("project_static")
 class TestProjectUpdateInlineView(PermissionRequiredMixin, TemplateOkMixin):
