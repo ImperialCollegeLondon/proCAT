@@ -153,6 +153,16 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
 
+# Adds the "requiredField" CSS class to the wrapper of any form field that is
+# always mandatory (i.e. its model field has `blank=False`), so it can be
+# visually marked as such (see the accompanying CSS in `main/base.html`).
+# Fields that are only conditionally required (e.g. depending on a Project's
+# status) are not marked, as they have `blank=True` at the model level and
+# are instead enforced, when needed, in the relevant `clean()` method.
+BOOTSTRAP5 = {
+    "required_css_class": "requiredField",
+}
+
 LOGIN_REDIRECT_URL = f"{FORCE_SCRIPT_NAME}/"
 LOGOUT_REDIRECT_URL = f"{FORCE_SCRIPT_NAME}/"
 
