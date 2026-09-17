@@ -938,6 +938,28 @@ class TestFunding:
         with pytest.raises(ValidationError):
             funding.clean()
 
+    def test_clean_without_project(self):
+        """clean() must not crash when the funding has no project set yet.
+
+        This happens, for instance, when the inline Project/Phase/Funding
+        form redisplays the Funding rows after the Project itself failed
+        validation, before it (and therefore the Funding rows referencing
+        it) has been saved: Django's `BaseInlineFormSet` sets the FK id to
+        `None` in that case, and accessing `.project` directly would raise
+        `RelatedObjectDoesNotExist` instead of being reported gracefully.
+        """
+        from main import models
+
+        funding = models.Funding(
+            budget=10000.00,
+            cost_centre="centre",
+            activity="G12345",
+            source="External",
+            daily_rate=389.00,
+        )
+
+        funding.clean()  # Should not raise.
+
     @pytest.mark.parametrize(
         ["activity", "expectation"],
         [
@@ -1486,6 +1508,33 @@ class TestProjectPhase:
             phase.check_phase_in_project()
         assert message is None or message in str(e)
 
+    @pytest.mark.django_db
+    def test_check_phase_in_project_without_project_dates(self, department, user):
+        """A project without dates yet should raise a graceful ValidationError.
+
+        This can happen for a 'Tentative'/'Not done' project (dates are
+        optional for those statuses), or transiently while editing a project
+        whose dates are being cleared/changed in the same request as its
+        phases. Either way, this must not crash with an AssertionError.
+        """
+        from main import models
+
+        dateless_project = models.Project.objects.create(
+            name="Dateless project", department=department, lead=user
+        )
+        phase = models.ProjectPhase(
+            project=dateless_project,
+            value=1,
+            start_date=datetime(2025, 1, 1).date(),
+            end_date=datetime(2025, 6, 30).date(),
+        )
+
+        with pytest.raises(
+            ValidationError,
+            match=r"Phases cannot be added until the project has a start and end date.",
+        ):
+            phase.check_phase_in_project()
+
     @pytest.mark.parametrize(
         "value,start_date,end_date,validation_error,message",
         (
@@ -1739,6 +1788,26 @@ class TestProjectPhase:
         # the sibling checks to the caller.
         overlapping._validated_by_formset = True
         overlapping.clean()
+
+    def test_clean_without_project(self):
+        """clean() must not crash when the phase has no project set yet.
+
+        This happens, for instance, when the inline Project/Phase/Funding
+        form redisplays the Phase rows after the Project itself failed
+        validation, before it (and therefore the Phase rows referencing it)
+        has been saved: Django's `BaseInlineFormSet` sets the FK id to `None`
+        in that case, and accessing `.project` directly would raise
+        `RelatedObjectDoesNotExist` instead of being reported gracefully.
+        """
+        from main import models
+
+        phase = models.ProjectPhase(
+            value=1,
+            start_date=datetime(2025, 1, 1).date(),
+            end_date=datetime(2025, 6, 30).date(),
+        )
+
+        phase.clean()  # Should not raise.
 
     @pytest.mark.parametrize(
         "value,start_date,end_date,validation_error,message",
