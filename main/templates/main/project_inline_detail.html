@@ -17,6 +17,11 @@
 
   <h2>Project details</h2>
 
+  {% if perms.main.change_project and perms.main.change_funding and perms.main.change_project_phase %}
+    <a class="btn btn-primary mb-3"
+       href="{% url 'main:project_update' pk=project.pk %}">Edit Project</a>
+  {% endif %}
+
   <div class="section-box">
     <h4 class="section-header">Project</h4>
     <div class="section-body">{% include "main/_project_inline_fields.html" %}</div>

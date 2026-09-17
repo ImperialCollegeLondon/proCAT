@@ -264,6 +264,13 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
     def _get_url(self):
         return reverse("main:project_create")
 
+    def test_get_shows_cancel_link_to_projects_list(self, admin_client):
+        """When creating, Cancel should go back to the projects list."""
+        response = admin_client.get(self._get_url())
+
+        assert response.status_code == HTTPStatus.OK
+        assert reverse("main:projects") in response.content.decode()
+
     def test_post_creates_project_funding_and_phase_together(
         self, admin_client, department, user
     ):
@@ -381,6 +388,16 @@ class TestProjectUpdateInlineView(PermissionRequiredMixin, TemplateOkMixin):
 
         return reverse("main:project_update", kwargs={"pk": project.pk})
 
+    def test_get_shows_cancel_link_to_project_detail(
+        self, admin_client, project_static
+    ):
+        """When editing, Cancel should go back to that project's detail page."""
+        response = admin_client.get(self._get_url())
+
+        assert response.status_code == HTTPStatus.OK
+        expected_url = reverse("main:project_detail", kwargs={"pk": project_static.pk})
+        assert expected_url in response.content.decode()
+
     def test_post_adds_funding_and_phase_to_existing_project(
         self, admin_client, project_static
     ):
@@ -475,6 +492,14 @@ class TestProjectDetailInlineView(PermissionRequiredMixin, TemplateOkMixin):
             for field in form.fields.keys():
                 assert form.fields[field].widget.attrs["disabled"]
                 assert form.fields[field].widget.attrs["readonly"]
+
+    def test_get_shows_edit_link(self, admin_client, project_static, phase):
+        """The page shows a link to edit the project, funding and phases."""
+        response = admin_client.get(self._get_url())
+
+        assert response.status_code == HTTPStatus.OK
+        expected_url = reverse("main:project_update", kwargs={"pk": project_static.pk})
+        assert expected_url in response.content.decode()
 
     def test_get_with_no_funding_or_phases(self, admin_client, project_static):
         """The page renders gracefully when there is no Funding/Phase yet."""

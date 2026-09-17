@@ -27,9 +27,18 @@
     to remove it on save.
   </p>
 
+  {% if project %}
+    {% url 'main:project_detail' pk=project.pk as cancel_url %}
+  {% else %}
+    {% url 'main:projects' as cancel_url %}
+  {% endif %}
+
   <form method="post">
     {% csrf_token %}
-    <div class="text-left">{% bootstrap_button button_type="submit" content="🖫 Save" %}</div>
+    <div class="text-left">
+      {% bootstrap_button button_type="submit" content="🖫 Save" %}
+      <a class="btn btn-outline-secondary" href="{{ cancel_url }}">Cancel</a>
+    </div>
     <p>&nbsp;</p>
 
     <div class="section-box">
@@ -94,7 +103,10 @@
       </div>
     </div>
 
-    <div class="text-left">{% bootstrap_button button_type="submit" content="🖫 Save" %}</div>
+    <div class="text-left">
+      {% bootstrap_button button_type="submit" content="🖫 Save" %}
+      <a class="btn btn-outline-secondary" href="{{ cancel_url }}">Cancel</a>
+    </div>
   </form>
 
 {% endblock content %}
