@@ -581,6 +581,48 @@ class TestProjectDetailInlineView(PermissionRequiredMixin, TemplateOkMixin):
         ):
             assert str(response.context[key]) in content
 
+    def test_get_shows_warnings_banner_when_project_has_warnings(
+        self, admin_client, project_static, phase
+    ):
+        """The page shows a banner listing the Project's current warnings."""
+        response = admin_client.get(self._get_url())
+
+        assert response.status_code == HTTPStatus.OK
+        assert project_static.has_warnings
+
+        content = response.content.decode()
+        assert "alert-warning" in content
+        assert "Warnings:" in content
+        for warning in project_static.warnings:
+            assert warning in content
+
+    def test_get_hides_warnings_banner_when_project_has_no_warnings(
+        self, admin_client, project, funding
+    ):
+        """No banner is shown when the Project has no current warnings."""
+        from main import models
+        from main.utils import days_to_fte
+
+        # A phase spanning the whole project lifetime avoids any warnings.
+        fte = days_to_fte(
+            project.start_date, project.end_date + timedelta(days=1), funding.effort
+        )
+        models.ProjectPhase.objects.create(
+            project=project,
+            value=fte,
+            start_date=project.start_date,
+            end_date=project.end_date,
+        )
+        assert not project.has_warnings
+
+        response = admin_client.get(
+            reverse("main:project_detail", kwargs={"pk": project.pk})
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        content = response.content.decode()
+        assert 'class="alert alert-warning' not in content
+
     def test_get_shows_na_badges_when_not_applicable(
         self, admin_client, department, user, project
     ):

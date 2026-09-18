@@ -18,10 +18,19 @@
   <h2>Project details</h2>
 
   <!--
-  The Edit button (left) and the at-a-glance summary badges (right) share
-  one row: "justify-content-between" pushes the badges flush to the right
-  regardless of whether the Edit button is shown, since the flex item
-  ordering (not its size) determines the left/right split.
+  The Edit button (left), warnings banner (middle) and the at-a-glance
+  summary badges (right) share one row: "justify-content-between" pushes
+  the badges flush to the right regardless of whether the Edit button or
+  banner are shown, since the flex item ordering (not its size) determines
+  the left/right split. The banner uses "flex-grow-1" so it fills the
+  space between the button and the badges instead of leaving a gap.
+
+  The warnings themselves come straight from the Project model (see
+  main/models_utils.py, the "Warning" mixin): "project.has_warnings" and
+  "project.warnings" are already available on any Project instance, so no
+  view changes are needed to support this. Bootstrap's "alert-warning"
+  class already renders as a light yellow box with a darker yellow border,
+  which matches what's wanted here without any custom CSS.
 
   The badges are computed from the Project model's own properties (see
   main/views.py, ProjectDetailInlineView.get()). "N/A" is shown instead of
@@ -35,9 +44,19 @@
     <div>
       {% if perms.main.change_project and perms.main.change_funding and perms.main.change_project_phase %}
         <a class="btn btn-primary"
-           href="{% url 'main:project_update' pk=project.pk %}">Edit Project</a>
+           href="{% url 'main:project_update' pk=project.pk %}"><h5>Edit Project<br>&#9998</h5></a>
       {% endif %}
+
     </div>
+    {% if project.has_warnings %}
+      <div class="alert alert-warning py-2 px-3 mb-0 flex-grow-1" role="alert">
+        <strong>Warnings:</strong>
+        <ul class="mb-0">
+          {% for warning in project.warnings %}<li>{{ warning }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
     <div class="d-flex flex-wrap gap-4">
       <div class="text-center">
         <div class="fs-4 text-muted mb-1">Total Funding</div>

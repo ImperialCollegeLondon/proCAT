@@ -82,6 +82,7 @@ class TestProject:
     def test_clean_when_project_active(self, user, department):
         """Test the clean method."""
         from main import models
+        from main.utils import days_to_fte
 
         # All good, the project is tentative.
         project = models.Project(
@@ -130,9 +131,12 @@ class TestProject:
         funding.source = "Internal"
         funding.save()
         # Add phase
+        fte = days_to_fte(
+            project.start_date, project.end_date + timedelta(days=1), funding.effort
+        )
         models.ProjectPhase.objects.create(
             project=project,
-            value=1,
+            value=fte,
             start_date=project.start_date,
             end_date=project.end_date,
         )
@@ -150,6 +154,7 @@ class TestProject:
         without one of them marked as the maintenance phase, must not be possible.
         """
         from main import models
+        from main.utils import days_to_fte
 
         # All good, the project is Tentative
         project = models.Project(
@@ -164,15 +169,18 @@ class TestProject:
         project.save()
 
         # Add funding and one phase so that status can be set to Active
-        models.Funding.objects.get_or_create(
+        funding = models.Funding.objects.get_or_create(
             project=project,
             source="Internal",
             budget=10000.00,
-        )
+        )[0]
         start, end = project.start_date, project.end_date
+        fte = days_to_fte(
+            project.start_date, project.end_date + timedelta(days=1), funding.effort
+        )
         phase1 = models.ProjectPhase.objects.create(
             project=project,
-            value=1,
+            value=fte,
             start_date=start,
             end_date=end,
         )

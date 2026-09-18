@@ -1,14 +1,23 @@
 {% extends "main/base.html" %}
 {% load django_bootstrap5 %}
 {% load django_tables2 %}
+{% load static %}
 {% block content %}
   <h2>Projects</h2>
   {% if perms.main.create_project %}
-    <a class="btn btn-primary"
-       href="{% url 'main:project_create' %}">+ Create Project</a>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+      <a class="btn btn-primary"
+         href="{% url 'main:project_create' %}">+ Create Project</a>
+    </div>
   {% endif %}
   {% for title, table in tables %}
-    <h3 class="mt-4">{{ title }}</h3>
-    {% render_table table %}
+    <div class="section-box">
+      <h3 class="section-header">{{ title }}</h3>
+      <div class="section-body">{% render_table table %}</div>
+    </div>
   {% endfor %}
 {% endblock content %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/project_inline.css' %}">
+{% endblock extra_css %}
