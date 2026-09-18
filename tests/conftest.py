@@ -185,21 +185,40 @@ def capacity(user):
 def phase(project_static):
     """Provides a default ProjectPhase object alongside others."""
     from main import models
-
-    models.ProjectPhase.objects.get_or_create(
-        project=project_static,
-        value=1,
-        start_date=datetime(2027, 4, 10).date(),
-        end_date=datetime(2027, 6, 30).date(),
-    )
+    from main.utils import days_to_fte
 
     models.Funding.objects.get_or_create(project=project_static)
 
+    funded_days = sum([f.effort for f in project_static.funding_source.all()])
+
+    # 1st phase
+    start_date = datetime(2027, 4, 10).date()
+    end_date = datetime(2027, 6, 30).date()
+    fte = days_to_fte(
+        start_date,
+        end_date + timedelta(days=1),
+        funded_days / 2,
+    )
+    models.ProjectPhase.objects.get_or_create(
+        project=project_static,
+        value=fte,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    # 2nd phase, the one returned
+    start_date = datetime(2027, 2, 10).date()
+    end_date = datetime(2027, 3, 9).date()
+    fte = days_to_fte(
+        start_date,
+        end_date + timedelta(days=1),
+        funded_days / 2,
+    )
     return models.ProjectPhase.objects.get_or_create(
         project=project_static,
-        value=1,
-        start_date=datetime(2027, 2, 10).date(),
-        end_date=datetime(2027, 3, 9).date(),
+        value=fte,
+        start_date=start_date,
+        end_date=end_date,
     )[0]
 
 

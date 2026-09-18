@@ -213,11 +213,13 @@ class Project(Warning, models.Model):
 
     def _warn_phase_lifetime(self) -> None | str:
         """Warns if the phases don't cover the project lifetime."""
+        # Projects without a start date (e.g. still 'Tentative') haven't
+        # started yet, so there is no lifetime for phases to span.
+        if self.start_date is None:
+            return None
+
         # get phases for project id
         phases_query = ProjectPhase.objects.filter(project__name=self.name)
-
-        # required for mypy as Project.start_date can be blank and null
-        assert self.start_date is not None
 
         # check start overlaps
         starts = phases_query.filter(start_date=self.start_date).exists()
@@ -240,7 +242,11 @@ class Project(Warning, models.Model):
 
     def _warn_wrong_days_sum(self) -> str | None:
         """Warns if the phases do not sum to the total working days for the project."""
-        project_days = self.total_working_days
+        if not self.funding_source.exists():
+            return None
+
+        project_days = sum([f.effort for f in self.funding_source.all()])
+
         if project_days is None:
             return None
 
@@ -250,7 +256,7 @@ class Project(Warning, models.Model):
         )
 
         # do the check
-        if not math.isclose(project_days, phase_days, abs_tol=1e-6):
+        if not math.isclose(project_days, phase_days, abs_tol=1e-2):
             return (
                 f"Project days ({project_days:.1f}) do not match "
                 f"Phase days ({phase_days:.1f})."
@@ -502,10 +508,10 @@ class Project(Warning, models.Model):
 
     @property
     def total_working_days(self) -> float | None:
-        """Provide the total number of working (business) days given the dates.
+        """Provide the total number of working days given the funding.
 
         Returns:
-            Number of working days between the project start and end date.
+            Number of working days given the funding available.
         """
         if self.start_date and self.end_date:
             # `start_date`/`end_date` are an inclusive calendar range (both days
