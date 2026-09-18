@@ -247,7 +247,7 @@ class Project(Warning, models.Model):
 
         project_days = sum([f.effort for f in self.funding_source.all()])
 
-        if project_days is None:
+        if not project_days:
             return None
 
         # get query for project name
