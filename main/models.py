@@ -1140,7 +1140,9 @@ class ProjectPhase(FullTimeEquivalent):
     """Phases associated with a project."""
 
     project = models.ForeignKey(
-        Project, related_name="phases", on_delete=models.PROTECT
+        Project,
+        related_name="phases",
+        on_delete=models.CASCADE,
     )
 
     is_maintenance = models.BooleanField(
