@@ -46,6 +46,7 @@
         <a class="btn btn-primary"
            href="{% url 'main:project_update' pk=project.pk %}"><h5>Edit Project<br>&#9998</h5></a>
       {% endif %}
+
     </div>
     {% if project.has_warnings %}
       <div class="alert alert-warning py-2 px-3 mb-0 flex-grow-1" role="alert">
@@ -55,6 +56,7 @@
         </ul>
       </div>
     {% endif %}
+
     <div class="d-flex flex-wrap gap-4">
       <div class="text-center">
         <div class="fs-4 text-muted mb-1">Total Funding</div>
