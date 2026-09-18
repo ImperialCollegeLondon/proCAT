@@ -44,7 +44,7 @@
     <div>
       {% if perms.main.change_project and perms.main.change_funding and perms.main.change_project_phase %}
         <a class="btn btn-primary"
-           href="{% url 'main:project_update' pk=project.pk %}">Edit Project</a>
+           href="{% url 'main:project_update' pk=project.pk %}"><h5>Edit Project<br>&#9998</h5></a>
       {% endif %}
     </div>
     {% if project.has_warnings %}
