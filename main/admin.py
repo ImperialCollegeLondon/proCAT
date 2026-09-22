@@ -95,6 +95,8 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "project",
         "start_time",
         "end_time",
+        "clockify_id",
+        "kimai_id",
     )
     list_filter = ("user", "project")
 
