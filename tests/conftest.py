@@ -231,3 +231,49 @@ def client_no_permissions(client, db):
     )
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
     return client
+
+
+@pytest.fixture
+def kimai_response():
+    """Successful kimai response.
+
+    Only relevant entries are included.
+    """
+    return [
+        {
+            "id": 20784,
+            "begin": "2026-08-27T10:00:00+0100",
+            "end": "2026-08-27T12:00:00+0100",
+            "user": {"email": "jane_doe@monkeyisland.com"},
+            "project": {"id": 42},
+        },
+        {
+            "id": 20803,
+            "begin": "2026-08-26T15:00:00+0100",
+            "end": "2026-08-26T17:00:00+0100",
+            "user": {"email": "jane_doe@monkeyisland.com"},
+            "project": {"id": 42},
+        },
+    ]
+
+
+@pytest.fixture
+def kimai_response_invalid():
+    """Invalid kimai response.
+
+    Only relevant entries are included.
+    """
+    return [
+        {
+            "id": 784,
+            "begin": "2026-08-27T10:00:00+0100",
+            "end": "2026-08-27T12:00:00+0100",
+            "user": {"email": "jane_doe@monkeyisland.com"},
+        },
+        {
+            "id": 803,
+            "begin": "2026-08-26T15:00:00+0100",
+            "user": {"email": "jane_doe@monkeyisland.com"},
+            "project": {"id": 42},
+        },
+    ]

@@ -7,6 +7,84 @@ import pytest
 import requests
 
 
+def test_process_entry(kimai_response, kimai_response_invalid):
+    """Test the _process_entry function."""
+    from main.Kimai.api_interface import _process_entry
+
+    entry = kimai_response[0]
+    valid = _process_entry(entry)
+    assert valid["entry_id"] == entry.get("id")
+    assert valid["project_id"] == entry.get("project", {}).get("id")
+    assert valid["user_email"] == entry.get("user", {}).get("email")
+    assert valid["start"] == entry.get("begin")
+    assert valid["end"] == entry.get("end")
+
+    with pytest.raises(ValueError, match=r"Error processing time entry for project"):
+        entry = kimai_response_invalid[0]
+        _process_entry(entry)
+
+
+class TestKimaiAPI:
+    """Test suite for the KimaiAPI class."""
+
+    def test_init(self):
+        """Test the initialization of KimaiAPI."""
+        from main.Kimai.api_interface import KimaiAPI
+
+        for key, url in (("", ""), ("api", ""), ("", "url")):
+            with pytest.raises(
+                ValueError, match=r"Missing Kimai API key, base_url or both."
+            ):
+                KimaiAPI(key, url)
+
+        key = "1234"
+        url = "http://some.url"
+        client = KimaiAPI(key, url)
+        assert client.base_url == url
+        assert key in client.headers["Authorization"]
+
+    @patch("main.Kimai.api_interface.requests.request")
+    def test_get_time_entries_success(self, mock_request, kimai_response):
+        """Test successful API call to get time entries."""
+        from datetime import datetime
+
+        from main.Kimai.api_interface import KimaiAPI
+
+        # Mock successful response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = kimai_response
+        mock_request.return_value = mock_response
+
+        start_date = datetime.fromisoformat("2026-08-26T14:00:00+0100")
+        end_date = datetime.fromisoformat("2026-08-27T13:00:00+0100")
+        client = KimaiAPI("1234", "http://some.url")
+
+        result = client.get_time_entries(start_date, end_date, 42)
+        assert len(result) == 2
+
+    @patch("main.Clockify.api_interface.requests.request")
+    def test_get_time_entries_http_error(self, mock_request):
+        """Test API call with HTTP error response."""
+        from datetime import datetime
+
+        from main.Kimai.api_interface import KimaiAPI
+
+        mock_response = Mock()
+        mock_response.status_code = 401
+        mock_response.raise_for_status.side_effect = requests.HTTPError("Unauthorized")
+        mock_request.return_value = mock_response
+
+        start_date = datetime.fromisoformat("2026-08-26T14:00:00+0100")
+        end_date = datetime.fromisoformat("2026-08-27T13:00:00+0100")
+        client = KimaiAPI("1234", "http://some.url")
+
+        with pytest.raises(requests.HTTPError, match=r"Unauthorized"):
+            client.get_time_entries(start_date, end_date, 42)
+
+        mock_response.raise_for_status.assert_called_once()
+
+
 class TestClockifyAPI:
     """Test suite for the ClockifyAPI class."""
 

@@ -57,15 +57,15 @@ class KimaiAPI:
         response = requests.request(
             "GET", url, headers=self.headers, params=payload, verify=False
         )
-        print(response.request.url)
+
         if response.status_code == 200:
-            return [process_entry(p) for p in response.json()]
+            return [_process_entry(p) for p in response.json()]
         else:
             response.raise_for_status()
         return []
 
 
-def process_entry(entry: dict[str, Any]):  # type: ignore[explicit-any]
+def _process_entry(entry: dict[str, Any]):  # type: ignore[explicit-any]
     """Process a raw entry from Kimai API and extract the relevant values.
 
     Args:
