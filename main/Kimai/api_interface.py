@@ -1,5 +1,6 @@
 """Kimai API Interface Module."""
 
+from collections.abc import Mapping
 from datetime import datetime, timedelta
 from logging import getLogger
 from typing import Any
@@ -48,7 +49,7 @@ class KimaiAPI:
         """
         url = f"{self.base_url}/timesheets"
 
-        payload = {
+        payload: Mapping[str, Any] = {  # type: ignore[explicit-any]
             "begin": start_date.strftime("%Y-%m-%dT00:00:00"),
             "end": end_date.strftime("%Y-%m-%dT23:59:59"),
             "full": 1,
@@ -75,7 +76,7 @@ class KimaiAPI:
         return []
 
 
-def _process_entry(entry: dict[str, Any]):  # type: ignore[explicit-any]
+def _process_entry(entry: dict[str, Any]) -> dict[str, Any]:  # type: ignore[explicit-any]
     """Process a raw entry from Kimai API and extract the relevant values.
 
     Args:
