@@ -46,8 +46,8 @@ class KimaiAPI:
         url = f"{self.base_url}/timesheets"
 
         payload = {
-            "begin": start_date.strftime("%Y-%m-%dT00:00:00%z"),
-            "end": end_date.strftime("%Y-%m-%dT23:59:59%z"),
+            "begin": start_date.strftime("%Y-%m-%dT00:00:00"),
+            "end": end_date.strftime("%Y-%m-%dT23:59:59"),
             "full": 1,
             "billable": 1,
             "size": 500,
