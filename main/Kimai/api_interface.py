@@ -1,4 +1,4 @@
-"""Clockify API Interface Module."""
+"""Kimai API Interface Module."""
 
 from datetime import datetime, timedelta
 from typing import Any
