@@ -1,9 +1,12 @@
 """Kimai API Interface Module."""
 
 from datetime import datetime, timedelta
+from logging import getLogger
 from typing import Any
 
 import requests
+
+logger = getLogger(__name__)
 
 
 class KimaiAPI:
@@ -59,7 +62,14 @@ class KimaiAPI:
         )
 
         if response.status_code == 200:
-            return [_process_entry(p) for p in response.json()]
+            try:
+                return [_process_entry(p) for p in response.json()]
+            except ValueError as e:
+                logger.error(
+                    "There was a problem processing time entries for project "
+                    f"{project_id}: {e}"
+                )
+                return []
         else:
             response.raise_for_status()
         return []

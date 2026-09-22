@@ -84,6 +84,31 @@ class TestKimaiAPI:
 
         mock_response.raise_for_status.assert_called_once()
 
+    @patch("main.Kimai.api_interface.requests.request")
+    def test_get_time_entries_processing_error(
+        self, mock_request, kimai_response_invalid, caplog
+    ):
+        """Test successful API call to get time entries."""
+        from datetime import datetime
+
+        from main.Kimai.api_interface import KimaiAPI
+
+        # Mock successful response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = kimai_response_invalid
+        mock_request.return_value = mock_response
+
+        start_date = datetime.fromisoformat("2026-08-26T14:00:00+0100")
+        end_date = datetime.fromisoformat("2026-08-27T13:00:00+0100")
+        client = KimaiAPI("1234", "http://some.url")
+
+        result = client.get_time_entries(start_date, end_date, 42)
+        assert len(result) == 0
+        assert caplog.records[-1].levelname == "ERROR"
+        msg = "There was a problem processing time entries for project 42"
+        assert msg in caplog.records[-1].message
+
 
 class TestClockifyAPI:
     """Test suite for the ClockifyAPI class."""
