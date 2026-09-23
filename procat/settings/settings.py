@@ -184,9 +184,9 @@ CLOCKIFY_API_KEY = os.environ.get("CLOCKIFY_API_KEY")
 CLOCKIFY_WORKSPACE_ID = os.environ.get("CLOCKIFY_WORKSPACE_ID")
 KIMAI_BASE_URL = os.environ.get("KIMAI_BASE_URL", "")
 KIMAI_API_TOKEN = os.environ.get("KIMAI_API_TOKEN", "")
-CLOCKIFY_CUTOVER_DATE = os.environ.get("CLOCKIFY_CUTOVER_DATE")
-if CLOCKIFY_CUTOVER_DATE:
-    CLOCKIFY_CUTOVER_DATE = datetime.fromisoformat(CLOCKIFY_CUTOVER_DATE)
+_cutover_date = os.environ.get("CLOCKIFY_CUTOVER_DATE")
+if _cutover_date:
+    CLOCKIFY_CUTOVER_DATE = datetime.fromisoformat(_cutover_date)
 
 # Azure OIDC settings
 OIDC_RP_CLIENT_ID = os.environ.get("OIDC_RP_CLIENT_ID")
