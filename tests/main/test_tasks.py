@@ -306,6 +306,7 @@ class TestSyncClockifyTimeEntries:
         mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
         project = funding.project
         project.clockify_id = "proj_1"
         project.status = "Active"
@@ -352,6 +353,7 @@ class TestSyncClockifyTimeEntries:
         """Test that an error is logged if the API call fails."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
         project = funding.project
         project.clockify_id = "proj_1"
         project.status = "Active"
@@ -374,6 +376,7 @@ class TestSyncClockifyTimeEntries:
         """Test that entries with missing data are skipped."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
         project = funding.project
         project.clockify_id = "proj_1"
         project.status = "Active"
@@ -397,6 +400,7 @@ class TestSyncClockifyTimeEntries:
         """Test that entries are skipped if the user does not exist in the database."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
         project = funding.project
         project.clockify_id = "proj_1"
         project.status = "Active"
@@ -438,6 +442,7 @@ class TestSyncClockifyTimeEntries:
         mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
 
         project = funding.project
         project.clockify_id = "proj_1"
@@ -499,6 +504,7 @@ class TestSyncClockifyTimeEntries:
         mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
 
         project = funding.project
         project.clockify_id = "proj_1"
