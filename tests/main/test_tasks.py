@@ -343,7 +343,7 @@ class TestSyncClockifyTimeEntries:
         mock_settings.CLOCKIFY_API_KEY = ""
         sync_clockify_time_entries()
         mock_clockify_api.assert_not_called()
-        assert "Clockify API key not found" in caplog.text
+        assert "Clockify API information not found" in caplog.text
 
     @patch("main.tasks.settings")
     @patch("main.tasks.ClockifyAPI")
