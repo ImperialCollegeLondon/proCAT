@@ -303,7 +303,7 @@ def sync_clockify_time_entries(
         or not settings.CLOCKIFY_CUTOVER_DATE
     ):
         logger.warning("Clockify API information not found in environment variables")
-        return True
+        return False
 
     api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
     start_date = end_date - datetime.timedelta(days=days_back)
@@ -415,7 +415,7 @@ def sync_kimai_time_entries(
         or not settings.CLOCKIFY_CUTOVER_DATE
     ):
         logger.warning("Kimai API information not found in environment variables")
-        return True
+        return False
 
     api = KimaiAPI(settings.KIMAI_API_TOKEN, settings.KIMAI_BASE_URL)
     start_date = end_date - datetime.timedelta(days=days_back)
