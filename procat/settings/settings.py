@@ -228,7 +228,7 @@ else:
     LOGIN_URL = f"{FORCE_SCRIPT_NAME}/auth/login"
 
 HUEY_TASK_SCHEDULES = {
-    "SYNC_CLOCKIFY_TIME_ENTRIES": {
+    "SYNC_TIMESHEETS": {
         "hour": 0,
         "minute": 0,
     },

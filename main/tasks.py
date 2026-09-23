@@ -497,11 +497,12 @@ def sync_kimai_time_entries(
     return issues
 
 
-@db_periodic_task(crontab(**settings.HUEY_TASK_SCHEDULES["SYNC_CLOCKIFY_TIME_ENTRIES"]))
-def sync_clockify_time_entries_task() -> None:
-    """Scheduled task to sync time entries from Clockify API."""
+@db_periodic_task(crontab(**settings.HUEY_TASK_SCHEDULES["SYNC_TIMESHEETS"]))
+def sync_timesheets_task() -> None:
+    """Scheduled task to sync timesheets."""
     sync_clockify_time_entries()
-    logger.info("Clockify time entries sync completed.")
+    sync_kimai_time_entries()
+    logger.info("Timesheet sync completed.")
 
 
 _template_days_used_exceeded_days_left = """
