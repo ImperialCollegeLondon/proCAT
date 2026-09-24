@@ -10,6 +10,8 @@ services:
     environment:
       - CLOCKIFY_API_KEY
       - CLOCKIFY_WORKSPACE_ID
+      - KIMAI_API_TOKEN
+      - KIMAI_BASE_URL
       - OIDC_RP_CLIENT_ID
       - OIDC_RP_CLIENT_SECRET
       - OIDC_OP_AUTHORIZATION_ENDPOINT
