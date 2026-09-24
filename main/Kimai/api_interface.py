@@ -56,6 +56,7 @@ class KimaiAPI:
             "billable": 1,
             "size": 500,
             "project": project_id,
+            "user": "all",
         }
 
         response = requests.request(

@@ -9,6 +9,7 @@ from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, task
 
 from .Clockify.api_interface import ClockifyAPI
+from .Kimai.api_interface import KimaiAPI
 from .models import Project, TimeEntry, User
 from .notify import email_attachment, email_user, email_user_and_cc_head
 from .report import create_charges_report_for_attachment
@@ -296,12 +297,25 @@ def sync_clockify_time_entries(
         True if there is any issue, and False if all went well.
     """
     issues = False
-    if not settings.CLOCKIFY_API_KEY or not settings.CLOCKIFY_WORKSPACE_ID:
-        logger.warning("Clockify API key not found in environment variables")
-        return True
+    if (
+        not settings.CLOCKIFY_API_KEY
+        or not settings.CLOCKIFY_WORKSPACE_ID
+        or not settings.CLOCKIFY_CUTOVER_DATE
+    ):
+        logger.warning("Clockify API information not found in environment variables")
+        return False
 
     api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
     start_date = end_date - datetime.timedelta(days=days_back)
+
+    # The end date can be, at most, the day before the cutover
+    end_date = (
+        end_date
+        if end_date < settings.CLOCKIFY_CUTOVER_DATE
+        else settings.CLOCKIFY_CUTOVER_DATE - datetime.timedelta(days=1)
+    )
+    if end_date < start_date:
+        return False
 
     projects = Project.objects.filter(status__in=["Active", "Maintenance"]).exclude(
         clockify_id=""
@@ -381,11 +395,114 @@ def sync_clockify_time_entries(
     return issues
 
 
-@db_periodic_task(crontab(**settings.HUEY_TASK_SCHEDULES["SYNC_CLOCKIFY_TIME_ENTRIES"]))
-def sync_clockify_time_entries_task() -> None:
-    """Scheduled task to sync time entries from Clockify API."""
+def sync_kimai_time_entries(
+    days_back: int = 30,
+    end_date: datetime.datetime = timezone.now(),
+) -> bool:
+    """Task to sync time entries from Kimai API to TimeEntry model.
+
+    Args:
+        days_back (int): Number of days to look back for time entries.
+        end_date (datetime.datetime): The end date for the time entries to fetch.
+
+    Returns:
+        True if there is any issue, and False if all went well.
+    """
+    issues = False
+    if (
+        not settings.KIMAI_API_TOKEN
+        or not settings.KIMAI_BASE_URL
+        or not settings.CLOCKIFY_CUTOVER_DATE
+    ):
+        logger.warning("Kimai API information not found in environment variables")
+        return False
+
+    api = KimaiAPI(settings.KIMAI_API_TOKEN, settings.KIMAI_BASE_URL)
+    start_date = end_date - datetime.timedelta(days=days_back)
+
+    # The start date can be, at most, the day of the cutover
+    start_date = (
+        start_date
+        if start_date >= settings.CLOCKIFY_CUTOVER_DATE
+        else settings.CLOCKIFY_CUTOVER_DATE
+    )
+    if end_date < start_date:
+        return False
+
+    projects = Project.objects.filter(status__in=["Active", "Maintenance"]).exclude(
+        kimai_id=-1
+    )
+
+    for project in projects:
+        logger.info(f"Processing project ID: {project.kimai_id} - {project.name}")
+        entries = []
+        try:
+            entries = api.get_time_entries(start_date, end_date, project.kimai_id)
+        except Exception as e:
+            logger.error(
+                f"Error fetching time entries for project {project.kimai_id} - "
+                f"{project.name}: {e}"
+            )
+            issues = issues or True
+            continue
+
+        seen_entry_ids: set[str] = set()
+        logger.debug(
+            f"{len(entries)} entries found for project {project.kimai_id} - "
+            f"{project.name}"
+        )
+        for entry in entries:
+            entry_id = entry["entry_id"]
+            user_email = entry["user_email"]
+            start = entry["start"]
+            end = entry["end"]
+
+            try:
+                user = User.objects.get(email=user_email)
+            except User.DoesNotExist:
+                logger.warning(
+                    f"User {user_email} not found. Skipping entry {entry_id}."
+                )
+                issues = issues or True
+                continue
+
+            start_time = datetime.datetime.fromisoformat(start)
+            end_time = datetime.datetime.fromisoformat(end)
+
+            TimeEntry.objects.update_or_create(
+                kimai_id=entry_id,
+                defaults={
+                    "user": user,
+                    "project": project,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                },
+            )
+            seen_entry_ids.add(entry_id)
+
+        stale_entries = TimeEntry.objects.filter(
+            project=project,
+            kimai_id__gt=0,
+            start_time__gte=start_date,
+            end_time__lte=end_date,
+        ).exclude(kimai_id__in=seen_entry_ids)
+
+        if stale_entries.exists():
+            deleted_count, _ = stale_entries.delete()
+            logger.info(
+                f"Removed {deleted_count} stale entries for project "
+                f"{project.kimai_id} - {project.name}"
+            )
+
+    return issues
+
+
+@db_periodic_task(crontab(**settings.HUEY_TASK_SCHEDULES["SYNC_TIMESHEETS"]))
+def sync_timesheets_task() -> None:
+    """Scheduled task to sync timesheets."""
     sync_clockify_time_entries()
-    logger.info("Clockify time entries sync completed.")
+    sync_kimai_time_entries()
+    logger.info("Timesheet sync completed.")
 
 
 _template_days_used_exceeded_days_left = """

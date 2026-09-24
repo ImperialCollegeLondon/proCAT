@@ -18,7 +18,7 @@ from .models import (
     TimeEntry,
     User,
 )
-from .tasks import sync_clockify_time_entries
+from .tasks import sync_clockify_time_entries, sync_kimai_time_entries
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Department)
@@ -105,16 +105,17 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         urls = super().get_urls()
         custom_urls = [
             path(
-                "sync_clockify/",
+                "sync_timesheets/",
                 self.sync_time_entries_view,
-                name="sync-clockify",
+                name="sync-timesheets",
             )
         ]
         return custom_urls + urls
 
     def sync_time_entries_view(self, request: HttpRequest) -> HttpResponse:
-        """Forces a synchronisation of Clockify time entries."""
+        """Forces a synchronisation of timesheets."""
         issues = sync_clockify_time_entries()
+        issues = sync_kimai_time_entries() or issues
         if not issues:
             self.message_user(request, "Syncronysation completted successfully!")
         else:

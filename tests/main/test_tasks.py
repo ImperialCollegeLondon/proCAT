@@ -15,6 +15,7 @@ from main.tasks import (
     notify_monthly_days_used_exceeding_days_left_logic,
     notify_monthly_time_logged_logic,
     sync_clockify_time_entries,
+    sync_kimai_time_entries,
 )
 
 
@@ -306,6 +307,7 @@ class TestSyncClockifyTimeEntries:
         mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
         project = funding.project
         project.clockify_id = "proj_1"
         project.status = "Active"
@@ -342,7 +344,7 @@ class TestSyncClockifyTimeEntries:
         mock_settings.CLOCKIFY_API_KEY = ""
         sync_clockify_time_entries()
         mock_clockify_api.assert_not_called()
-        assert "Clockify API key not found" in caplog.text
+        assert "Clockify API information not found" in caplog.text
 
     @patch("main.tasks.settings")
     @patch("main.tasks.ClockifyAPI")
@@ -352,6 +354,7 @@ class TestSyncClockifyTimeEntries:
         """Test that an error is logged if the API call fails."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
         project = funding.project
         project.clockify_id = "proj_1"
         project.status = "Active"
@@ -374,6 +377,7 @@ class TestSyncClockifyTimeEntries:
         """Test that entries with missing data are skipped."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
         project = funding.project
         project.clockify_id = "proj_1"
         project.status = "Active"
@@ -397,6 +401,7 @@ class TestSyncClockifyTimeEntries:
         """Test that entries are skipped if the user does not exist in the database."""
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
         project = funding.project
         project.clockify_id = "proj_1"
         project.status = "Active"
@@ -438,6 +443,7 @@ class TestSyncClockifyTimeEntries:
         mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
 
         project = funding.project
         project.clockify_id = "proj_1"
@@ -499,6 +505,7 @@ class TestSyncClockifyTimeEntries:
         mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.now()
 
         project = funding.project
         project.clockify_id = "proj_1"
@@ -529,6 +536,223 @@ class TestSyncClockifyTimeEntries:
         mock_api_instance.get_time_entries.return_value = {"timeentries": []}
 
         sync_clockify_time_entries(end_date=current_time)
+
+        assert not TimeEntry.objects.filter(id=stale_entry.id).exists()
+        assert TimeEntry.objects.filter(id=preserved_entry.id).exists()
+
+
+@pytest.mark.django_db
+class TestSyncKimaiTimeEntries:
+    """Tests for the sync_kimai_time_entries function."""
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.KimaiAPI")
+    @patch("main.tasks.timezone.now")
+    def test_sync_creates_new_entry(
+        self, mock_now, mock_kimai_api, mock_settings, user, funding
+    ):
+        """Test that a new time entry from the API is created in the database."""
+        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        mock_now.return_value = current_time
+        mock_settings.KIMAI_API_TOKEN = "fake_key"
+        mock_settings.KIMAI_BASE_URL = "some_url"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
+            datetime(2020, 7, 16, 10, 0, 0)
+        )
+        project = funding.project
+        project.kimai_id = 1
+        project.status = "Active"
+        project.save()
+
+        mock_api_instance = mock_kimai_api.return_value
+        mock_api_instance.get_time_entries.return_value = [
+            {
+                "entry_id": 1,
+                "project_id": project.kimai_id,
+                "user_email": user.email,
+                "start": "2025-07-15T12:00:00Z",
+                "end": "2025-07-15T13:00:00Z",
+            },
+        ]
+
+        assert TimeEntry.objects.count() == 0
+        sync_kimai_time_entries(end_date=current_time)
+
+        assert TimeEntry.objects.count() == 1
+        new_entry = TimeEntry.objects.first()
+        assert new_entry.kimai_id == 1
+        assert new_entry.user == user
+        assert new_entry.project == project
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.KimaiAPI")
+    def test_no_api_key(self, mock_kimai_api, mock_settings, caplog):
+        """Test that the function exits gracefully if no API key is set."""
+        mock_settings.KIMAI_API_TOKEN = ""
+        sync_kimai_time_entries()
+        mock_kimai_api.assert_not_called()
+        assert "Kimai API information not found" in caplog.text
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.KimaiAPI")
+    def test_api_call_exception(self, mock_kimai_api, mock_settings, funding, caplog):
+        """Test that an error is logged if the API call fails."""
+        mock_settings.KIMAI_API_TOKEN = "fake_key"
+        mock_settings.KIMAI_BASE_URL = "some_url"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
+            datetime(2020, 7, 16, 10, 0, 0)
+        )
+        project = funding.project
+        project.kimai_id = 1
+        project.status = "Active"
+        project.save()
+
+        mock_api_instance = mock_kimai_api.return_value
+        mock_api_instance.get_time_entries.side_effect = Exception("API is down")
+
+        sync_kimai_time_entries()
+
+        assert "Error fetching time entries" in caplog.text
+        assert "API is down" in caplog.text
+        assert TimeEntry.objects.count() == 0
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.KimaiAPI")
+    def test_skips_entry_if_user_not_found(
+        self, mock_kimai_api, mock_settings, funding, caplog
+    ):
+        """Test that entries are skipped if the user does not exist in the database."""
+        mock_settings.KIMAI_API_TOKEN = "fake_key"
+        mock_settings.KIMAI_BASE_URL = "some_url"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
+            datetime(2020, 7, 16, 10, 0, 0)
+        )
+        project = funding.project
+        project.kimai_id = 1
+        project.status = "Active"
+        project.save()
+
+        mock_api_instance = mock_kimai_api.return_value
+        mock_api_instance.get_time_entries.return_value = [
+            {
+                "entry_id": 1,
+                "project_id": project.kimai_id,
+                "user_email": "non.existent.user@example.com",
+                "start": "2025-07-15T12:00:00Z",
+                "end": "2025-07-15T13:00:00Z",
+            },
+        ]
+
+        sync_kimai_time_entries()
+
+        assert "User non.existent.user@example.com not found" in caplog.text
+        assert TimeEntry.objects.count() == 0
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.KimaiAPI")
+    @patch("main.tasks.timezone.now")
+    def test_sync_updates_existing_entry(
+        self,
+        mock_now,
+        mock_kimai_api,
+        mock_settings,
+        user,
+        funding,
+    ):
+        """Existing entries are refreshed when the API reports changes."""
+        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        mock_now.return_value = current_time
+        mock_settings.KIMAI_API_TOKEN = "fake_key"
+        mock_settings.KIMAI_BASE_URL = "some_url"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
+            datetime(2020, 7, 16, 10, 0, 0)
+        )
+
+        project = funding.project
+        project.kimai_id = 1
+        project.status = "Active"
+        project.save()
+
+        original_start = timezone.make_aware(datetime(2025, 7, 10, 9, 0, 0))
+        original_end = original_start + timedelta(hours=1)
+
+        entry = TimeEntry.objects.create(
+            kimai_id=1,
+            user=user,
+            project=project,
+            start_time=original_start,
+            end_time=original_end,
+        )
+
+        updated_start = "2025-07-15T10:00:00Z"
+        updated_end = "2025-07-15T12:00:00Z"
+
+        mock_api_instance = mock_kimai_api.return_value
+        mock_api_instance.get_time_entries.return_value = [
+            {
+                "entry_id": 1,
+                "project_id": project.kimai_id,
+                "user_email": user.email,
+                "start": updated_start,
+                "end": updated_end,
+            },
+        ]
+
+        sync_kimai_time_entries(end_date=current_time)
+
+        entry.refresh_from_db()
+        assert entry.start_time == datetime.fromisoformat(updated_start)
+        assert entry.end_time == datetime.fromisoformat(updated_end)
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.KimaiAPI")
+    @patch("main.tasks.timezone.now")
+    def test_sync_deletes_missing_entries_within_window(
+        self,
+        mock_now,
+        mock_kimai_api,
+        mock_settings,
+        user,
+        funding,
+    ):
+        """Entries absent from the API inside the 30-day window are removed."""
+        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        mock_now.return_value = current_time
+        mock_settings.KIMAI_API_TOKEN = "fake_key"
+        mock_settings.KIMAI_BASE_URL = "some_url"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
+            datetime(2020, 7, 16, 10, 0, 0)
+        )
+
+        project = funding.project
+        project.kimai_id = 1
+        project.status = "Active"
+        project.save()
+
+        in_window_start = current_time - timedelta(days=5)
+        in_window_end = in_window_start + timedelta(hours=2)
+        stale_entry = TimeEntry.objects.create(
+            kimai_id=1,
+            user=user,
+            project=project,
+            start_time=in_window_start,
+            end_time=in_window_end,
+        )
+
+        out_of_window_start = current_time - timedelta(days=45)
+        out_of_window_end = out_of_window_start + timedelta(hours=2)
+        preserved_entry = TimeEntry.objects.create(
+            kimai_id=2,
+            user=user,
+            project=project,
+            start_time=out_of_window_start,
+            end_time=out_of_window_end,
+        )
+
+        mock_api_instance = mock_kimai_api.return_value
+        mock_api_instance.get_time_entries.return_value = []
+
+        sync_kimai_time_entries(end_date=current_time)
 
         assert not TimeEntry.objects.filter(id=stale_entry.id).exists()
         assert TimeEntry.objects.filter(id=preserved_entry.id).exists()
