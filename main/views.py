@@ -284,7 +284,7 @@ class ProjectDetailInlineView(PermissionRequiredMixin, View):
     permission_required = (
         "main.view_project",
         "main.view_funding",
-        "main.view_project_phase",
+        "main.view_projectphase",
     )
     raise_exception = False
     template_name = "main/project_inline_detail.html"
