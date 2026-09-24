@@ -198,6 +198,13 @@ class Project(Warning, models.Model):
         null=False,
         help_text="The ID of the project in Clockify, if applicable.",
     )
+    kimai_id = models.IntegerField(
+        "Kimai ID",
+        blank=True,
+        null=False,
+        default=-1,
+        help_text="The ID of the project in Kimai, if applicable.",
+    )
 
     def __str__(self) -> str:
         """String representation of the Project object."""
@@ -1033,6 +1040,13 @@ class TimeEntry(models.Model):
         "Clockify ID",
         blank=True,
         null=False,
+        help_text="The ID of the time entry in Clockify, if applicable.",
+    )
+    kimai_id = models.IntegerField(
+        "Kimai ID",
+        blank=True,
+        null=False,
+        default=-1,
         help_text="The ID of the time entry in Clockify, if applicable.",
     )
 
