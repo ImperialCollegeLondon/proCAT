@@ -12,7 +12,7 @@ from bokeh.models.widgets import Button
 from bokeh.plotting import figure
 from django.utils import timezone
 
-from . import timeseries, widgets
+from . import models, timeseries, widgets
 from .utils import (
     get_calendar_year_dates,
     get_financial_year_dates,
@@ -94,6 +94,8 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     traces: list[dict[str, Any]],
     x_range: tuple[datetime, datetime] | None = None,
     vareas: tuple[tuple[tuple[str, str], str], ...] | None = None,
+    height: int = 500,
+    legend_loc: str = "bottom_left",
 ) -> figure:
     """Creates a generic timeseries plot.
 
@@ -118,7 +120,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
 
     plot = figure(
         title=title,
-        height=500,
+        height=height,
         background_fill_color="#efefef",
         x_axis_type="datetime",  # type: ignore[call-arg]
         tools="save,xpan,xwheel_zoom,reset",
@@ -158,7 +160,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
 
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
 
-    plot.legend.location = "bottom_left"
+    plot.legend.location = legend_loc
 
     return plot
 
@@ -468,6 +470,73 @@ def create_cost_recovery_layout() -> Row:
             bar_plot,
             sizing_mode="stretch_width",
         ),
+        sizing_mode="stretch_width",
+    )
+    return plot_layout
+
+
+def create_project_evolution_plot(project: models.Project) -> figure:
+    """Create plot with the time evolution of usage and charges."""
+    # Expected, cumulative use, normalized
+    expected = project.fte(include_excess=False)
+    if maintenance := project.maintenance_phase():
+        expected = expected[expected.index < maintenance.start_date]
+    expected = expected.cumsum()
+    expected = expected / expected.max()
+
+    traces = [
+        {"timeseries": expected, "label": "Expected trend", "colour": "red"},
+    ]
+
+    # Actual usage
+    usage = pd.DataFrame.from_records(
+        project.timeentry_set.all().values("start_time", "end_time")
+    )
+    if not usage.empty:
+        usage["time_used"] = (
+            usage["end_time"] - usage["start_time"]
+        ).dt.total_seconds()
+        usage = (
+            usage.set_index("start_time")
+            .drop("end_time", axis="columns")
+            .groupby(pd.Grouper(freq="D"))
+            .sum()
+            .cumsum()["time_used"]
+        )
+        total_effort = project.total_effort
+        assert total_effort is not None
+        usage = usage / (total_effort * 7 * 3600)
+
+        traces.append({"timeseries": usage, "label": "Actual usage", "colour": "blue"})
+
+    # Charges made
+    charges = pd.DataFrame.from_records(
+        models.MonthlyCharge.objects.filter(project=project).values("date", "amount")
+    )
+    if not charges.empty:
+        charges["amount"] = charges["amount"].astype(float)
+        charges["date"] = pd.to_datetime(charges["date"], utc=True)
+        charges = (
+            charges.set_index("date")
+            .groupby(pd.Grouper(freq="D"))
+            .sum()
+            .cumsum()["amount"]
+        )
+        budget = project.funding_source.all().values_list("budget", flat=True)
+        charges = charges / float(sum(budget))
+
+        traces.append(
+            {"timeseries": charges, "label": "Cumulative charges", "colour": "green"}
+        )
+
+    return create_timeseries_plot(
+        "Project evolution", traces, height=400, legend_loc="bottom_right"
+    )
+
+
+def create_project_evolution_layout(project: models.Project) -> Row:
+    plot_layout = row(
+        create_project_evolution_plot(project),
         sizing_mode="stretch_width",
     )
     return plot_layout
