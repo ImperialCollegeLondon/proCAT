@@ -340,4 +340,7 @@ class ProjectDetailInlineView(PermissionRequiredMixin, View):
                 for phase in project.phases.all()
             ],
         }
+        layout = plots.create_project_evolution_layout(project)
+        context.update(plots.html_components_from_plot(layout))
+        context["bokeh_version"] = bokeh.__version__
         return render(request, self.template_name, context)
