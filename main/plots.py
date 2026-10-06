@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, HoverTool, Range1d, VArea
+from bokeh.models import ColumnDataSource, HoverTool, Range1d, Span, VArea
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
 from bokeh.plotting import figure
@@ -478,11 +478,28 @@ def create_cost_recovery_layout() -> Row:
     return plot_layout
 
 
+def get_time_vertical_line(location: datetime, colour: str = "black") -> Span:
+    """Create a vertical line to indicate the specified time on the plots.
+
+    Args:
+        location: The timestamp to position the vertical line.
+        colour: Colour for the lne. Defaults to black.
+
+    Returns:
+        A Span object representing the vertical line for the specified time.
+    """
+    now_line = Span(
+        location=location,
+        dimension="height",
+        line_color=colour,
+        line_dash="dashed",
+        line_width=1,
+    )
+    return now_line
+
+
 def create_project_evolution_plot(project: models.Project) -> figure | None:
     """Create plot with the time evolution of usage and charges."""
-    if not project.phases.exists():
-        return None
-
     # Expected, commulative use, homogeneous over each phase
     expected = project.fte(include_excess=False)
     expected = expected.cumsum()
@@ -533,9 +550,14 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
             {"timeseries": charges, "label": "Cumulative charges", "colour": "green"}
         )
 
-    return create_timeseries_plot(
+    plot = create_timeseries_plot(
         "Project evolution", traces, height=400, legend_loc="bottom_right"
     )
+    for phase in project.phases.all():
+        plot.add_layout(get_time_vertical_line(pd.to_datetime(phase.start_date)))
+    plot.add_layout(get_time_vertical_line(pd.to_datetime(project.end_date)))
+    plot.add_layout(get_time_vertical_line(datetime.now(), colour="grey"))
+    return plot
 
 
 def create_project_evolution_layout(project: models.Project) -> Row | None:
