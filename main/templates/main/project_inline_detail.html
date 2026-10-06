@@ -4,12 +4,13 @@
 
 {% block content %}
 
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-{{ bokeh_version }}.min.js"></script>
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{ bokeh_version }}.min.js"></script>
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{ bokeh_version }}.min.js"></script>
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-{{ bokeh_version }}.min.js"></script>
-  <script src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-{{ bokeh_version }}.min.js"></script>
-
+  {% if bokeh_version %}
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-{{ bokeh_version }}.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{{ bokeh_version }}.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-{{ bokeh_version }}.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-{{ bokeh_version }}.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-{{ bokeh_version }}.min.js"></script>
+  {% endif %}
   <!--
   Read-only counterpart of project_inline_form.html (used by
   ProjectCreateInlineView / ProjectUpdateInlineView): shows a Project
@@ -83,9 +84,11 @@
     </div>
   </div>
 
-  <!-- Plot for the time evolution of the project -->
-  {{ script | safe }}
-  {{ div | safe }}
+  {% if bokeh_version %}
+    <!-- Plot for the time evolution of the project -->
+    {{ script | safe }}
+    {{ div | safe }}
+  {% endif %}
 
   <br>
 

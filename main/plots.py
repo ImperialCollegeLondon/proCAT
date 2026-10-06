@@ -501,13 +501,15 @@ def get_time_vertical_line(location: datetime, colour: str = "black") -> Span:
 def create_project_evolution_plot(project: models.Project) -> figure | None:
     """Create plot with the time evolution of usage and charges."""
     # Expected, commulative use, homogeneous over each phase
-    expected = project.fte(include_excess=False)
-    expected = expected.cumsum()
-    expected = expected / expected.max()
+    traces = []
+    if project.phases.exists():
+        expected = project.fte(include_excess=False)
+        expected = expected.cumsum()
+        expected = expected / expected.max()
 
-    traces = [
-        {"timeseries": expected, "label": "Expected trend", "colour": "red"},
-    ]
+        traces.append(
+            {"timeseries": expected, "label": "Expected trend", "colour": "red"},
+        )
 
     # Actual usage, based on time records, if any
     usage = pd.DataFrame.from_records(
@@ -549,6 +551,9 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
         traces.append(
             {"timeseries": charges, "label": "Cumulative charges", "colour": "green"}
         )
+
+    if not traces:
+        return None
 
     plot = create_timeseries_plot(
         "Project evolution", traces, height=400, legend_loc="bottom_right"

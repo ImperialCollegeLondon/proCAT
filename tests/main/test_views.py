@@ -654,6 +654,33 @@ class TestProjectDetailInlineView(PermissionRequiredMixin, TemplateOkMixin):
         assert response.context["total_days_badge"] == na_badge
         assert response.context["days_left_badge"] == na_badge
 
+    def test_time_evolution_plot_no_plot(self, admin_client, project):
+        """Check that a project with no phases has a time evolution plot.
+
+        If there were time entries or charges, there could be a plot, but
+        this is meant to test the primary logic of not showing plot if
+        there's no data.
+        """
+        assert not project.phases.exists()
+        response = admin_client.get(
+            reverse("main:project_detail", kwargs={"pk": project.pk})
+        )
+        assert "bokeh_version" not in response.context.keys()
+        assert "script" not in response.context.keys()
+        assert "div" not in response.context.keys()
+
+    def test_time_evolution_plot(self, admin_client, phase):
+        """Test the case when there're phases, and hence a plot."""
+        import bokeh
+
+        project = phase.project
+        response = admin_client.get(
+            reverse("main:project_detail", kwargs={"pk": project.pk})
+        )
+        assert "<script" in response.context["script"]
+        assert "<div" in response.context["div"]
+        assert response.context["bokeh_version"] == bokeh.__version__
+
 
 class TestCapacityPlanningView(LoginRequiredMixin, TemplateOkMixin):
     """Test suite for the Capacity Planning view."""
