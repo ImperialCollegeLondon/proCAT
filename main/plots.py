@@ -108,6 +108,9 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         vareas: (optional) tuple of tuples, containing a tuple of trace labels to apply
             shading between and the colour to use, e.g.
             ((("Capacity", "Project effort"), "Green"), ...)
+        height: Height of the plto in pixels. Defaults to 500.
+        legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
+            for valid options. Defaults to 'bottom_left'
 
     Returns:
         Bokeh figure containing timeseries data.
@@ -475,12 +478,13 @@ def create_cost_recovery_layout() -> Row:
     return plot_layout
 
 
-def create_project_evolution_plot(project: models.Project) -> figure:
+def create_project_evolution_plot(project: models.Project) -> figure | None:
     """Create plot with the time evolution of usage and charges."""
-    # Expected, cumulative use, normalized
+    if not project.phases.exists():
+        return None
+
+    # Expected, commulative use, homogeneous over each phase
     expected = project.fte(include_excess=False)
-    if maintenance := project.maintenance_phase():
-        expected = expected[expected.index < maintenance.start_date]
     expected = expected.cumsum()
     expected = expected / expected.max()
 
@@ -488,7 +492,7 @@ def create_project_evolution_plot(project: models.Project) -> figure:
         {"timeseries": expected, "label": "Expected trend", "colour": "red"},
     ]
 
-    # Actual usage
+    # Actual usage, based on time records, if any
     usage = pd.DataFrame.from_records(
         project.timeentry_set.all().values("start_time", "end_time")
     )
@@ -509,7 +513,7 @@ def create_project_evolution_plot(project: models.Project) -> figure:
 
         traces.append({"timeseries": usage, "label": "Actual usage", "colour": "blue"})
 
-    # Charges made
+    # Charges made, for those projects with charges
     charges = pd.DataFrame.from_records(
         models.MonthlyCharge.objects.filter(project=project).values("date", "amount")
     )
@@ -534,11 +538,19 @@ def create_project_evolution_plot(project: models.Project) -> figure:
     )
 
 
-def create_project_evolution_layout(project: models.Project) -> Row:
-    plot_layout = row(
-        create_project_evolution_plot(project),
-        sizing_mode="stretch_width",
-    )
+def create_project_evolution_layout(project: models.Project) -> Row | None:
+    """Add the evolution plot to a layout.
+
+    Args:
+        project: Project object the layout is about.
+
+    Returns:
+        The layout with the plot.
+    """
+    plot = create_project_evolution_plot(project)
+    if not plot:
+        return None
+    plot_layout = row(plot, sizing_mode="stretch_width")
     return plot_layout
 
 

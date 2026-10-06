@@ -341,6 +341,7 @@ class ProjectDetailInlineView(PermissionRequiredMixin, View):
             ],
         }
         layout = plots.create_project_evolution_layout(project)
-        context.update(plots.html_components_from_plot(layout))
-        context["bokeh_version"] = bokeh.__version__
+        if layout:
+            context.update(plots.html_components_from_plot(layout))
+            context["bokeh_version"] = bokeh.__version__
         return render(request, self.template_name, context)
