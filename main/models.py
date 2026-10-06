@@ -527,9 +527,9 @@ class Project(Warning, models.Model):
             return (days / 365) * WORKING_DAYS
         return None
 
-    def fte(
+    def fte(  # type: ignore[explicit-any]
         self, timerange: pd.DatetimeIndex | None = None, include_excess: bool = True
-    ) -> pd.Series:  # type: ignore[explicit-any]
+    ) -> pd.Series:
         """Calculate the FTE trace for the project over a given timerange.
 
         This is calculated by summing the trace of all the phases of the project,
