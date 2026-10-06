@@ -6,7 +6,13 @@ from typing import Any
 import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, HoverTool, Range1d, Span, VArea
+from bokeh.models import (  # type: ignore
+    ColumnDataSource,
+    HoverTool,
+    Range1d,
+    Span,
+    VArea,
+)
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
 from bokeh.plotting import figure
@@ -163,7 +169,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
 
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
 
-    plot.legend.location = legend_loc
+    plot.legend.location = legend_loc  # type: ignore[assignment]
 
     return plot
 
@@ -512,20 +518,21 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
         )
 
     # Actual usage, based on time records, if any
-    usage = pd.DataFrame.from_records(
+    _usage = pd.DataFrame.from_records(
         project.timeentry_set.all().values("start_time", "end_time")
     )
-    if not usage.empty:
-        usage["time_used"] = (
-            usage["end_time"] - usage["start_time"]
+    if not _usage.empty:
+        _usage["time_used"] = (
+            _usage["end_time"] - _usage["start_time"]
         ).dt.total_seconds()
         usage = (
-            usage.set_index("start_time")
+            _usage.set_index("start_time")
             .drop("end_time", axis="columns")
             .groupby(pd.Grouper(freq="D"))
             .sum()
             .cumsum()["time_used"]
         )
+        usage.index.name = None
         total_effort = project.total_effort
         assert total_effort is not None
         usage = usage / (total_effort * 7 * 3600)
@@ -533,14 +540,14 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
         traces.append({"timeseries": usage, "label": "Actual usage", "colour": "blue"})
 
     # Charges made, for those projects with charges
-    charges = pd.DataFrame.from_records(
+    _charges = pd.DataFrame.from_records(
         models.MonthlyCharge.objects.filter(project=project).values("date", "amount")
     )
-    if not charges.empty:
-        charges["amount"] = charges["amount"].astype(float)
-        charges["date"] = pd.to_datetime(charges["date"], utc=True)
+    if not _charges.empty:
+        _charges["amount"] = _charges["amount"].astype(float)
+        _charges["date"] = pd.to_datetime(_charges["date"], utc=True)
         charges = (
-            charges.set_index("date")
+            _charges.set_index("date")
             .groupby(pd.Grouper(freq="D"))
             .sum()
             .cumsum()["amount"]
@@ -560,6 +567,7 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
     )
     for phase in project.phases.all():
         plot.add_layout(get_time_vertical_line(pd.to_datetime(phase.start_date)))
+    assert project.end_date
     plot.add_layout(get_time_vertical_line(pd.to_datetime(project.end_date)))
     plot.add_layout(get_time_vertical_line(datetime.now(), colour="grey"))
     return plot
