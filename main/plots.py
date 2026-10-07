@@ -592,11 +592,13 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
         legend_loc="bottom_right",
     )
     plot.yaxis.axis_label = "Days"
+
     for phase in project.phases.all():
         plot.add_layout(get_time_vertical_line(pd.to_datetime(phase.start_date)))
     assert project.end_date
     plot.add_layout(get_time_vertical_line(pd.to_datetime(project.end_date)))
     plot.add_layout(get_time_vertical_line(datetime.now(), colour="grey"))
+
     return plot
 
 
