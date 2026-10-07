@@ -123,6 +123,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     """
     # Create ColumnDataSource from trace data
     df = pd.DataFrame({trace["label"]: trace["timeseries"] for trace in traces})
+    df.index.name = "index"
     df.reset_index(inplace=True)
     df["index"] = pd.to_datetime(df["index"]).dt.date
     source = ColumnDataSource(df)
@@ -509,12 +510,30 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
     # Expected, commulative use, homogeneous over each phase
     traces = []
     if project.phases.exists():
-        expected = project.fte(include_excess=False)
-        expected = expected.cumsum()
-        expected = expected / expected.max()
+        _expected = []
+        cumsum = 0.0
+        for phase in project.phases.all():
+            _expected.append(
+                {"date": pd.to_datetime(phase.start_date, utc=True), "value": cumsum}
+            )
+            cumsum += phase.days
+        assert project.end_date
+        _expected.append(
+            {"date": pd.to_datetime(project.end_date, utc=True), "value": cumsum}
+        )
+        expected = (
+            pd.DataFrame(_expected)
+            .set_index("date")["value"]
+            .resample("D")
+            .interpolate()
+        )
 
         traces.append(
-            {"timeseries": expected, "label": "Expected trend", "colour": "red"},
+            {
+                "timeseries": expected,
+                "label": "Expected trend",
+                "colour": "red",
+            },
         )
 
     # Actual usage, based on time records, if any
@@ -533,9 +552,7 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
             .cumsum()["time_used"]
         )
         usage.index.name = None
-        total_effort = project.total_effort
-        assert total_effort is not None
-        usage = usage / (total_effort * 7 * 3600)
+        usage = usage / (7 * 3600)
 
         traces.append({"timeseries": usage, "label": "Actual usage", "colour": "blue"})
 
@@ -552,19 +569,29 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
             .sum()
             .cumsum()["amount"]
         )
-        budget = project.funding_source.all().values_list("budget", flat=True)
-        charges = charges / float(sum(budget))
+        budget = pd.DataFrame.from_records(
+            project.funding_source.all().values("budget", "daily_rate")
+        )
+        total_budget = budget["budget"].sum()
+        weighted_daily_rate = (
+            budget["budget"] * budget["daily_rate"]
+        ).sum() / total_budget
+        charges = charges / float(weighted_daily_rate)
 
         traces.append(
-            {"timeseries": charges, "label": "Cumulative charges", "colour": "green"}
+            {"timeseries": charges, "label": "Charged days", "colour": "green"}
         )
 
     if not traces:
         return None
 
     plot = create_timeseries_plot(
-        "Project evolution", traces, height=400, legend_loc="bottom_right"
+        "Project evolution",
+        traces,
+        height=400,
+        legend_loc="bottom_right",
     )
+    plot.yaxis.axis_label = "Days"
     for phase in project.phases.all():
         plot.add_layout(get_time_vertical_line(pd.to_datetime(phase.start_date)))
     assert project.end_date
