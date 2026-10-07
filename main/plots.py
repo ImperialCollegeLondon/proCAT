@@ -505,29 +505,83 @@ def get_time_vertical_line(location: datetime, colour: str = "black") -> Span:
     return now_line
 
 
+def _expected_days_used(project: models.Project) -> pd.Series:
+    """Create the time series with the expected time used in the project."""
+    if not project.phases.exists():
+        return pd.Series()
+
+    _expected = []
+    cumsum = 0.0
+    for phase in project.phases.all():
+        _expected.append(
+            {"date": pd.to_datetime(phase.start_date, utc=True), "value": cumsum}
+        )
+        cumsum += phase.days
+
+    assert project.end_date
+    _expected.append(
+        {"date": pd.to_datetime(project.end_date, utc=True), "value": cumsum}
+    )
+    expected = (
+        pd.DataFrame(_expected).set_index("date")["value"].resample("D").interpolate()
+    )
+
+    return expected
+
+
+def _actual_days_used(project: models.Project) -> pd.Series:
+    """Create the time series with the actual time used in the project."""
+    _usage = pd.DataFrame.from_records(
+        project.timeentry_set.all().values("start_time", "end_time")
+    )
+    if _usage.empty:
+        return pd.Series()
+
+    _usage["time_used"] = (_usage["end_time"] - _usage["start_time"]).dt.total_seconds()
+    usage = (
+        _usage.set_index("start_time")
+        .drop("end_time", axis="columns")
+        .groupby(pd.Grouper(freq="D"))
+        .sum()
+        .cumsum()["time_used"]
+    )
+    usage.index.name = None
+    usage = usage / (7 * 3600)
+
+    return usage
+
+
+def _actual_days_charged(project: models.Project) -> pd.Series:
+    """Create the time series with the actual time used in the project."""
+    _charges = pd.DataFrame.from_records(
+        models.MonthlyCharge.objects.filter(project=project).values("date", "amount")
+    )
+    if _charges.empty:
+        return pd.Series()
+
+    _charges["amount"] = _charges["amount"].astype(float)
+    _charges["date"] = pd.to_datetime(_charges["date"], utc=True)
+    charges = (
+        _charges.set_index("date")
+        .groupby(pd.Grouper(freq="D"))
+        .sum()
+        .cumsum()["amount"]
+    )
+    budget = pd.DataFrame.from_records(
+        project.funding_source.all().values("budget", "daily_rate")
+    )
+    total_budget = budget["budget"].sum()
+    weighted_daily_rate = (budget["budget"] * budget["daily_rate"]).sum() / total_budget
+    charges = charges / float(weighted_daily_rate)
+
+    return charges
+
+
 def create_project_evolution_plot(project: models.Project) -> figure | None:
     """Create plot with the time evolution of usage and charges."""
     # Expected, commulative use, homogeneous over each phase
     traces = []
-    if project.phases.exists():
-        _expected = []
-        cumsum = 0.0
-        for phase in project.phases.all():
-            _expected.append(
-                {"date": pd.to_datetime(phase.start_date, utc=True), "value": cumsum}
-            )
-            cumsum += phase.days
-        assert project.end_date
-        _expected.append(
-            {"date": pd.to_datetime(project.end_date, utc=True), "value": cumsum}
-        )
-        expected = (
-            pd.DataFrame(_expected)
-            .set_index("date")["value"]
-            .resample("D")
-            .interpolate()
-        )
-
+    if not (expected := _expected_days_used(project)).empty:
         traces.append(
             {
                 "timeseries": expected,
@@ -537,47 +591,11 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
         )
 
     # Actual usage, based on time records, if any
-    _usage = pd.DataFrame.from_records(
-        project.timeentry_set.all().values("start_time", "end_time")
-    )
-    if not _usage.empty:
-        _usage["time_used"] = (
-            _usage["end_time"] - _usage["start_time"]
-        ).dt.total_seconds()
-        usage = (
-            _usage.set_index("start_time")
-            .drop("end_time", axis="columns")
-            .groupby(pd.Grouper(freq="D"))
-            .sum()
-            .cumsum()["time_used"]
-        )
-        usage.index.name = None
-        usage = usage / (7 * 3600)
-
-        traces.append({"timeseries": usage, "label": "Actual usage", "colour": "blue"})
+    if not (actual := _actual_days_used(project)).empty:
+        traces.append({"timeseries": actual, "label": "Actual usage", "colour": "blue"})
 
     # Charges made, for those projects with charges
-    _charges = pd.DataFrame.from_records(
-        models.MonthlyCharge.objects.filter(project=project).values("date", "amount")
-    )
-    if not _charges.empty:
-        _charges["amount"] = _charges["amount"].astype(float)
-        _charges["date"] = pd.to_datetime(_charges["date"], utc=True)
-        charges = (
-            _charges.set_index("date")
-            .groupby(pd.Grouper(freq="D"))
-            .sum()
-            .cumsum()["amount"]
-        )
-        budget = pd.DataFrame.from_records(
-            project.funding_source.all().values("budget", "daily_rate")
-        )
-        total_budget = budget["budget"].sum()
-        weighted_daily_rate = (
-            budget["budget"] * budget["daily_rate"]
-        ).sum() / total_budget
-        charges = charges / float(weighted_daily_rate)
-
+    if not (charges := _actual_days_charged(project)).empty:
         traces.append(
             {"timeseries": charges, "label": "Charged days", "colour": "green"}
         )
