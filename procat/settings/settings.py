@@ -229,7 +229,6 @@ else:
 
 HUEY_TASK_SCHEDULES = {
     "SYNC_TIMESHEETS": {
-        "hour": 0,
         "minute": 0,
     },
 }

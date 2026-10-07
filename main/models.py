@@ -527,7 +527,9 @@ class Project(Warning, models.Model):
             return (days / 365) * WORKING_DAYS
         return None
 
-    def fte(self, timerange: pd.DatetimeIndex | None = None) -> pd.Series:  # type: ignore[explicit-any]
+    def fte(  # type: ignore[explicit-any]
+        self, timerange: pd.DatetimeIndex | None = None, include_excess: bool = True
+    ) -> pd.Series:
         """Calculate the FTE trace for the project over a given timerange.
 
         This is calculated by summing the trace of all the phases of the project,
@@ -535,6 +537,8 @@ class Project(Warning, models.Model):
 
         Args:
             timerange: The timerange to calculate the FTE trace over.
+            include_excess: If result should be corrected for unused FTE. If false, the
+                original, expected fte evolution is returned.
 
         Returns:
             A pandas Series with the FTE trace over the timerange, or a trace of 0 if
@@ -551,7 +555,7 @@ class Project(Warning, models.Model):
         if self.phases.exists():
             return cast(  # type: ignore[explicit-any]
                 pd.Series, sum(phase.trace(timerange) for phase in self.phases.all())
-            ) + self._excess_fte(timerange)
+            ) + (self._excess_fte(timerange) if include_excess else 0)
         return pd.Series(0.0, index=timerange)
 
     def _excess_fte(self, timerange: pd.DatetimeIndex) -> pd.Series:  # type: ignore[explicit-any]

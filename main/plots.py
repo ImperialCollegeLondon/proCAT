@@ -6,13 +6,19 @@ from typing import Any
 import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, HoverTool, Range1d, VArea
+from bokeh.models import (  # type: ignore
+    ColumnDataSource,
+    HoverTool,
+    Range1d,
+    Span,
+    VArea,
+)
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
 from bokeh.plotting import figure
 from django.utils import timezone
 
-from . import timeseries, widgets
+from . import models, timeseries, widgets
 from .utils import (
     get_calendar_year_dates,
     get_financial_year_dates,
@@ -94,6 +100,8 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     traces: list[dict[str, Any]],
     x_range: tuple[datetime, datetime] | None = None,
     vareas: tuple[tuple[tuple[str, str], str], ...] | None = None,
+    height: int = 500,
+    legend_loc: str = "bottom_left",
 ) -> figure:
     """Creates a generic timeseries plot.
 
@@ -106,19 +114,23 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         vareas: (optional) tuple of tuples, containing a tuple of trace labels to apply
             shading between and the colour to use, e.g.
             ((("Capacity", "Project effort"), "Green"), ...)
+        height: Height of the plto in pixels. Defaults to 500.
+        legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
+            for valid options. Defaults to 'bottom_left'
 
     Returns:
         Bokeh figure containing timeseries data.
     """
     # Create ColumnDataSource from trace data
     df = pd.DataFrame({trace["label"]: trace["timeseries"] for trace in traces})
+    df.index.name = "index"
     df.reset_index(inplace=True)
     df["index"] = pd.to_datetime(df["index"]).dt.date
     source = ColumnDataSource(df)
 
     plot = figure(
         title=title,
-        height=500,
+        height=height,
         background_fill_color="#efefef",
         x_axis_type="datetime",  # type: ignore[call-arg]
         tools="save,xpan,xwheel_zoom,reset",
@@ -158,7 +170,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
 
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
 
-    plot.legend.location = "bottom_left"
+    plot.legend.location = legend_loc  # type: ignore[assignment]
 
     return plot
 
@@ -470,6 +482,139 @@ def create_cost_recovery_layout() -> Row:
         ),
         sizing_mode="stretch_width",
     )
+    return plot_layout
+
+
+def get_time_vertical_line(location: datetime, colour: str = "black") -> Span:
+    """Create a vertical line to indicate the specified time on the plots.
+
+    Args:
+        location: The timestamp to position the vertical line.
+        colour: Colour for the lne. Defaults to black.
+
+    Returns:
+        A Span object representing the vertical line for the specified time.
+    """
+    now_line = Span(
+        location=location,
+        dimension="height",
+        line_color=colour,
+        line_dash="dashed",
+        line_width=1,
+    )
+    return now_line
+
+
+def create_project_evolution_plot(project: models.Project) -> figure | None:
+    """Create plot with the time evolution of usage and charges."""
+    # Expected, commulative use, homogeneous over each phase
+    traces = []
+    if project.phases.exists():
+        _expected = []
+        cumsum = 0.0
+        for phase in project.phases.all():
+            _expected.append(
+                {"date": pd.to_datetime(phase.start_date, utc=True), "value": cumsum}
+            )
+            cumsum += phase.days
+        assert project.end_date
+        _expected.append(
+            {"date": pd.to_datetime(project.end_date, utc=True), "value": cumsum}
+        )
+        expected = (
+            pd.DataFrame(_expected)
+            .set_index("date")["value"]
+            .resample("D")
+            .interpolate()
+        )
+
+        traces.append(
+            {
+                "timeseries": expected,
+                "label": "Expected trend",
+                "colour": "red",
+            },
+        )
+
+    # Actual usage, based on time records, if any
+    _usage = pd.DataFrame.from_records(
+        project.timeentry_set.all().values("start_time", "end_time")
+    )
+    if not _usage.empty:
+        _usage["time_used"] = (
+            _usage["end_time"] - _usage["start_time"]
+        ).dt.total_seconds()
+        usage = (
+            _usage.set_index("start_time")
+            .drop("end_time", axis="columns")
+            .groupby(pd.Grouper(freq="D"))
+            .sum()
+            .cumsum()["time_used"]
+        )
+        usage.index.name = None
+        usage = usage / (7 * 3600)
+
+        traces.append({"timeseries": usage, "label": "Actual usage", "colour": "blue"})
+
+    # Charges made, for those projects with charges
+    _charges = pd.DataFrame.from_records(
+        models.MonthlyCharge.objects.filter(project=project).values("date", "amount")
+    )
+    if not _charges.empty:
+        _charges["amount"] = _charges["amount"].astype(float)
+        _charges["date"] = pd.to_datetime(_charges["date"], utc=True)
+        charges = (
+            _charges.set_index("date")
+            .groupby(pd.Grouper(freq="D"))
+            .sum()
+            .cumsum()["amount"]
+        )
+        budget = pd.DataFrame.from_records(
+            project.funding_source.all().values("budget", "daily_rate")
+        )
+        total_budget = budget["budget"].sum()
+        weighted_daily_rate = (
+            budget["budget"] * budget["daily_rate"]
+        ).sum() / total_budget
+        charges = charges / float(weighted_daily_rate)
+
+        traces.append(
+            {"timeseries": charges, "label": "Charged days", "colour": "green"}
+        )
+
+    if not traces:
+        return None
+
+    plot = create_timeseries_plot(
+        "Project evolution",
+        traces,
+        height=400,
+        legend_loc="bottom_right",
+    )
+    plot.yaxis.axis_label = "Days"
+
+    for phase in project.phases.all():
+        plot.add_layout(get_time_vertical_line(pd.to_datetime(phase.start_date)))
+    assert project.end_date
+    plot.add_layout(get_time_vertical_line(pd.to_datetime(project.end_date)))
+    plot.add_layout(get_time_vertical_line(datetime.now(), colour="grey"))
+
+    return plot
+
+
+def create_project_evolution_layout(project: models.Project) -> Row | None:
+    """Add the evolution plot to a layout.
+
+    Args:
+        project: Project object the layout is about.
+
+    Returns:
+        The layout with the plot.
+    """
+    plot = create_project_evolution_plot(project)
+    if not plot:
+        return None
+    plot_layout = row(plot, sizing_mode="stretch_width")
     return plot_layout
 
 
