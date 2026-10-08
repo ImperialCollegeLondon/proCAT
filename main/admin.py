@@ -8,6 +8,7 @@ from django.urls import URLPattern, path, reverse
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (
+    Allocation,
     AnalysisCode,
     Capacity,
     DailyRate,
@@ -24,7 +25,6 @@ from .tasks import sync_clockify_time_entries, sync_kimai_time_entries
 admin.site.register(User, UserAdmin)
 admin.site.register(Department)
 admin.site.register(AnalysisCode)
-admin.site.register(ProjectsCapacity)
 
 
 @admin.register(Capacity)
@@ -150,3 +150,30 @@ class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     ) -> None:
         """Update monthly charge status to 'Confirmed'."""
         queryset.update(status="Confirmed")
+
+
+@admin.register(ProjectsCapacity)
+class ProjectsCapacityAdmin(admin.ModelAdmin):
+    """Admin class for the ProjectsCapacity model."""
+
+    list_display = (
+        "pk",
+        "user",
+        "value",
+        "start_date",
+        "end_date",
+    )
+
+
+@admin.register(Allocation)
+class AllocationAdmin(admin.ModelAdmin):
+    """Admin class for the Allocation model."""
+
+    list_display = (
+        "pk",
+        "project",
+        "user",
+        "value",
+        "start_date",
+        "end_date",
+    )

@@ -1392,3 +1392,38 @@ class ProjectsCapacity(FullTimeEquivalent):
 
         unique_together = ("priority", "user")
         verbose_name_plural = "Project Capacities"
+
+
+class Allocation(FullTimeEquivalent):
+    """Allocation of a user to a project.
+
+    This represents the effort that a user will put into working in a project for
+    a certain period of time. A user can have multiple allocations for the same
+    project, corresponding to multiple levels of work. The only validation when
+    creating an allocation is that it must not extend beyond the end of a project.
+    """
+
+    project = models.ForeignKey(
+        Project,
+        null=False,
+        blank=False,
+        on_delete=models.CASCADE,
+        help_text="Project this allocation relates to.",
+    )
+
+    user = models.ForeignKey(
+        User,
+        null=False,
+        blank=False,
+        on_delete=models.CASCADE,
+        help_text="User involved in this allocation.",
+    )
+
+    def clean(self):
+        """Checks that the allocation does not extend beyond the project."""
+        super().clean()
+
+        if self.end_date is not None and self.end_date > self.project.end_date:
+            raise ValidationError(
+                "An allocation end date cannot extend beyond the end of its project."
+            )
