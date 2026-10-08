@@ -15,6 +15,7 @@ from .models import (
     Funding,
     MonthlyCharge,
     Project,
+    ProjectsCapacity,
     TimeEntry,
     User,
 )
@@ -23,6 +24,7 @@ from .tasks import sync_clockify_time_entries, sync_kimai_time_entries
 admin.site.register(User, UserAdmin)
 admin.site.register(Department)
 admin.site.register(AnalysisCode)
+admin.site.register(ProjectsCapacity)
 
 
 @admin.register(Capacity)

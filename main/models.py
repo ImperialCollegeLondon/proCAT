@@ -1365,3 +1365,30 @@ class ProjectPhase(FullTimeEquivalent):
             max((self.end_date - timezone.now().date()).days, 0) / total_calendar_days,
         )
         return fraction_left * self.days
+
+
+class ProjectsCapacity(FullTimeEquivalent):
+    """Capacity of a user that can be invested in project work.
+
+    These capacities have a priority. Those with the higher priority will be applied
+    last in case of overlapping with other priorities. Priority of Project Capacities
+    must be unique for a given user.
+    """
+
+    priority = models.IntegerField(
+        null=False, blank=False, help_text="Priority of the Capacity"
+    )
+
+    user = models.ForeignKey(
+        User,
+        null=False,
+        blank=False,
+        on_delete=models.CASCADE,
+        help_text="User this capacity relates to.",
+    )
+
+    class Meta:
+        """Meta information for the model."""
+
+        unique_together = ("priority", "user")
+        verbose_name_plural = "Project Capacities"
