@@ -17,7 +17,7 @@ def test_add_timeseries_callback_to_date_pickers():
     min_date, max_date = timezone.now(), timezone.now() + timedelta(365)
     display_dates = (min_date + timedelta(100), min_date + timedelta(200))
 
-    plot = plots.create_capacity_planning_plot(
+    plot, _ = plots.create_capacity_planning_plot(
         min_date, max_date, x_range=display_dates
     )
 
@@ -124,17 +124,22 @@ def test_add_callback_to_button():
         display_dates[1].date(),
     )
 
-    plot = plots.create_capacity_planning_plot(
-        min_date, max_date, x_range=display_dates
+    dates = utils.get_month_dates_for_previous_years()
+    min_date = datetime.combine(dates[0][0], time.min)
+    max_date = datetime.combine(dates[-1][1], time.min)
+    start = datetime.combine(dates[-12][0], time.min)
+    chart_months = [f"{date[0].strftime('%b')} {date[0].year}" for date in dates]
+
+    plot, _ = plots.create_cost_recovery_plots(
+        dates, min_date, max_date, (start, max_date), chart_months
     )
-    calendar_dates = utils.get_calendar_year_dates()
 
     expected_callback = CustomJS(
         args=dict(
-            start=calendar_dates[0],
-            end=calendar_dates[1],
-            start_isoformat=calendar_dates[0].isoformat().split("T")[0],
-            end_isoformat=calendar_dates[1].isoformat().split("T")[0],
+            start=dates[0][0],
+            end=dates[-1][1],
+            start_isoformat=dates[0][0].isoformat().split("T")[0],
+            end_isoformat=dates[-1][1].isoformat().split("T")[0],
             x_range=plot.x_range,
             start_picker=start_picker,
             end_picker=end_picker,
@@ -148,7 +153,7 @@ def test_add_callback_to_button():
     # Check js_on_click called with the expected arguments
     with patch.object(Button, "js_on_click") as js_mock:
         widgets.add_callback_to_button(
-            button, calendar_dates, plot, start_picker, end_picker
+            button, (dates[0][0], dates[-1][1]), plot, start_picker, end_picker
         )
         js_mock.assert_called_once()
 

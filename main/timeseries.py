@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import cast
 
 import pandas as pd
+from django.contrib.auth import get_user_model
 from django.db.models import (
     DurationField,
     ExpressionWrapper,
@@ -19,6 +20,8 @@ from django.db.models.functions import Coalesce, Lead
 from procat.settings.settings import TIME_ZONE, WORKING_DAYS
 
 from . import models
+
+User = get_user_model()
 
 
 def update_timeseries(
@@ -172,14 +175,11 @@ def get_team_members_timeseries(
     return timeseries
 
 
-def get_capacity_timeseries(
-    start_date: datetime, end_date: datetime
-) -> pd.Series[float]:
+def get_capacity_timeseries(start_date: datetime, end_date: datetime) -> pd.DataFrame:
     """Get the timeseries data for aggregated user capacities.
 
-    A user may have multiple capacity entries associated. In this case, we assign the
-    'end date' for the capacity entry as the start date of the next capacity. If there
-    is no subsequent capacity entry, the 'end date' is the end of the plotting period.
+    A user may have multiple capacity entries associated. We order them by start_date
+    and then calculate the trace by overriding the old values based on the newest ones.
 
     Args:
         start_date: datetime object representing the start of the plotting period
@@ -188,29 +188,23 @@ def get_capacity_timeseries(
     Returns:
         Pandas series of aggregated capacities with date range as index.
     """
-    dates = pd.bdate_range(
-        pd.Timestamp(start_date), pd.Timestamp(end_date), inclusive="left", tz=TIME_ZONE
+    dates = pd.date_range(
+        pd.Timestamp(start_date).date(),
+        pd.Timestamp(end_date).date(),
+        inclusive="left",
+        tz=TIME_ZONE,
     )
-    # if multiple capacities for a user, end_date is start_date of next capacity object
-    # if no subsequent capacity, then end_date is plotting period end_date
-    capacities = list(
-        models.Capacity.objects.filter(start_date__lte=end_date.date())  # type: ignore [no-redef]
-        .annotate(
-            end_date=Window(
-                expression=Lead("start_date"),  # get start date of next capacity
-                order_by=F("start_date").asc(),  # orders by ascending start date
-                partition_by="user__username",
-            )
-        )
-        .annotate(end_date=Coalesce("end_date", end_date.date()))
-    )
+    capacities = pd.DataFrame(index=dates)
 
-    # initialize timeseries
-    timeseries = pd.Series(0.0, index=dates)
-    for capacity in capacities:
-        timeseries = update_timeseries(timeseries, capacity, "value")
+    members = User.objects.filter(groups__name="RSETeam").order_by("first_name")
+    for user in members:
+        full_name = str(user)
+        capacities[full_name] = 0.0
+        for capa in models.Capacity.objects.filter(user=user).order_by("start_date"):
+            idx = capacities.index >= pd.to_datetime(capa.start_date, utc=True)
+            capacities.loc[idx, full_name] = float(capa.value)
 
-    return timeseries
+    return capacities
 
 
 def get_cost_recovery_timeseries(

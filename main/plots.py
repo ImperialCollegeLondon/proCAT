@@ -5,9 +5,10 @@ from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
-from bokeh.layouts import column, row
+from bokeh.layouts import column, gridplot, row
 from bokeh.models import (  # type: ignore
     ColumnDataSource,
+    CrosshairTool,
     HoverTool,
     Range1d,
     Span,
@@ -179,7 +180,7 @@ def create_capacity_planning_plot(
     start_date: datetime,
     end_date: datetime,
     x_range: tuple[datetime, datetime] | None = None,
-) -> figure:
+) -> tuple[figure, list[figure]]:
     """Generates all the time series data and creates the capacity planning plot.
 
     Includes all business days between the selected start and end date, inclusive of
@@ -196,9 +197,10 @@ def create_capacity_planning_plot(
         Bokeh figure containing timeseries data.
     """
     # Create overall capacity timeseries
-    capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
+    capacities = timeseries.get_capacity_timeseries(start_date, end_date)
+    aggregated_capacity = capacities.sum(axis=1)
     traces = [
-        {"timeseries": capacity_timeseries, "colour": "darkgreen", "label": "Capacity"}
+        {"timeseries": aggregated_capacity, "colour": "darkgreen", "label": "Capacity"}
     ]
 
     # Create individual effort timeseries according to project status
@@ -234,7 +236,21 @@ def create_capacity_planning_plot(
         x_range=x_range,
         vareas=vareas,
     )
-    return plot
+
+    individual_plots = []
+    for name in capacities.columns:
+        traces = [
+            {
+                "timeseries": capacities[name],
+                "colour": "darkgreen",
+                "label": f"Capacity - {name}",
+            }
+        ]
+        individual_plots.append(
+            create_timeseries_plot(title="", traces=traces, x_range=x_range, height=150)
+        )
+
+    return plot, individual_plots
 
 
 def create_capacity_planning_layout() -> Row:
@@ -252,46 +268,41 @@ def create_capacity_planning_layout() -> Row:
 
     # Get the plot to display (it is created with all data, but only the dates
     # in the x_range provided are shown)
-    plot = create_capacity_planning_plot(
+    plot, individual_plots = create_capacity_planning_plot(
         start_date=min_date, end_date=max_date, x_range=(start, end)
     )
 
-    # Create date picker widgets to control the dates shown in the plot
-    start_picker, end_picker = widgets.get_plot_date_pickers(
-        min_date=min_date.date(),
-        max_date=max_date.date(),
-        default_start=start.date(),
-        default_end=end.date(),
-    )
-    widgets.add_timeseries_callback_to_date_pickers(start_picker, end_picker, plot)
+    # Create a crosshair to show in all plots, synchronised
+    height = Span(dimension="height", line_dash="dotted", line_width=2)
+    crosshair = CrosshairTool(overlay=height, dimensions="height")
 
-    # Create buttons to set plot dates to some defaults
-    calendar_button = Button(
-        label="Current calendar year",
-    )
-    widgets.add_callback_to_button(
-        button=calendar_button,
-        dates=get_calendar_year_dates(),
-        plot=plot,
-        start_picker=start_picker,
-        end_picker=end_picker,
-    )
+    plot.add_tools(crosshair)
+    for i, plt in enumerate(individual_plots):
+        plt.add_tools(crosshair)
 
-    financial_button = Button(
-        label="Current financial year",
-    )
-    widgets.add_callback_to_button(
-        button=financial_button,
-        dates=get_financial_year_dates(),
-        plot=plot,
-        start_picker=start_picker,
-        end_picker=end_picker,
-    )
+        plt.y_range = Range1d(0, 1)  # type: ignore[arg-type]
+        plt.yaxis.axis_label = "Capacity"
+        plt.xaxis.axis_label = None
 
-    # Create layout to display widgets aligned as a column next to the plot
-    plot_layout = row(
-        column(start_picker, end_picker, calendar_button, financial_button),
-        plot,
+        # --- Remove internal border padding to eliminate the visual gap ---
+        plt.min_border_top = 0
+        plt.min_border_bottom = 0
+
+        # --- Hide x-axis on all plots except the last two ---
+        if i < len(individual_plots) - 2:
+            plt.xaxis.major_label_text_font_size = "0pt"  # Hide tick labels
+            plt.xaxis.major_tick_line_color = None  # Hide tick marks
+            plt.xaxis.minor_tick_line_color = None  # Hide minor ticks
+
+    # Create layout with common plot at the top and individual ones in a grid
+    # below
+    plot_layout = column(  # type: ignore[call-overload]
+        [
+            plot,
+            gridplot(  # type: ignore[call-overload]
+                individual_plots, ncols=2, sizing_mode="stretch_width"
+            ),
+        ],
         sizing_mode="stretch_width",
     )
     return plot_layout
@@ -328,9 +339,10 @@ def create_cost_recovery_plots(
     cost_recovery_timeseries, monthly_totals = timeseries.get_cost_recovery_timeseries(
         dates
     )
-    capacity_timeseries = timeseries.get_capacity_timeseries(
+    capacities = timeseries.get_capacity_timeseries(
         start_date=start_date, end_date=end_date
     )
+    capacity_timeseries = capacities.sum(axis=1)
 
     internal_effort_timeseries = timeseries.get_internal_effort_timeseries(
         start_date=start_date, end_date=end_date
