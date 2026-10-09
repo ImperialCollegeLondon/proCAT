@@ -175,9 +175,7 @@ def get_team_members_timeseries(
     return timeseries
 
 
-def get_capacity_timeseries(
-    start_date: datetime, end_date: datetime
-) -> pd.Series[float]:
+def get_capacity_timeseries(start_date: datetime, end_date: datetime) -> pd.DataFrame:
     """Get the timeseries data for aggregated user capacities.
 
     A user may have multiple capacity entries associated. We order them by start_date
@@ -196,17 +194,17 @@ def get_capacity_timeseries(
         inclusive="left",
         tz=TIME_ZONE,
     )
-    capacities = pd.DataFrame({}, index=dates)
+    capacities = pd.DataFrame(index=dates)
 
-    members = User.objects.filter(groups__name="RSETeam")
+    members = User.objects.filter(groups__name="RSETeam").order_by("first_name")
     for user in members:
-        capacities[user.first_name] = 0.0
+        full_name = str(user)
+        capacities[full_name] = 0.0
         for capa in models.Capacity.objects.filter(user=user).order_by("start_date"):
             idx = capacities.index >= pd.to_datetime(capa.start_date, utc=True)
-            capacities.loc[idx, user.first_name] = float(capa.value)
+            capacities.loc[idx, full_name] = float(capa.value)
 
-    timeseries = capacities.sum(axis=1)
-    return timeseries
+    return capacities
 
 
 def get_cost_recovery_timeseries(

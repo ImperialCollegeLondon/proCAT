@@ -5,9 +5,10 @@ from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
-from bokeh.layouts import column, row
+from bokeh.layouts import column, gridplot, row
 from bokeh.models import (  # type: ignore
     ColumnDataSource,
+    CrosshairTool,
     HoverTool,
     Range1d,
     Span,
@@ -196,9 +197,13 @@ def create_capacity_planning_plot(
         Bokeh figure containing timeseries data.
     """
     # Create overall capacity timeseries
-    capacity_timeseries = timeseries.get_capacity_timeseries(start_date, end_date)
+    capacities = timeseries.get_capacity_timeseries(start_date, end_date)
+    from logging import getLogger
+
+    getLogger().warning(capacities.columns)
+    aggregated_capacity = capacities.sum(axis=1)
     traces = [
-        {"timeseries": capacity_timeseries, "colour": "darkgreen", "label": "Capacity"}
+        {"timeseries": aggregated_capacity, "colour": "darkgreen", "label": "Capacity"}
     ]
 
     # Create individual effort timeseries according to project status
@@ -234,7 +239,21 @@ def create_capacity_planning_plot(
         x_range=x_range,
         vareas=vareas,
     )
-    return plot
+
+    individual_plots = []
+    for name in capacities.columns:
+        traces = [
+            {
+                "timeseries": capacities[name],
+                "colour": "darkgreen",
+                "label": f"Capacity - {name}",
+            }
+        ]
+        individual_plots.append(
+            create_timeseries_plot(title="", traces=traces, x_range=x_range, height=150)
+        )
+
+    return plot, individual_plots
 
 
 def create_capacity_planning_layout() -> Row:
@@ -252,13 +271,38 @@ def create_capacity_planning_layout() -> Row:
 
     # Get the plot to display (it is created with all data, but only the dates
     # in the x_range provided are shown)
-    plot = create_capacity_planning_plot(
+    plot, individual_plots = create_capacity_planning_plot(
         start_date=min_date, end_date=max_date, x_range=(start, end)
     )
 
+    # Create a crosshair to show in all plots, synchronised
+    height = Span(dimension="height", line_dash="dotted", line_width=2)
+    crosshair = CrosshairTool(overlay=height, dimensions="height")
+
+    plot.add_tools(crosshair)
+    for i, plt in enumerate(individual_plots):
+        plt.add_tools(crosshair)
+
+        plt.y_range = Range1d(0, 1)
+        plt.yaxis.axis_label = "Capacity"
+        plt.xaxis.axis_label = None
+
+        # --- Remove internal border padding to eliminate the visual gap ---
+        plt.min_border_top = 0
+        plt.min_border_bottom = 0
+
+        # --- Hide x-axis on all plots except the last two ---
+        if i < len(individual_plots) - 2:
+            plt.xaxis.major_label_text_font_size = "0pt"  # Hide tick labels
+            plt.xaxis.major_tick_line_color = None  # Hide tick marks
+            plt.xaxis.minor_tick_line_color = None  # Hide minor ticks
+
     # Create layout to display widgets aligned as a column next to the plot
-    plot_layout = row(
-        plot,
+    # plot_layout = column(
+    #  [plot, *individual_plots], sizing_mode="stretch_width", spacing=0
+    # )
+    plot_layout = column(
+        [plot, gridplot(individual_plots, ncols=2, sizing_mode="stretch_width")],
         sizing_mode="stretch_width",
     )
     return plot_layout
