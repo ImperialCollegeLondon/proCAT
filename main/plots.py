@@ -180,7 +180,7 @@ def create_capacity_planning_plot(
     start_date: datetime,
     end_date: datetime,
     x_range: tuple[datetime, datetime] | None = None,
-) -> figure:
+) -> tuple[figure, list[figure]]:
     """Generates all the time series data and creates the capacity planning plot.
 
     Includes all business days between the selected start and end date, inclusive of
@@ -283,7 +283,7 @@ def create_capacity_planning_layout() -> Row:
     for i, plt in enumerate(individual_plots):
         plt.add_tools(crosshair)
 
-        plt.y_range = Range1d(0, 1)
+        plt.y_range = Range1d(0, 1)  # type: ignore[arg-type]
         plt.yaxis.axis_label = "Capacity"
         plt.xaxis.axis_label = None
 
@@ -301,8 +301,13 @@ def create_capacity_planning_layout() -> Row:
     # plot_layout = column(
     #  [plot, *individual_plots], sizing_mode="stretch_width", spacing=0
     # )
-    plot_layout = column(
-        [plot, gridplot(individual_plots, ncols=2, sizing_mode="stretch_width")],
+    plot_layout = column(  # type: ignore[call-overload]
+        [
+            plot,
+            gridplot(  # type: ignore[call-overload]
+                individual_plots, ncols=2, sizing_mode="stretch_width"
+            ),
+        ],
         sizing_mode="stretch_width",
     )
     return plot_layout
@@ -339,9 +344,10 @@ def create_cost_recovery_plots(
     cost_recovery_timeseries, monthly_totals = timeseries.get_cost_recovery_timeseries(
         dates
     )
-    capacity_timeseries = timeseries.get_capacity_timeseries(
+    capacities = timeseries.get_capacity_timeseries(
         start_date=start_date, end_date=end_date
     )
+    capacity_timeseries = capacities.sum(axis=1)
 
     internal_effort_timeseries = timeseries.get_internal_effort_timeseries(
         start_date=start_date, end_date=end_date

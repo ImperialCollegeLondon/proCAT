@@ -40,10 +40,13 @@ def test_create_capacity_planning_plot():
 
     from main import plots
 
-    plot = plots.create_capacity_planning_plot(
+    plot, plot_list = plots.create_capacity_planning_plot(
         timezone.now(), timezone.now() + timedelta(365)
     )
     assert isinstance(plot, figure)
+    assert len(plot_list) == 1
+    for plt in plot_list:
+        assert isinstance(plt, figure)
 
     title = "Project effort and team capacity over time"
     assert plot.title.text == title
