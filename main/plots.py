@@ -256,41 +256,8 @@ def create_capacity_planning_layout() -> Row:
         start_date=min_date, end_date=max_date, x_range=(start, end)
     )
 
-    # Create date picker widgets to control the dates shown in the plot
-    start_picker, end_picker = widgets.get_plot_date_pickers(
-        min_date=min_date.date(),
-        max_date=max_date.date(),
-        default_start=start.date(),
-        default_end=end.date(),
-    )
-    widgets.add_timeseries_callback_to_date_pickers(start_picker, end_picker, plot)
-
-    # Create buttons to set plot dates to some defaults
-    calendar_button = Button(
-        label="Current calendar year",
-    )
-    widgets.add_callback_to_button(
-        button=calendar_button,
-        dates=get_calendar_year_dates(),
-        plot=plot,
-        start_picker=start_picker,
-        end_picker=end_picker,
-    )
-
-    financial_button = Button(
-        label="Current financial year",
-    )
-    widgets.add_callback_to_button(
-        button=financial_button,
-        dates=get_financial_year_dates(),
-        plot=plot,
-        start_picker=start_picker,
-        end_picker=end_picker,
-    )
-
     # Create layout to display widgets aligned as a column next to the plot
     plot_layout = row(
-        column(start_picker, end_picker, calendar_button, financial_button),
         plot,
         sizing_mode="stretch_width",
     )
