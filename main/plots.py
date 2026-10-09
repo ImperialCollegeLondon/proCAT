@@ -294,10 +294,8 @@ def create_capacity_planning_layout() -> Row:
             plt.xaxis.major_tick_line_color = None  # Hide tick marks
             plt.xaxis.minor_tick_line_color = None  # Hide minor ticks
 
-    # Create layout to display widgets aligned as a column next to the plot
-    # plot_layout = column(
-    #  [plot, *individual_plots], sizing_mode="stretch_width", spacing=0
-    # )
+    # Create layout with common plot at the top and individual ones in a grid
+    # below
     plot_layout = column(  # type: ignore[call-overload]
         [
             plot,
