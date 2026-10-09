@@ -198,9 +198,6 @@ def create_capacity_planning_plot(
     """
     # Create overall capacity timeseries
     capacities = timeseries.get_capacity_timeseries(start_date, end_date)
-    from logging import getLogger
-
-    getLogger().warning(capacities.columns)
     aggregated_capacity = capacities.sum(axis=1)
     traces = [
         {"timeseries": aggregated_capacity, "colour": "darkgreen", "label": "Capacity"}
