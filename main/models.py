@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 from datetime import UTC, date, timedelta
+from logging import getLogger
 from typing import Any, cast
 
 import pandas as pd
@@ -22,6 +23,8 @@ from procat.settings.settings import (
 )
 
 from .models_utils import Warning
+
+logger = getLogger(__name__)
 
 
 class User(AbstractUser):
@@ -862,13 +865,16 @@ class Funding(models.Model):
             The monthly charge amount, or None if the project doesn't have Pro-rata
             charging or the date is outside the project period.
         """
+        if self.project.start_date is None or self.project.end_date is None:
+            return None
+
+        pstart = self.project.start_date.replace(day=1)
+        pend = self.project.end_date.replace(day=1)
         if (
             self.project.charging == "Pro-rata"
             and self.project.start_date
             and self.project.end_date
-            and self.project.start_date.month
-            <= date.month
-            < self.project.end_date.month
+            and pstart <= date < pend
         ):
             months = (
                 self.project.end_date.year - self.project.start_date.year
