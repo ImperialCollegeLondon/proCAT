@@ -5,7 +5,6 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 from datetime import UTC, date, timedelta
-from logging import getLogger
 from typing import Any, cast
 
 import pandas as pd
@@ -23,8 +22,6 @@ from procat.settings.settings import (
 )
 
 from .models_utils import Warning
-
-logger = getLogger(__name__)
 
 
 class User(AbstractUser):
