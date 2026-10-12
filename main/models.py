@@ -862,13 +862,16 @@ class Funding(models.Model):
             The monthly charge amount, or None if the project doesn't have Pro-rata
             charging or the date is outside the project period.
         """
+        if self.project.start_date is None or self.project.end_date is None:
+            return None
+
+        pstart = self.project.start_date.replace(day=1)
+        pend = self.project.end_date.replace(day=1)
         if (
             self.project.charging == "Pro-rata"
             and self.project.start_date
             and self.project.end_date
-            and self.project.start_date.month
-            <= date.month
-            < self.project.end_date.month
+            and pstart <= date < pend
         ):
             months = (
                 self.project.end_date.year - self.project.start_date.year

@@ -81,7 +81,6 @@ def create_pro_rata_monthly_charges(
     for funding in funding_sources:
         if (monthly_charge := funding.monthly_pro_rata_charge(start_date)) is None:
             continue
-
         charge = models.MonthlyCharge.objects.create(
             project=project,
             funding=funding,
