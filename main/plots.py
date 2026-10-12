@@ -168,9 +168,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         renderers=lines,  # type: ignore[arg-type]
     )
     plot.add_tools(hover)
-
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
-
     plot.legend.location = legend_loc  # type: ignore[assignment]
 
     return plot
@@ -429,19 +427,19 @@ def create_cost_recovery_layout() -> Row:
         chart_months=chart_months,
     )
 
-    # Create date picker widgets to control the dates shown in the plot
-    start_picker, end_picker = widgets.get_plot_date_pickers(
-        min_date=min_date.date(),
-        max_date=max_date.date(),
-        default_start=start.date(),
-        default_end=max_date.date(),
+    # Create button to set plots to default year
+    last_year_button = Button(
+        label="Last year",
     )
-    widgets.add_timeseries_callback_to_date_pickers(
-        start_picker=start_picker, end_picker=end_picker, plot=timeseries_plot
+    widgets.add_callback_to_button(
+        button=last_year_button,
+        dates=(start, max_date),
+        plot=timeseries_plot,
+        include_future_dates=False,
     )
-    widgets.add_bar_callback_to_date_pickers(
-        start_picker=start_picker,
-        end_picker=end_picker,
+    widgets.add_bar_callback_to_button(
+        button=last_year_button,
+        dates=get_calendar_year_dates(),
         plot=bar_plot,
         chart_months=chart_months,
     )
@@ -454,8 +452,6 @@ def create_cost_recovery_layout() -> Row:
         button=calendar_button,
         dates=get_calendar_year_dates(),
         plot=timeseries_plot,
-        start_picker=start_picker,
-        end_picker=end_picker,
         include_future_dates=False,
     )
     widgets.add_bar_callback_to_button(
@@ -473,8 +469,6 @@ def create_cost_recovery_layout() -> Row:
         button=financial_button,
         dates=get_financial_year_dates(),
         plot=timeseries_plot,
-        start_picker=start_picker,
-        end_picker=end_picker,
         include_future_dates=False,
     )
     widgets.add_bar_callback_to_button(
@@ -486,7 +480,7 @@ def create_cost_recovery_layout() -> Row:
 
     # Create layout to display widgets aligned as a column next to the plot
     plot_layout = row(
-        column(start_picker, end_picker, calendar_button, financial_button),
+        column(last_year_button, calendar_button, financial_button),
         column(
             timeseries_plot,
             bar_plot,
