@@ -4,7 +4,6 @@ import csv
 import io
 from _csv import Writer
 from datetime import date, datetime, timedelta
-from logging import getLogger
 from typing import cast
 
 from django.core.exceptions import ValidationError
@@ -14,8 +13,6 @@ from django.utils import timezone
 
 from . import models, utils
 from .models import Funding, Project
-
-logger = getLogger(__name__)
 
 
 def get_actual_chargeable_days(
@@ -82,7 +79,6 @@ def create_pro_rata_monthly_charges(
     funding_sources = get_valid_funding_sources(project, end_date)
 
     for funding in funding_sources:
-        logger.warning(start_date)
         if (monthly_charge := funding.monthly_pro_rata_charge(start_date)) is None:
             continue
         charge = models.MonthlyCharge.objects.create(
