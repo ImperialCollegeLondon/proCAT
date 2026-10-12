@@ -218,9 +218,10 @@ def test_get_capacity_timeseries(user):
     )
     plot_start_date, plot_end_date = timezone.now(), timezone.now() + timedelta(28)
     ts = timeseries.get_capacity_timeseries(plot_start_date, plot_end_date)
-    assert isinstance(ts, pd.Series)
-    assert ts.value_counts()[capacity_A.value] == 5
-    assert ts.value_counts()[capacity_B.value] == 15
+    assert isinstance(ts, pd.DataFrame)
+    aggregate = ts.sum(axis=1)
+    assert aggregate.value_counts()[capacity_A.value] == 7
+    assert aggregate.value_counts()[capacity_B.value] == 21
 
 
 @pytest.mark.django_db

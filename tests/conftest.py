@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Group, Permission
 from django.test import Client
 from django.utils import timezone
 
@@ -28,6 +28,9 @@ def user(django_user_model):
     )
     permission = Permission.objects.get(codename="view_project")
     user.user_permissions.add(permission)
+    rseteam = Group.objects.get(name="RSETeam")
+    rseteam.user_set.add(user)
+
     return user
 
 
