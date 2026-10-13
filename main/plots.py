@@ -241,11 +241,13 @@ def create_capacity_planning_plot(
             {
                 "timeseries": capacities[name],
                 "colour": "darkgreen",
-                "label": f"Capacity - {name}",
+                "label": "Capacity",
             }
         ]
         individual_plots.append(
-            create_timeseries_plot(title="", traces=traces, x_range=x_range, height=150)
+            create_timeseries_plot(
+                title=name, traces=traces, x_range=x_range, height=150
+            )
         )
 
     return plot, individual_plots
@@ -269,7 +271,8 @@ def create_capacity_planning_layout() -> Row:
     plot, individual_plots = create_capacity_planning_plot(
         start_date=min_date, end_date=max_date, x_range=(start, end)
     )
-
+    plot.title.text_font_size = "20px"
+    plot.yaxis.axis_label = "Capacity and Effort (FTE)"
     # Create a crosshair to show in all plots, synchronised
     height = Span(dimension="height", line_dash="dotted", line_width=2)
     crosshair = CrosshairTool(overlay=height, dimensions="height")
@@ -279,8 +282,9 @@ def create_capacity_planning_layout() -> Row:
         plt.add_tools(crosshair)
 
         plt.y_range = Range1d(0, 1)  # type: ignore[arg-type]
-        plt.yaxis.axis_label = "Capacity"
+        plt.yaxis.axis_label = "Cap&Eff (FTE)"
         plt.xaxis.axis_label = None
+        plt.title.text_font_size = "20px"
 
         # --- Remove internal border padding to eliminate the visual gap ---
         plt.min_border_top = 0
@@ -565,6 +569,17 @@ def _actual_days_charged(project: models.Project) -> pd.Series:
     if _charges.empty:
         return pd.Series()
 
+    # We add an extra point at the end, so the trace always renders.
+    _charges = pd.concat(
+        [
+            _charges,
+            pd.DataFrame(
+                {"date": timezone.now().today(), "amount": 0.0}, index=[len(_charges)]
+            ),
+        ]
+    )
+
+    # Now accumulate the charges
     _charges["amount"] = _charges["amount"].astype(float)
     _charges["date"] = pd.to_datetime(_charges["date"], utc=True)
     charges = (
@@ -573,6 +588,8 @@ def _actual_days_charged(project: models.Project) -> pd.Series:
         .sum()
         .cumsum()["amount"]
     )
+
+    # Finally, we calculate the corresponding days
     budget = pd.DataFrame.from_records(
         project.funding_source.all().values("budget", "daily_rate")
     )
