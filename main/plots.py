@@ -271,8 +271,9 @@ def create_capacity_planning_layout() -> Row:
     plot, individual_plots = create_capacity_planning_plot(
         start_date=min_date, end_date=max_date, x_range=(start, end)
     )
-    plot.title.text_font_size = "20px"
+    plot.title.text_font_size = "20px"  # type: ignore[union-attr]
     plot.yaxis.axis_label = "Capacity and Effort (FTE)"
+
     # Create a crosshair to show in all plots, synchronised
     height = Span(dimension="height", line_dash="dotted", line_width=2)
     crosshair = CrosshairTool(overlay=height, dimensions="height")
@@ -284,7 +285,7 @@ def create_capacity_planning_layout() -> Row:
         plt.y_range = Range1d(0, 1)  # type: ignore[arg-type]
         plt.yaxis.axis_label = "Cap&Eff (FTE)"
         plt.xaxis.axis_label = None
-        plt.title.text_font_size = "20px"
+        plt.title.text_font_size = "20px"  # type: ignore[union-attr]
 
         # --- Remove internal border padding to eliminate the visual gap ---
         plt.min_border_top = 0
@@ -515,7 +516,9 @@ def get_time_vertical_line(location: datetime, colour: str = "black") -> Span:
     return now_line
 
 
-def _expected_days_used(project: models.Project) -> pd.Series:
+def _expected_days_used(  # type: ignore[explicit-any]
+    project: models.Project,
+) -> pd.Series:
     """Create the time series with the expected time used in the project."""
     if not project.phases.exists():
         return pd.Series()
@@ -539,7 +542,9 @@ def _expected_days_used(project: models.Project) -> pd.Series:
     return expected
 
 
-def _actual_days_used(project: models.Project) -> pd.Series:
+def _actual_days_used(  # type: ignore[explicit-any]
+    project: models.Project,
+) -> pd.Series:
     """Create the time series with the actual time used in the project."""
     _usage = pd.DataFrame.from_records(
         project.timeentry_set.all().values("start_time", "end_time")
@@ -561,7 +566,9 @@ def _actual_days_used(project: models.Project) -> pd.Series:
     return usage
 
 
-def _actual_days_charged(project: models.Project) -> pd.Series:
+def _actual_days_charged(  # type: ignore[explicit-any]
+    project: models.Project,
+) -> pd.Series:
     """Create the time series with the actual time used in the project."""
     _charges = pd.DataFrame.from_records(
         models.MonthlyCharge.objects.filter(project=project).values("date", "amount")
