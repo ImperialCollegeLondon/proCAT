@@ -137,7 +137,7 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
     permission_required = (
         "main.create_project",
         "main.create_funding",
-        "main.create_project_phase",
+        "main.create_projectphase",
     )
     raise_exception = False
     template_name = "main/project_inline_form.html"
@@ -213,7 +213,7 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
     permission_required = (
         "main.change_project",
         "main.change_funding",
-        "main.change_project_phase",
+        "main.change_projectphase",
     )
     raise_exception = False
     template_name = "main/project_inline_form.html"
