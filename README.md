@@ -22,7 +22,7 @@ To get started:
 
 1. Clone this repository:
 
-    ``` bash
+    ```bash
     git clone https://github.com/ImperialCollegeLondon/proCAT.git
     ```
 
@@ -33,7 +33,7 @@ To get started:
     ```
 
 1. Create and activate a virtual environment. This creates a `.venv` in the same
-    directory with the environment, including the `dev` dependencies:
+   directory with the environment, including the `dev` dependencies:
 
     ```bash
     uv sync
