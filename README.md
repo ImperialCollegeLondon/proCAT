@@ -22,64 +22,64 @@ To get started:
 
 1. Clone this repository:
 
-   ```bash
-   git clone https://github.com/ImperialCollegeLondon/proCAT.git
-   ```
+    ``` bash
+    git clone https://github.com/ImperialCollegeLondon/proCAT.git
+    ```
 
-1. Move into the created repo.
+1. Move into the created repo:
 
-   ```bash
-   cd proCAT
-   ```
+    ```bash
+    cd proCAT
+    ```
 
 1. Create and activate a virtual environment. This creates a `.venv` in the same
-   directory with the environment, including the `dev` dependencies:
+    directory with the environment, including the `dev` dependencies:
 
-   ```bash
-   uv sync
-   ```
+    ```bash
+    uv sync
+    ```
 
 1. (Optionally) install tools for building documentation:
 
-   ```bash
-   uv sync --group doc
-   ```
+    ```bash
+    uv sync --group doc
+    ```
 
 1. Install the git hooks:
 
-   ```bash
-   pre-commit install
-   ```
+    ```bash
+    pre-commit install
+    ```
 
 1. Run the web app:
 
-   ```bash
-   python manage.py runserver
-   ```
+    ```bash
+    python manage.py runserver
+    ```
 
-   When running the webapp for the first time you may get a warning similar to:
+    When running the webapp for the first time you may get a warning similar to:
 
-   `You have 19 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, main, sessions.`
+    `You have 19 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, main, sessions.`
 
-   If this is the case, stop your webapp (with CONTROL-C) and apply the migrations with:
+    If this is the case, stop your webapp (with CONTROL-C) and apply the migrations with:
 
-   ```bash
-   python manage.py migrate
-   ```
+    ```bash
+    python manage.py migrate
+    ```
 
-   then restart it.
+    then restart it.
 
 1. Run the tests:
 
-   ```bash
-   pytest
-   ```
+    ```bash
+    pytest
+    ```
 
 1. Create an admin account to access admin backend:
 
-   ```bash
-   python manage.py createsuperuser
-   ```
+    ```bash
+    python manage.py createsuperuser
+    ```
 
 ## Login, SSO and local accounts
 
