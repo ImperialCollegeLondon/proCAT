@@ -7,7 +7,6 @@ import pytest
 
 from main.analytics import (
     _get_num_projects_per_division,
-    _str_to_date,
     get_num_projects_per_department,
     get_num_projects_per_faculty,
     get_projects_active_in_past_year,
@@ -16,86 +15,83 @@ from main.models import Department, Project
 
 
 @pytest.fixture
-def projects_list():
+def projects_list(db):
     """A list of projects to cover a broad range of attributes.
 
     Aim to cover a range of departments, faculties, start and end dates and statuses.
     """
-    return [
+    department_list = [
+        Department(name="Mathematics", faculty="Faculty of Natural Sciences"),
+        Department(name="Computing", faculty="Faculty of Engineering"),
+        Department(name="Materials", faculty="Faculty of Engineering"),
+        Department(name="Physics", faculty="Faculty of Natural Sciences"),
+        Department(name="Immunology and Inflammation", faculty="Faculty of Medicine"),
+        Department(name="ICT", faculty="Other"),
+    ]
+    Department.objects.bulk_create(department_list)
+
+    projects_list = [
         Project(
             name="Calcul8",
-            department=Department(
-                name="Mathematics", faculty="Faculty of Natural Sciences"
-            ),
-            start_date="01/02/2023",
-            end_date="04/05/2026",
+            department=Department.objects.get(name="Mathematics"),
+            start_date="2023-02-01",
+            end_date="2026-05-04",
             status="Finished",
         ),
         Project(
             name="ProjectX",
-            department=Department(name="Computing", faculty="Faculty of Engineering"),
-            start_date="04/05/2026",
-            end_date="07/08/2029",
+            department=Department.objects.get(name="Computing"),
+            start_date="2026-05-04",
+            end_date="2029-08-07",
             status="Not done",
         ),
         Project(
             name="Picobots",
-            department=Department(name="Materials", faculty="Faculty of Engineering"),
-            start_date="01/02/2023",
-            end_date="01/01/2027",
+            department=Department.objects.get(name="Materials"),
+            start_date="2023-02-01",
+            end_date="2027-01-01",
             status="Active",
         ),
         Project(
             name="Astro0",
-            department=Department(
-                name="Physics", faculty="Faculty of Natural Sciences"
-            ),
-            start_date="06/07/2028",
-            end_date="31/12/2039",
+            department=Department.objects.get(name="Physics"),
+            start_date="2028-07-06",
+            end_date="2039-12-31",
             status="Tentative",
         ),
         Project(
             name="Rust++",
-            department=Department(name="Computing", faculty="Faculty of Engineering"),
-            start_date="10/01/2027",
-            end_date="09/01/2028",
+            department=Department.objects.get(name="Computing"),
+            start_date="2027-01-10",
+            end_date="2028-01-09",
             status="Confirmed",
         ),
         Project(
             name="Vaxin7",
-            department=Department(
-                name="Immunology and Inflammation",
-                faculty="Faculty of Medicine",
-            ),
-            start_date="04/04/2024",
-            end_date="05/05/2025",
+            department=Department.objects.get(name="Immunology and Inflammation"),
+            start_date="2024-04-04",
+            end_date="2025-05-05",
             status="Finished",
         ),
         Project(
             name="Vaxin8",
-            department=Department(
-                name="Immunology and Inflammation",
-                faculty="Faculty of Medicine",
-            ),
-            start_date="05/05/2025",
-            end_date="08/08/2028",
+            department=Department.objects.get(name="Immunology and Inflammation"),
+            start_date="2025-05-05",
+            end_date="2028-08-08",
             status="Maintenance",
         ),
         Project(
             name="Great Project",
-            department=Department(name="ICT", faculty="Other"),
-            start_date="01/02/2023",
-            end_date="07/08/2029",
+            department=Department.objects.get(name="ICT"),
+            start_date="2023-02-01",
+            end_date="2029-08-07",
             status="Active",
         ),
     ]
 
+    Project.objects.bulk_create(projects_list)
 
-def test_str_to_date():
-    """Test the _str_to_date function."""
-    assert _str_to_date("01/02/2023") == dt.date(2023, 2, 1)
-    assert _str_to_date("04/5/2026") == dt.date(2026, 5, 4)
-    assert _str_to_date("7/08/2029") == dt.date(2029, 8, 7)
+    return projects_list
 
 
 def test_get_num_projects_per_division():
@@ -152,30 +148,28 @@ def test_get_projects_active_in_past_year(
     date_mock.today.return_value = dt.date(2026, 10, 14)
     date_mock.side_effect = lambda *args, **kw: dt.date(*args, **kw)
 
-    projects = get_projects_active_in_past_year(projects_list)
+    projects = get_projects_active_in_past_year(Project.objects.all())
 
-    calcul8 = next(project for project in projects_list if project.name == "Calcul8")
-    assert calcul8 in projects  # Finished in past 12 months
+    # Finished in past 12 months
+    assert Project.objects.get(name="Calcul8") in projects
 
-    projectx = next(project for project in projects_list if project.name == "ProjectX")
-    assert projectx not in projects  # Project initiated, but work not started
+    # Project initiated, but work not started
+    assert Project.objects.get(name="ProjectX") not in projects
 
-    picobots = next(project for project in projects_list if project.name == "Picobots")
-    assert picobots in projects  # Started, not finished
+    # Started, not finished
+    assert Project.objects.get(name="Picobots") in projects
 
-    astro0 = next(project for project in projects_list if project.name == "Astro0")
-    assert astro0 not in projects  # Future start date (tentative)
+    # Future start date (tentative)
+    assert Project.objects.get(name="Astro0") not in projects
 
-    rustpp = next(project for project in projects_list if project.name == "Rust++")
-    assert rustpp not in projects  # Future start date (confirmed)
+    # Future start date (confirmed)
+    assert Project.objects.get(name="Rust++") not in projects
 
-    vaxin7 = next(project for project in projects_list if project.name == "Vaxin7")
-    assert vaxin7 not in projects  # Finished more than 12 months ago
+    # Finished more than 12 months ago
+    assert Project.objects.get(name="Vaxin7") not in projects
 
-    vaxin8 = next(project for project in projects_list if project.name == "Vaxin8")
-    assert vaxin8 in projects  # Currently in maintenance period
+    # Currently in maintenance period
+    assert Project.objects.get(name="Vaxin8") in projects
 
-    great_project = next(
-        project for project in projects_list if project.name == "Great Project"
-    )
-    assert great_project in projects  # Started, not finished
+    # Started, not finished
+    assert Project.objects.get(name="Great Project") in projects
