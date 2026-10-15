@@ -152,7 +152,7 @@ class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
 
 @admin.register(Allocation)
-class AllocationAdmin(admin.ModelAdmin):
+class AllocationAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     """Admin for the Allocation model."""
 
     list_display = ("pk", "project", "user", "value", "start_date", "end_date")
