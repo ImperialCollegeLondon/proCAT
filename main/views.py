@@ -22,9 +22,10 @@ from . import forms, models, plots, report, tables
 from .utils import format_currency, style_fraction_badge, style_plain_badge
 
 
-def index(request: HttpRequest) -> HttpResponse:
+class IndexView(TemplateView):
     """View for the index page, using the home template."""
-    return render(request, "main/home.html")
+
+    template_name = "main/home.html"
 
 
 class RegistrationView(CreateView):  # type: ignore [type-arg]
