@@ -41,4 +41,8 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("add-phase").addEventListener("click", function () {
     addFormsetRow("#phase-forms", "#empty-phase-form", "phase");
   });
+
+  document.getElementById("add-allocation").addEventListener("click", function () {
+    addFormsetRow("#allocation-forms", "#empty-allocation-form", "allocation");
+  });
 });

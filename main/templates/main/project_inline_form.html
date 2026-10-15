@@ -107,6 +107,33 @@
       </div>
     </div>
 
+    <div class="section-box">
+      <h4 class="section-header">Allocations</h4>
+      <div class="section-body">
+        {% with formset=allocation_formset %}
+          <!--
+          Same one-row-per-form table layout as the Funding section above.
+        -->
+          {{ formset.non_form_errors }}
+          {{ formset.management_form }}
+          {% include "main/_inline_section_table.html" with header_fields=formset.empty_form.visible_fields rows=formset tbody_id="allocation-forms" empty_message="" %}
+          <button type="button"
+                  class="btn btn-secondary btn-sm"
+                  id="add-allocation">+ Add allocation</button>
+          <!--
+          Hidden template row, cloned by JavaScript whenever "Add allocation"
+          is clicked. Never displayed directly, hence "d-none" above.
+        -->
+          <table class="d-none">
+            <tbody id="empty-allocation-form">
+              <tr>{% include "main/_inline_table_row.html" with form=formset.empty_form %}</tr>
+            </tbody>
+          </table>
+        {% endwith %}
+      </div>
+    </div>
+
+
     <div class="text-left">
       {% bootstrap_button button_type="submit" content="🖫 Save" %}
       <a class="btn btn-outline-secondary" href="{{ cancel_url }}">Cancel</a>
