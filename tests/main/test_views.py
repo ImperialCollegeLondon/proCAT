@@ -299,6 +299,10 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-0-days": "100",
             "phase-0-start_date": "2025-01-01",
             "phase-0-end_date": "2025-12-31",
+            "allocation-TOTAL_FORMS": "0",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
         }
 
         response = admin_client.post(self._get_url(), data)
@@ -336,6 +340,10 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-0-days": "10",
             "phase-0-start_date": "2020-01-01",
             "phase-0-end_date": "2020-01-31",
+            "allocation-TOTAL_FORMS": "0",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
         }
 
         response = admin_client.post(self._get_url(), data)
@@ -364,6 +372,10 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-INITIAL_FORMS": "0",
             "phase-MIN_NUM_FORMS": "0",
             "phase-MAX_NUM_FORMS": "1000",
+            "allocation-TOTAL_FORMS": "0",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
         }
 
         response = admin_client.post(self._get_url(), data)
@@ -410,6 +422,10 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-0-days": "100",
             "phase-0-start_date": "2025-01-01",
             "phase-0-end_date": "2025-12-31",
+            "allocation-TOTAL_FORMS": "0",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
         }
 
         response = admin_client.post(self._get_url(), data)
@@ -473,6 +489,10 @@ class TestProjectUpdateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-0-days": "50",
             "phase-0-start_date": "2025-01-01",
             "phase-0-end_date": "2025-06-30",
+            "allocation-TOTAL_FORMS": "0",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
         }
 
         response = admin_client.post(self._get_url(), data)

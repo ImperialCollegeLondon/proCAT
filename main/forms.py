@@ -225,3 +225,30 @@ ProjectPhaseInlineFormSet = forms.inlineformset_factory(
     extra=0,
     can_delete=True,
 )
+
+
+class AllocationInlineForm(forms.ModelForm):  # type: ignore [type-arg]
+    """Form to create and edit an allocation row inline, as part of a Project form.
+
+    The `project` field is left out, since it is supplied automatically by
+    the enclosing formset (see `AllocationInlineFormSet`).
+    """
+
+    class Meta:
+        """Meta class for the form."""
+
+        model = models.Allocation
+        fields = ("user", "value", "start_date", "end_date")
+        widgets: ClassVar = {
+            "start_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
+            "end_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
+        }
+
+
+AllocationInlineFormSet = forms.inlineformset_factory(
+    models.Project,
+    models.Allocation,
+    form=AllocationInlineForm,
+    extra=0,
+    can_delete=True,
+)
