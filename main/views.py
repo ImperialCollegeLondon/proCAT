@@ -27,6 +27,18 @@ class IndexView(TemplateView):
 
     template_name = "main/home.html"
 
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore
+        """Add HTML components and Bokeh version to the context.
+
+        Create the Bokeh plots for project analytics overview, generate their HTML and
+        add them to the homepage.
+        """
+        context = super().get_context_data(**kwargs)
+        layout = plots.create_analytics_layout()
+        context.update(plots.html_components_from_plot(layout))
+        context["bokeh_version"] = bokeh.__version__
+        return context
+
 
 class RegistrationView(CreateView):  # type: ignore [type-arg]
     """View to register new users.

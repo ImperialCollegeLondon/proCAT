@@ -784,3 +784,23 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         response = views.CostRecoveryView.as_view()(request)
         assert response.headers["Content-Type"] == "text/csv"
         assert f"charges_report_{month}-{year}.csv" in response["Content-Disposition"]
+
+
+class TestIndexView(TemplateOkMixin):
+    """Test suite for the Index view."""
+
+    _template_name = "main/home.html"
+
+    def _get_url(self):
+        return reverse("main:home")
+
+    def test_get(self, auth_client):
+        """Tests the get method and the data provided."""
+        import bokeh
+
+        endpoint = reverse("main:home")
+        response = auth_client.get(endpoint)
+        assert response.status_code == HTTPStatus.OK
+        assert "<script" in response.context["script"]
+        assert "<div" in response.context["div"]
+        assert response.context["bokeh_version"] == bokeh.__version__

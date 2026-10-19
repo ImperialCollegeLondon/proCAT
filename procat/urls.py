@@ -19,9 +19,12 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
+from main.analytics import api
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("main.urls")),
+    path("api/", api.urls),
 ]
 
 if settings.USE_OIDC:

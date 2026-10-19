@@ -7,9 +7,12 @@ import pytest
 
 from main.analytics import (
     _get_num_projects_per_division,
+    _str_to_date,
     get_num_projects_per_department,
     get_num_projects_per_faculty,
-    get_projects_active_in_past_year,
+    get_projects_active_between,
+    get_projects_by_department,
+    get_projects_by_faculty,
 )
 from main.models import Department, Project
 
@@ -94,6 +97,13 @@ def projects_list(db):
     return projects_list
 
 
+def test_str_to_date():
+    """Test the _str_to_date function."""
+    assert _str_to_date("01/02/2023") == dt.date(2023, 2, 1)
+    assert _str_to_date("04/5/2026") == dt.date(2026, 5, 4)
+    assert _str_to_date("7/08/2029") == dt.date(2029, 8, 7)
+
+
 def test_get_num_projects_per_division():
     """Test the _get_num_projects_per_division function."""
     divs = ["a"] * 8 + ["b"] * 5 + ["c"] * 21
@@ -140,15 +150,12 @@ def test_get_num_projects_per_faculty(projects_list: list[Project]):
     assert proj_per_faculty["Other"] == 1
 
 
-@patch("main.analytics.date")
-def test_get_projects_active_in_past_year(
-    date_mock: MagicMock, projects_list: list[Project]
-):
-    """Test the get_num_projects_per_department function."""
-    date_mock.today.return_value = dt.date(2026, 10, 14)
-    date_mock.side_effect = lambda *args, **kw: dt.date(*args, **kw)
+def test_get_projects_active_between(projects_list: list[Project]):
+    """Test the get_projects_active_between function."""
+    from_date = dt.date(2025, 10, 15)
+    to_date = dt.date(2026, 10, 14)
 
-    projects = get_projects_active_in_past_year(Project.objects.all())
+    projects = get_projects_active_between(from_date, to_date)
 
     # Finished in past 12 months
     assert Project.objects.get(name="Calcul8") in projects
@@ -173,3 +180,39 @@ def test_get_projects_active_in_past_year(
 
     # Started, not finished
     assert Project.objects.get(name="Great Project") in projects
+
+
+@patch("main.analytics.get_num_projects_per_department")
+@patch("main.analytics.get_projects_active_between")
+def test_get_projects_by_department(
+    get_projects_active_between_mock: MagicMock,
+    get_num_projects_by_department_mock: MagicMock,
+):
+    """Test the get_projects_by_department function."""
+    projects = MagicMock()
+    get_projects_active_between_mock.return_value = projects
+
+    get_projects_by_department(MagicMock(), "01/02/3456", "09/08/7654")
+
+    get_projects_active_between_mock.assert_called_once_with(
+        _str_to_date("01/02/3456"), _str_to_date("09/08/7654")
+    )
+    get_num_projects_by_department_mock.assert_called_once_with(projects)
+
+
+@patch("main.analytics.get_num_projects_per_faculty")
+@patch("main.analytics.get_projects_active_between")
+def test_get_projects_by_faculty(
+    get_projects_active_between_mock: MagicMock,
+    get_num_projects_by_faculty_mock: MagicMock,
+):
+    """Test the get_projects_by_faculty function."""
+    projects = MagicMock()
+    get_projects_active_between_mock.return_value = projects
+
+    get_projects_by_faculty(MagicMock(), "01/02/3456", "09/08/7654")
+
+    get_projects_active_between_mock.assert_called_once_with(
+        _str_to_date("01/02/3456"), _str_to_date("09/08/7654")
+    )
+    get_num_projects_by_faculty_mock.assert_called_once_with(projects)

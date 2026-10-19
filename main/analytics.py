@@ -2,9 +2,27 @@
 
 from datetime import date
 
-from django.db.models import QuerySet
+from django.http import HttpRequest
+from ninja import NinjaAPI
 
-from .models import Project
+from . import models
+
+api = NinjaAPI()
+
+
+def _str_to_date(date_str: str) -> date:
+    """Convert a DD/MM/YYYY string to a datetime.date.
+
+    Args:
+        date_str: A date in the format DD/MM/YYYY.
+
+    Returns:
+        The provided date, as a datetime.date.
+    """
+    date_str_split = date_str.split("/")
+    date_str_split.reverse()
+    date_int_split = [int(s) for s in date_str_split]
+    return date(*date_int_split)
 
 
 def _get_num_projects_per_division(divs: list[str]) -> dict[str, int]:
@@ -21,7 +39,7 @@ def _get_num_projects_per_division(divs: list[str]) -> dict[str, int]:
     return {div: divs.count(div) for div in divs}
 
 
-def get_num_projects_per_department(projects: list[Project]) -> dict[str, int]:
+def get_num_projects_per_department(projects: list[models.Project]) -> dict[str, int]:
     """Determine the number of projects per department.
 
     Args:
@@ -34,7 +52,7 @@ def get_num_projects_per_department(projects: list[Project]) -> dict[str, int]:
     return _get_num_projects_per_division(departments)
 
 
-def get_num_projects_per_faculty(projects: list[Project]) -> dict[str, int]:
+def get_num_projects_per_faculty(projects: list[models.Project]) -> dict[str, int]:
     """Determine the number of projects per faculty.
 
     Args:
@@ -47,27 +65,63 @@ def get_num_projects_per_faculty(projects: list[Project]) -> dict[str, int]:
     return _get_num_projects_per_division(faculties)
 
 
-def get_projects_active_in_past_year(projects: QuerySet[Project]) -> list[Project]:
-    """Get the projects in the past year.
-
-    Here we are concerned with projects that were active in the past 12 months. This
-    includes projects that began within the last 12 months, and projects that finished
-    within the last 12 months.
+def get_projects_active_between(from_date: date, to_date: date) -> list[models.Project]:
+    """Get the projects under active development within a time frame.
 
     Exclude "Not done", which is projects whose start date has passed, but are not yet
     under development.
 
     Args:
-        projects: The set of projects.
+        from_date: A datetime.date marking the start of the search interval.
+        to_date:  A datetime.date marking the end of the search interval.
 
     Returns:
-        The list of projects under active development within the past year.
+        The list of projects under active development within the time interval.
     """
-    today = date.today()
-    one_year_ago = date(today.year - 1, today.month, today.day)
-
+    projects = models.Project.objects.all()
     return list(
         projects.exclude(status="Not done").filter(
-            start_date__lt=today, end_date__gte=one_year_ago
+            start_date__lt=to_date, end_date__gte=from_date
         )
     )
+
+
+@api.get("/data/projects_by_department")
+def get_projects_by_department(
+    request: HttpRequest, from_date: str, to_date: str
+) -> dict[str, int]:
+    """Determine the number of projects per department.
+
+    Args:
+        request: The HTTP request.
+        from_date: A date in the format DD/MM/YYYY.
+        to_date: A date in the format DD/MM/YYYY.
+
+    Returns:
+        A dictionary of projects active in the requested interval, separated by
+        department.
+    """
+    projects = get_projects_active_between(
+        _str_to_date(from_date), _str_to_date(to_date)
+    )
+    return get_num_projects_per_department(projects)
+
+
+@api.get("/data/projects_by_faculty")
+def get_projects_by_faculty(
+    request: HttpRequest, from_date: str, to_date: str
+) -> dict[str, int]:
+    """Determine the number of projects per faculty.
+
+    Args:
+        request: The HTTP request.
+        from_date: A date in the format DD/MM/YYYY.
+        to_date: A date in the format DD/MM/YYYY.
+
+    Returns:
+        A dictionary of projects active in the requested interval, separated by faculty.
+    """
+    projects = get_projects_active_between(
+        _str_to_date(from_date), _str_to_date(to_date)
+    )
+    return get_num_projects_per_faculty(projects)
