@@ -7,8 +7,10 @@ import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import column, gridplot, row
 from bokeh.models import (  # type: ignore
+    AjaxDataSource,
     ColumnDataSource,
     CrosshairTool,
+    CustomJS,
     HoverTool,
     Range1d,
     Span,
@@ -16,7 +18,9 @@ from bokeh.models import (  # type: ignore
 )
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
+from bokeh.palettes import Category20c
 from bokeh.plotting import figure
+from bokeh.transform import cumsum
 from django.utils import timezone
 
 from . import models, timeseries, widgets
@@ -115,7 +119,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         vareas: (optional) tuple of tuples, containing a tuple of trace labels to apply
             shading between and the colour to use, e.g.
             ((("Capacity", "Project effort"), "Green"), ...)
-        height: Height of the plto in pixels. Defaults to 500.
+        height: Height of the plot in pixels. Defaults to 500.
         legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
             for valid options. Defaults to 'bottom_left'
 
@@ -664,6 +668,102 @@ def create_project_evolution_layout(project: models.Project) -> Row | None:
         return None
     plot_layout = row(plot, sizing_mode="stretch_width")
     return plot_layout
+
+
+def create_pie_chart(category_name: str, source: AjaxDataSource) -> figure:
+    """Create a pie chart.
+
+    Args:
+        category_name: The name of the category being displayed.
+        source: The source of the name of the quantity being displayed.
+
+    Returns:
+        The Bokeh figure for the pie chart.
+    """
+    plot = figure(
+        title=f"Projects per {category_name.lower()}",
+        toolbar_location=None,
+        x_range=(-0.5, 1.0),  # type: ignore[arg-type]
+    )
+
+    plot.wedge(
+        x=0,
+        y=1,
+        start_angle=cumsum("angle", include_zero=True),
+        end_angle=cumsum("angle"),
+        radius=0.4,
+        line_color="white",
+        fill_color="colour",
+        legend_field="category",
+        source=source,
+    )
+
+    plot.add_tools(HoverTool(tooltips="@category: @value"))
+
+    plot.axis.axis_label = None
+    plot.axis.visible = False
+    plot.grid.grid_line_color = None
+
+    return plot
+
+
+def create_analytics_layout() -> figure:
+    """Create the analytics charts in a layout with widgets.
+
+    Creates the project analytics charts plus the associated widgets.
+
+    Returns:
+        A layout containing each of the analytics plots.
+    """
+    # Create a CustomJS adapter to convert a Json dict into a plottable AjaxDataSource
+    response_adapter = CustomJS(
+        args=dict(palette=Category20c[20]),
+        code=(
+            """
+            const response = cb_data.response;
+            const categories = Object.keys(response);
+            const values = categories.map(k => response[k]);
+            const total = values.reduce((a, b) => a + b, 0);
+            const angles = values.map(v => (v / total) * 2 * Math.PI);
+            const colours = categories.map((_, i) => palette[i % palette.length]);
+
+            return {
+                category: categories,
+                value: values,
+                angle: angles,
+                colour: colours,
+            };
+            """
+        ),
+    )
+
+    # Generate the list of plots we wish to display
+    plots = []
+    today = date.today()
+    one_year_ago = date(today.year - 1, today.month, today.day)
+    for division in ("department", "faculty"):
+        source = AjaxDataSource(
+            data_url=(
+                f"/api/data/projects_by_{division}?"
+                f"from_date={one_year_ago.strftime('%d/%m/%Y')}&"
+                f"to_date={today.strftime('%d/%m/%Y')}"
+            ),
+            method="GET",
+            adapter=response_adapter,
+            data=dict(category=[], value=[], angle=[], colour=[]),  # type: ignore[call-arg]
+        )
+        plots.append(create_pie_chart(category_name=division, source=source))
+
+    # Arrange the plots into a two-column grid layout
+    layout = column(  # type: ignore[call-overload]
+        [
+            gridplot(  # type: ignore[call-overload]
+                plots, ncols=2, sizing_mode="stretch_width"
+            ),
+        ],
+        sizing_mode="stretch_width",
+    )
+    return layout
 
 
 def html_components_from_plot(
