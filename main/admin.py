@@ -8,6 +8,7 @@ from django.urls import URLPattern, path, reverse
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from .models import (
+    Allocation,
     AnalysisCode,
     Capacity,
     DailyRate,
@@ -148,3 +149,10 @@ class MonthlyChargeAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     ) -> None:
         """Update monthly charge status to 'Confirmed'."""
         queryset.update(status="Confirmed")
+
+
+@admin.register(Allocation)
+class AllocationAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    """Admin for the Allocation model."""
+
+    list_display = ("pk", "project", "user", "value", "start_date", "end_date")

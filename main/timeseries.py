@@ -207,6 +207,40 @@ def get_capacity_timeseries(start_date: datetime, end_date: datetime) -> pd.Data
     return capacities
 
 
+def get_allocation_timeseries(
+    start_date: datetime, end_date: datetime
+) -> dict[str, pd.DataFrame]:
+    """Get the timeseries data for project allocations.
+
+    Each user gets a DataFrame with the projects they are involved and to what level.
+
+    Args:
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
+
+    Returns:
+        Pandas series of aggregated capacities with date range as index.
+    """
+    dates = pd.date_range(
+        pd.Timestamp(start_date).date(),
+        pd.Timestamp(end_date).date(),
+        inclusive="left",
+        tz=TIME_ZONE,
+    )
+    allocations = {}
+
+    members = User.objects.filter(groups__name="RSETeam").order_by("first_name")
+    for user in members:
+        full_name = str(user)
+        allocations[full_name] = pd.DataFrame(index=dates)
+        for allocation in models.Allocation.objects.filter(user=user).order_by(
+            "start_date"
+        ):
+            allocations[full_name][allocation.project.name] = allocation.trace(dates)
+
+    return allocations
+
+
 def get_cost_recovery_timeseries(
     dates: list[tuple[date, date]],
 ) -> tuple[pd.Series[float], list[float]]:

@@ -388,3 +388,30 @@ def test_get_cost_recovery_timeseries_equal_to_num_people(
     assert ts.value_counts()[2.0] == len(
         pd.bdate_range(start_last_month, end_last_month, inclusive="both")
     )
+
+
+@pytest.mark.django_db
+def test_get_allocation_timeseries(user, project):
+    """Test the get_allocation_timeseries function."""
+    from main import models, timeseries
+
+    plot_start_date = timezone.now()
+    plot_end_date = plot_start_date + timedelta(28)
+    models.Allocation.objects.create(
+        project=project,
+        user=user,
+        start_date=plot_start_date,
+        end_date=plot_end_date,
+        value=0.5,
+    )
+    ts = timeseries.get_allocation_timeseries(plot_start_date, plot_end_date)
+
+    assert str(user) in ts
+    for df in ts.values():
+        assert isinstance(df, pd.DataFrame)
+
+    allocated_projects = models.Allocation.objects.filter(user=user)
+    assert all(
+        allocation.project.name in ts[str(user)].columns
+        for allocation in allocated_projects
+    )

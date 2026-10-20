@@ -271,7 +271,7 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
         assert response.status_code == HTTPStatus.OK
         assert reverse("main:projects") in response.content.decode()
 
-    def test_post_creates_project_funding_and_phase_together(
+    def test_post_creates_project_funding_phase_and_allocation_together(
         self, admin_client, department, user
     ):
         """A single POST creates the Project, its Funding and its Phase rows."""
@@ -299,6 +299,14 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-0-days": "100",
             "phase-0-start_date": "2025-01-01",
             "phase-0-end_date": "2025-12-31",
+            "allocation-TOTAL_FORMS": "1",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
+            "allocation-0-user": user.pk,
+            "allocation-0-value": "0.5",
+            "allocation-0-start_date": "2025-01-01",
+            "allocation-0-end_date": "2025-12-31",
         }
 
         response = admin_client.post(self._get_url(), data)
@@ -309,6 +317,7 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
         project = Project.objects.get(name="Inline Project")
         assert project.funding_source.count() == 1
         assert project.phases.count() == 1
+        assert project.allocation_set.count() == 1
 
     def test_post_with_invalid_phase_rolls_back_everything(
         self, admin_client, department, user
@@ -336,6 +345,10 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-0-days": "10",
             "phase-0-start_date": "2020-01-01",
             "phase-0-end_date": "2020-01-31",
+            "allocation-TOTAL_FORMS": "0",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
         }
 
         response = admin_client.post(self._get_url(), data)
@@ -364,6 +377,10 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-INITIAL_FORMS": "0",
             "phase-MIN_NUM_FORMS": "0",
             "phase-MAX_NUM_FORMS": "1000",
+            "allocation-TOTAL_FORMS": "0",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
         }
 
         response = admin_client.post(self._get_url(), data)
@@ -410,6 +427,10 @@ class TestProjectCreateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-0-days": "100",
             "phase-0-start_date": "2025-01-01",
             "phase-0-end_date": "2025-12-31",
+            "allocation-TOTAL_FORMS": "0",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
         }
 
         response = admin_client.post(self._get_url(), data)
@@ -473,6 +494,10 @@ class TestProjectUpdateInlineView(PermissionRequiredMixin, TemplateOkMixin):
             "phase-0-days": "50",
             "phase-0-start_date": "2025-01-01",
             "phase-0-end_date": "2025-06-30",
+            "allocation-TOTAL_FORMS": "0",
+            "allocation-INITIAL_FORMS": "0",
+            "allocation-MIN_NUM_FORMS": "0",
+            "allocation-MAX_NUM_FORMS": "1000",
         }
 
         response = admin_client.post(self._get_url(), data)

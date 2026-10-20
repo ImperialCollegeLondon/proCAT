@@ -151,6 +151,7 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
         "main.create_project",
         "main.create_funding",
         "main.create_projectphase",
+        "main.create_allocation",
     )
     raise_exception = False
     template_name = "main/project_inline_form.html"
@@ -161,6 +162,7 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
             "project_form": forms.ProjectForm(),
             "funding_formset": forms.FundingInlineFormSet(prefix="funding"),
             "phase_formset": forms.ProjectPhaseInlineFormSet(prefix="phase"),
+            "allocation_formset": forms.AllocationInlineFormSet(prefix="allocation"),
         }
         return render(request, self.template_name, context)
 
@@ -170,9 +172,9 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
         The project is saved first, so that the funding and phase rows (which
         reference it via a foreign key) can be validated and saved against a
         real primary key. Everything happens inside one atomic transaction:
-        if the funding or phase formsets turn out to be invalid, the project
-        creation is rolled back too, and the whole page is redisplayed with
-        every error shown together.
+        if the funding, phase or allocation formsets turn out to be invalid,
+        the project creation is rolled back too, and the whole page is
+        redisplayed with every error shown together.
         """
         project_form = forms.ProjectForm(request.POST)
 
@@ -185,6 +187,9 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
                 "phase_formset": forms.ProjectPhaseInlineFormSet(
                     request.POST, prefix="phase"
                 ),
+                "allocation_formset": forms.AllocationInlineFormSet(
+                    request.POST, prefix="allocation"
+                ),
             }
             return render(request, self.template_name, context)
 
@@ -196,15 +201,20 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
             phase_formset = forms.ProjectPhaseInlineFormSet(
                 request.POST, instance=project, prefix="phase"
             )
-            # Evaluate both explicitly (rather than `and`-chaining) so that,
+            allocation_formset = forms.AllocationInlineFormSet(
+                request.POST, instance=project, prefix="allocation"
+            )
+            # Evaluate all explicitly (rather than `and`-chaining) so that,
             # if one of them is invalid, the other's errors are still
             # available to show alongside it.
             funding_valid = funding_formset.is_valid()
             phase_valid = phase_formset.is_valid()
+            allocation_valid = allocation_formset.is_valid()
 
-            if funding_valid and phase_valid:
+            if funding_valid and phase_valid and allocation_valid:
                 funding_formset.save()
                 phase_formset.save()
+                allocation_formset.save()
                 return redirect("main:project_detail", pk=project.pk)
 
             transaction.set_rollback(True)
@@ -216,6 +226,7 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
                 "project_form": project_form,
                 "funding_formset": funding_formset,
                 "phase_formset": phase_formset,
+                "allocation_formset": allocation_formset,
             },
         )
 
@@ -227,12 +238,13 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
         "main.change_project",
         "main.change_funding",
         "main.change_projectphase",
+        "main.change_allocation",
     )
     raise_exception = False
     template_name = "main/project_inline_form.html"
 
     def get(self, request: HttpRequest, pk: int) -> HttpResponse:
-        """Render the Project form with its Funding/Phase formsets pre-filled."""
+        """Render the Project form with its inline formsets pre-filled."""
         project = get_object_or_404(models.Project, pk=pk)
         context = {
             "project": project,
@@ -243,6 +255,9 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
             "phase_formset": forms.ProjectPhaseInlineFormSet(
                 instance=project, prefix="phase"
             ),
+            "allocation_formset": forms.AllocationInlineFormSet(
+                instance=project, prefix="allocation"
+            ),
         }
         return render(request, self.template_name, context)
 
@@ -250,7 +265,7 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
         """Validate and save the Project together with its Funding/Phase rows.
 
         Unlike the create view, the project already has a primary key, so all
-        three forms/formsets can be validated together up front.
+        forms/formsets can be validated together up front.
         """
         project = get_object_or_404(models.Project, pk=pk)
         project_form = forms.ProjectForm(request.POST, instance=project)
@@ -260,17 +275,22 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
         phase_formset = forms.ProjectPhaseInlineFormSet(
             request.POST, instance=project, prefix="phase"
         )
+        allocation_formset = forms.AllocationInlineFormSet(
+            request.POST, instance=project, prefix="allocation"
+        )
 
-        # Evaluate all three explicitly so every error can be shown together.
+        # Evaluate all explicitly so every error can be shown together.
         project_valid = project_form.is_valid()
         funding_valid = funding_formset.is_valid()
         phase_valid = phase_formset.is_valid()
+        allocation_valid = allocation_formset.is_valid()
 
-        if project_valid and funding_valid and phase_valid:
+        if project_valid and funding_valid and phase_valid and allocation_valid:
             with transaction.atomic():
                 project = project_form.save()
                 funding_formset.save()
                 phase_formset.save()
+                allocation_formset.save()
             return redirect("main:project_detail", pk=project.pk)
 
         return render(
@@ -281,6 +301,7 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
                 "project_form": project_form,
                 "funding_formset": funding_formset,
                 "phase_formset": phase_formset,
+                "allocation_formset": allocation_formset,
             },
         )
 
@@ -298,6 +319,7 @@ class ProjectDetailInlineView(PermissionRequiredMixin, View):
         "main.view_project",
         "main.view_funding",
         "main.view_projectphase",
+        "main.view_allocation",
     )
     raise_exception = False
     template_name = "main/project_inline_detail.html"
@@ -351,6 +373,11 @@ class ProjectDetailInlineView(PermissionRequiredMixin, View):
             "phase_forms": [
                 self._disable(forms.ProjectPhaseInlineForm(instance=phase))
                 for phase in project.phases.all()
+            ],
+            "allocation_header_form": forms.AllocationInlineForm(),
+            "allocation_forms": [
+                self._disable(forms.AllocationInlineForm(instance=allocation))
+                for allocation in project.allocation_set.all()
             ],
         }
         layout = plots.create_project_evolution_layout(project)

@@ -1368,3 +1368,23 @@ class ProjectPhase(FullTimeEquivalent):
             max((self.end_date - timezone.now().date()).days, 0) / total_calendar_days,
         )
         return fraction_left * self.days
+
+
+class Allocation(FullTimeEquivalent):
+    """User allocated to a project for a period of time."""
+
+    user = models.ForeignKey(
+        User,
+        null=False,
+        blank=False,
+        help_text="User allocated to this project.",
+        on_delete=models.CASCADE,
+    )
+
+    project = models.ForeignKey(
+        Project,
+        null=False,
+        blank=False,
+        help_text="Project this allocation relates to.",
+        on_delete=models.CASCADE,
+    )

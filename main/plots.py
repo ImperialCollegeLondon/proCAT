@@ -239,6 +239,7 @@ def create_capacity_planning_plot(
         vareas=vareas,
     )
 
+    allocations = timeseries.get_allocation_timeseries(start_date, end_date)
     individual_plots = []
     for name in capacities.columns:
         traces = [
@@ -248,9 +249,22 @@ def create_capacity_planning_plot(
                 "label": "Capacity",
             }
         ]
+        allocation = allocations[name]
+        for project in allocation.columns:
+            traces.append(
+                {
+                    "timeseries": allocation[project],
+                    "colour": "red",
+                    "label": project,
+                }
+            )
         individual_plots.append(
             create_timeseries_plot(
-                title=name, traces=traces, x_range=x_range, height=150
+                title=name,
+                traces=traces,
+                x_range=x_range,
+                height=150,
+                legend_loc="top_right",
             )
         )
 
