@@ -191,7 +191,7 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
             allocation_formset = forms.AllocationInlineFormSet(
                 request.POST, instance=project, prefix="allocation"
             )
-            # Evaluate both explicitly (rather than `and`-chaining) so that,
+            # Evaluate all explicitly (rather than `and`-chaining) so that,
             # if one of them is invalid, the other's errors are still
             # available to show alongside it.
             funding_valid = funding_formset.is_valid()
@@ -231,7 +231,7 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
     template_name = "main/project_inline_form.html"
 
     def get(self, request: HttpRequest, pk: int) -> HttpResponse:
-        """Render the Project form with its nline formsets pre-filled."""
+        """Render the Project form with its inline formsets pre-filled."""
         project = get_object_or_404(models.Project, pk=pk)
         context = {
             "project": project,
@@ -266,7 +266,7 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
             request.POST, instance=project, prefix="allocation"
         )
 
-        # Evaluate all three explicitly so every error can be shown together.
+        # Evaluate all explicitly so every error can be shown together.
         project_valid = project_form.is_valid()
         funding_valid = funding_formset.is_valid()
         phase_valid = phase_formset.is_valid()
