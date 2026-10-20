@@ -252,7 +252,7 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
         """Validate and save the Project together with its Funding/Phase rows.
 
         Unlike the create view, the project already has a primary key, so all
-        three forms/formsets can be validated together up front.
+        forms/formsets can be validated together up front.
         """
         project = get_object_or_404(models.Project, pk=pk)
         project_form = forms.ProjectForm(request.POST, instance=project)
