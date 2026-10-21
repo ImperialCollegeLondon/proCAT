@@ -11,6 +11,7 @@ from bokeh.models import (  # type: ignore
     ColumnDataSource,
     CrosshairTool,
     HoverTool,
+    Range,
     Range1d,
     Span,
     VArea,
@@ -657,7 +658,7 @@ def _actual_days_charged(  # type: ignore[explicit-any]
 
 
 def create_allocation_plot_for_project(
-    project: models.Project, x_range: Range1d | None
+    project: models.Project, x_range: Range | None
 ) -> figure | None:
     """Create an allocation plot for the detail project page."""
     allocations = models.Allocation.objects.filter(project=project)
@@ -670,7 +671,7 @@ def create_allocation_plot_for_project(
     for allocation in allocations:
         traces.append(
             {
-                "timeseries": allocation.trace(fte.index),
+                "timeseries": allocation.trace(fte.index),  # type: ignore[arg-type]
                 "label": str(allocation.user),
                 "colour": next(colours),
             }
@@ -755,6 +756,7 @@ def create_project_evolution_layout(project: models.Project) -> Row | None:
         return None
 
     if len(plots) == 2:
+        assert evolution_plot is not None
         evolution_plot.xaxis.axis_label = None
         evolution_plot.xaxis.major_label_text_font_size = "0pt"  # Hide tick labels
         evolution_plot.xaxis.major_tick_line_color = None  # Hide tick marks
