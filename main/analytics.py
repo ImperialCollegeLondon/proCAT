@@ -78,9 +78,8 @@ def get_projects_active_between(from_date: date, to_date: date) -> list[models.P
     Returns:
         The list of projects under active development within the time interval.
     """
-    projects = models.Project.objects.all()
     return list(
-        projects.exclude(status="Not done").filter(
+        models.Project.objects.exclude(status="Not done").filter(
             start_date__lt=to_date, end_date__gte=from_date
         )
     )
