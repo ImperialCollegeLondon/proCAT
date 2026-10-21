@@ -772,20 +772,19 @@ def create_analytics_layout() -> figure:
     Returns:
         A layout containing each of the analytics plots.
     """
-    # Generate the list of plots we wish to display
-    plots = []
+    # Get projects active in past 12 months
     today = date.today()
     one_year_ago = today - timedelta(days=365)
+    projects_this_year = analytics.get_projects_active_between(one_year_ago, today)
 
-    fcn_map = {
-        "Department": analytics.get_project_count_per_department,
-        "Faculty": analytics.get_project_count_per_faculty,
-    }
-    for division, get_project_count_per_division in fcn_map.items():
-        data = get_project_count_per_division(
-            analytics.get_projects_active_between(one_year_ago, today)
-        )
-        plots.append(create_pie_chart(category_name=division, data=data))
+    # Generate the list of plots we wish to display
+    plots = []
+
+    proj_per_dept = analytics.get_project_count_per_department(projects_this_year)
+    plots.append(create_pie_chart(category_name="department", data=proj_per_dept))
+
+    proj_per_fac = analytics.get_project_count_per_faculty(projects_this_year)
+    plots.append(create_pie_chart(category_name="faculty", data=proj_per_fac))
 
     # Arrange the plots into a two-column grid layout
     layout = column(  # type: ignore[call-overload]
