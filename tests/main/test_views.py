@@ -794,9 +794,22 @@ class TestIndexView(TemplateOkMixin):
     def _get_url(self):
         return reverse("main:home")
 
-    def test_get(self, auth_client):
+    @patch("main.analytics.get_num_projects_per_department")
+    @patch("main.analytics.get_num_projects_per_faculty")
+    def test_template_used(self, per_faculty_mock, per_dept_mock, admin_client):
+        """Test the correct template is used by the GET request."""
+        per_dept_mock.return_value = {"a": 5, "b": 4, "c": 7}
+        per_faculty_mock.return_value = {"D": 7, "E": 9, "F": 2}
+        super().test_template_used(admin_client)
+
+    @patch("main.analytics.get_num_projects_per_department")
+    @patch("main.analytics.get_num_projects_per_faculty")
+    def test_get(self, per_faculty_mock, per_dept_mock, auth_client):
         """Tests the get method and the data provided."""
         import bokeh
+
+        per_dept_mock.return_value = {"a": 5, "b": 4, "c": 7}
+        per_faculty_mock.return_value = {"D": 7, "E": 9, "F": 2}
 
         endpoint = reverse("main:home")
         response = auth_client.get(endpoint)

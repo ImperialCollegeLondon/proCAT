@@ -2,27 +2,7 @@
 
 from datetime import date
 
-from django.http import HttpRequest
-from ninja import NinjaAPI
-
 from . import models
-
-api = NinjaAPI()
-
-
-def _str_to_date(date_str: str) -> date:
-    """Convert a DD/MM/YYYY string to a datetime.date.
-
-    Args:
-        date_str: A date in the format DD/MM/YYYY.
-
-    Returns:
-        The provided date, as a datetime.date.
-    """
-    date_str_split = date_str.split("/")
-    date_str_split.reverse()
-    date_int_split = [int(s) for s in date_str_split]
-    return date(*date_int_split)
 
 
 def _get_num_projects_per_division(divs: list[str]) -> dict[str, int]:
@@ -83,44 +63,3 @@ def get_projects_active_between(from_date: date, to_date: date) -> list[models.P
             start_date__lt=to_date, end_date__gte=from_date
         )
     )
-
-
-@api.get("/data/projects_by_department")
-def get_projects_by_department(
-    request: HttpRequest, from_date: str, to_date: str
-) -> dict[str, int]:
-    """Determine the number of projects per department.
-
-    Args:
-        request: The HTTP request.
-        from_date: A date in the format DD/MM/YYYY.
-        to_date: A date in the format DD/MM/YYYY.
-
-    Returns:
-        A dictionary of projects active in the requested interval, separated by
-        department.
-    """
-    projects = get_projects_active_between(
-        _str_to_date(from_date), _str_to_date(to_date)
-    )
-    return get_num_projects_per_department(projects)
-
-
-@api.get("/data/projects_by_faculty")
-def get_projects_by_faculty(
-    request: HttpRequest, from_date: str, to_date: str
-) -> dict[str, int]:
-    """Determine the number of projects per faculty.
-
-    Args:
-        request: The HTTP request.
-        from_date: A date in the format DD/MM/YYYY.
-        to_date: A date in the format DD/MM/YYYY.
-
-    Returns:
-        A dictionary of projects active in the requested interval, separated by faculty.
-    """
-    projects = get_projects_active_between(
-        _str_to_date(from_date), _str_to_date(to_date)
-    )
-    return get_num_projects_per_faculty(projects)

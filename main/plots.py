@@ -2,16 +2,15 @@
 
 from datetime import date, datetime, time, timedelta
 from itertools import cycle
+from math import pi
 from typing import Any
 
 import pandas as pd
 from bokeh.embed import components
 from bokeh.layouts import column, gridplot, row
 from bokeh.models import (  # type: ignore
-    AjaxDataSource,
     ColumnDataSource,
     CrosshairTool,
-    CustomJS,
     HoverTool,
     Range1d,
     Span,
@@ -24,7 +23,7 @@ from bokeh.plotting import figure
 from bokeh.transform import cumsum
 from django.utils import timezone
 
-from . import models, timeseries, widgets
+from . import analytics, models, timeseries, widgets
 from .utils import (
     get_calendar_year_dates,
     get_financial_year_dates,
@@ -719,16 +718,24 @@ def create_project_evolution_layout(project: models.Project) -> Row | None:
     return plot_layout
 
 
-def create_pie_chart(category_name: str, source: AjaxDataSource) -> figure:
+def create_pie_chart(category_name: str, data: dict[str, int]) -> figure:
     """Create a pie chart.
 
     Args:
         category_name: The name of the category being displayed.
-        source: The source of the name of the quantity being displayed.
+        data: The data being displayed.
 
     Returns:
         The Bokeh figure for the pie chart.
     """
+    source = (
+        pd.Series(data)
+        .reset_index(name="value")
+        .rename(columns={"index": category_name})
+    )
+    source["angle"] = source["value"] / source["value"].sum() * 2 * pi
+    source["colour"] = Category20c[len(data)]
+
     plot = figure(
         title=f"Projects per {category_name.lower()}",
         toolbar_location=None,
@@ -743,11 +750,11 @@ def create_pie_chart(category_name: str, source: AjaxDataSource) -> figure:
         radius=0.4,
         line_color="white",
         fill_color="colour",
-        legend_field="category",
+        legend_field=category_name,
         source=source,
     )
 
-    plot.add_tools(HoverTool(tooltips="@category: @value"))
+    plot.add_tools(HoverTool(tooltips=f"@{category_name}: @value"))
 
     plot.axis.axis_label = None
     plot.axis.visible = False
@@ -764,44 +771,20 @@ def create_analytics_layout() -> figure:
     Returns:
         A layout containing each of the analytics plots.
     """
-    # Create a CustomJS adapter to convert a Json dict into a plottable AjaxDataSource
-    response_adapter = CustomJS(
-        args=dict(palette=Category20c[20]),
-        code=(
-            """
-            const response = cb_data.response;
-            const categories = Object.keys(response);
-            const values = categories.map(k => response[k]);
-            const total = values.reduce((a, b) => a + b, 0);
-            const angles = values.map(v => (v / total) * 2 * Math.PI);
-            const colours = categories.map((_, i) => palette[i % palette.length]);
-
-            return {
-                category: categories,
-                value: values,
-                angle: angles,
-                colour: colours,
-            };
-            """
-        ),
-    )
-
     # Generate the list of plots we wish to display
     plots = []
     today = date.today()
     one_year_ago = today - timedelta(days=365)
-    for division in ("department", "faculty"):
-        source = AjaxDataSource(
-            data_url=(
-                f"/api/data/projects_by_{division}?"
-                f"from_date={one_year_ago.strftime('%d/%m/%Y')}&"
-                f"to_date={today.strftime('%d/%m/%Y')}"
-            ),
-            method="GET",
-            adapter=response_adapter,
-            data=dict(category=[], value=[], angle=[], colour=[]),  # type: ignore[call-arg]
+
+    fcn_map = {
+        "Department": analytics.get_num_projects_per_department,
+        "Faculty": analytics.get_num_projects_per_faculty,
+    }
+    for division, get_num_projects_per_division in fcn_map.items():
+        data = get_num_projects_per_division(
+            analytics.get_projects_active_between(one_year_ago, today)
         )
-        plots.append(create_pie_chart(category_name=division, source=source))
+        plots.append(create_pie_chart(category_name=division, data=data))
 
     # Arrange the plots into a two-column grid layout
     layout = column(  # type: ignore[call-overload]

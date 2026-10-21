@@ -25,7 +25,6 @@ dependencies = [
     "mozilla-django-oidc",
     "django-admin-rangefilter",
     "gunicorn",
-    "django-ninja>=1.7.1",
 ]
 
 [dependency-groups]
