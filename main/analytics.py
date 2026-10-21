@@ -1,22 +1,9 @@
 """Functions for calculating team activity stats."""
 
+from collections import Counter
 from datetime import date
 
 from . import models
-
-
-def _get_num_projects_per_division(divs: list[str]) -> dict[str, int]:
-    """Determine the number of projects per division.
-
-    A "division" could be a department or faculty, for example.
-
-    Args:
-        divs: The list of names of divisions.
-
-    Returns:
-        A dictionary with division names and the number of projects per division.
-    """
-    return {div: divs.count(div) for div in divs}
 
 
 def get_num_projects_per_department(projects: list[models.Project]) -> dict[str, int]:
@@ -28,8 +15,7 @@ def get_num_projects_per_department(projects: list[models.Project]) -> dict[str,
     Returns:
         A dictionary with department names and the number of projects per department.
     """
-    departments = [project.department.name for project in projects]
-    return _get_num_projects_per_division(departments)
+    return Counter([project.department.name for project in projects])
 
 
 def get_num_projects_per_faculty(projects: list[models.Project]) -> dict[str, int]:
@@ -41,8 +27,7 @@ def get_num_projects_per_faculty(projects: list[models.Project]) -> dict[str, in
     Returns:
         A dictionary with faculty names and the number of projects per faculty.
     """
-    faculties = [project.department.faculty for project in projects]
-    return _get_num_projects_per_division(faculties)
+    return Counter([project.department.faculty for project in projects])
 
 
 def get_projects_active_between(from_date: date, to_date: date) -> list[models.Project]:

@@ -5,7 +5,6 @@ import datetime as dt
 import pytest
 
 from main.analytics import (
-    _get_num_projects_per_division,
     get_num_projects_per_department,
     get_num_projects_per_faculty,
     get_projects_active_between,
@@ -91,12 +90,6 @@ def projects_list(db):
     Project.objects.bulk_create(projects_list)
 
     return projects_list
-
-
-def test_get_num_projects_per_division():
-    """Test the _get_num_projects_per_division function."""
-    divs = ["a"] * 8 + ["b"] * 5 + ["c"] * 21
-    assert _get_num_projects_per_division(divs) == {"a": 8, "b": 5, "c": 21}
 
 
 def test_get_num_projects_per_department(projects_list: list[Project]):
