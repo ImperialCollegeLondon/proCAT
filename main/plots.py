@@ -242,7 +242,7 @@ def create_capacity_planning_plot(
         )
 
     # Apply area shading between select traces
-    vareas = (
+    vareas: tuple[tuple[tuple[str, str], str], ...] = (
         (("Capacity", "Confirmed project effort"), "green"),
         (("Maintenance project effort", "Active project effort"), "purple"),
         (("Confirmed project effort", "Maintenance project effort"), "yellow"),
