@@ -656,6 +656,39 @@ def _actual_days_charged(  # type: ignore[explicit-any]
     return charges
 
 
+def create_allocation_plot_for_project(
+    project: models.Project, x_range: Range1d | None
+) -> figure | None:
+    """Create an allocation plot for the detail project page."""
+    allocations = models.Allocation.objects.filter(project=project)
+    if not allocations.exists():
+        return None
+
+    fte = project.fte(include_excess=False)
+    traces = [{"timeseries": fte, "label": "Project FTE", "colour": "green"}]
+    colours = cycle(["red", "purple", "yellow", "navy"])
+    for allocation in allocations:
+        traces.append(
+            {
+                "timeseries": allocation.trace(fte.index),
+                "label": str(allocation.user),
+                "colour": next(colours),
+            }
+        )
+
+    plot = create_timeseries_plot(
+        "Allocations",
+        traces,
+        height=200,
+        legend_loc="bottom_right",
+    )
+    plot.yaxis.axis_label = "FTE"
+    plot.legend.nrows = 1
+    if x_range:
+        plot.x_range = x_range
+    return plot
+
+
 def create_project_evolution_plot(project: models.Project) -> figure | None:
     """Create plot with the time evolution of usage and charges."""
     # Expected, commulative use, homogeneous over each phase
@@ -685,7 +718,7 @@ def create_project_evolution_plot(project: models.Project) -> figure | None:
     plot = create_timeseries_plot(
         "Project evolution",
         traces,
-        height=400,
+        height=350,
         legend_loc="bottom_right",
     )
     plot.yaxis.axis_label = "Days"
@@ -708,10 +741,28 @@ def create_project_evolution_layout(project: models.Project) -> Row | None:
     Returns:
         The layout with the plot.
     """
-    plot = create_project_evolution_plot(project)
-    if not plot:
+    evolution_plot = create_project_evolution_plot(project)
+    allocation_plot = create_allocation_plot_for_project(
+        project, evolution_plot.x_range if evolution_plot else None
+    )
+
+    plots = []
+    if evolution_plot:
+        plots.append(evolution_plot)
+    if allocation_plot:
+        plots.append(allocation_plot)
+    if not plots:
         return None
-    plot_layout = row(plot, sizing_mode="stretch_width")
+
+    if len(plots) == 2:
+        evolution_plot.xaxis.axis_label = None
+        evolution_plot.xaxis.major_label_text_font_size = "0pt"  # Hide tick labels
+        evolution_plot.xaxis.major_tick_line_color = None  # Hide tick marks
+        evolution_plot.xaxis.minor_tick_line_color = None  # Hide minor ticks
+
+    plot_layout = row(
+        column(*plots, sizing_mode="stretch_width"), sizing_mode="stretch_width"
+    )
     return plot_layout
 
 
