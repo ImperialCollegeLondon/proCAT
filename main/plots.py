@@ -258,7 +258,10 @@ def create_capacity_planning_plot(
 
     allocations = timeseries.get_allocation_timeseries(start_date, end_date)
     individual_plots = []
-    vareas = ((("Capacity", ""), "green"),)
+    vareas = (
+        (("Capacity", ""), "green"),
+        (("", "Capacity"), "red"),
+    )
 
     for name in capacities.columns:
         traces = [
