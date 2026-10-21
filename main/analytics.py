@@ -68,12 +68,12 @@ def get_num_projects_per_faculty(projects: list[models.Project]) -> dict[str, in
 def get_projects_active_between(from_date: date, to_date: date) -> list[models.Project]:
     """Get the projects under active development within a time frame.
 
-    Exclude "Not done", which is projects whose start date has passed, but are not yet
-    under development.
+    Exclude "Not done", which is projects whose start date has passed, but are not under
+    development.
 
     Args:
         from_date: A datetime.date marking the start of the search interval.
-        to_date:  A datetime.date marking the end of the search interval.
+        to_date: A datetime.date marking the end of the search interval.
 
     Returns:
         The list of projects under active development within the time interval.
