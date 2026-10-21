@@ -733,6 +733,7 @@ def create_pie_chart(category_name: str, data: dict[str, int]) -> figure:
         .reset_index(name="value")
         .rename(columns={"index": category_name})
     )
+    source = source.sort_values(by=category_name)
     source["angle"] = source["value"] / source["value"].sum() * 2 * pi
     source["colour"] = Category20c[len(data)]
 
