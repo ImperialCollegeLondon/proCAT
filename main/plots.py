@@ -1,6 +1,7 @@
 """Plots for displaying database data."""
 
 from datetime import date, datetime, time, timedelta
+from itertools import cycle
 from typing import Any
 
 import pandas as pd
@@ -139,34 +140,54 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     )
     if x_range:
         plot.x_range = Range1d(x_range[0], x_range[1])  # type: ignore[arg-type]
+
     plot.yaxis.axis_label = "Value"
     plot.xaxis.axis_label = "Date"
 
+    # Now we add the data
     lines = []
+    tooltips = [
+        ("Date", "@{index}{%F}"),
+    ]
+    hover_renderer = []
     for trace in traces:
-        line = plot.line(
-            "index",
-            trace["label"],
-            source=source,
-            line_width=2,
-            color=trace["colour"],
-            legend_label=trace["label"],
+        label = trace["label"]
+
+        # If there's no label, that's the mark of a ghost trace used for area filling
+        # and hoover tooltips only. Should not appear in the legend
+        if not label:
+            hover_renderer = [
+                plot.line("index", label, source=source, alpha=0, line_width=20)
+            ]
+            continue
+
+        # The other traces are plotted and included in the legend
+        lines.append(
+            plot.line(
+                "index",
+                label,
+                source=source,
+                line_width=2,
+                color=trace["colour"],
+                legend_label=label,
+            )
         )
-        lines.append(line)
+        tooltips.append((label, f"@{{{label}}}{{0.00}}"))
 
     # If provided, add varea shading between traces
     if vareas:
         for labels, colour in vareas:
             add_varea_glyph(plot, df, labels[0], labels[1], colour)
 
+    # The tooltip appears in the hover rendered ghost trace, if any, or the first trace
+    # otherwise
     hover = HoverTool(
-        tooltips=[
-            ("Date", "$x{%F}"),
-            ("Value", "$y{0.00}"),
-        ],
-        formatters={"$x": "datetime"},
-        renderers=lines,  # type: ignore[arg-type]
+        tooltips=tooltips,
+        formatters={"@{index}": "datetime"},
+        renderers=hover_renderer or lines[:1],  # type: ignore[arg-type]
+        mode="vline",
     )
+
     plot.add_tools(hover)
     plot.legend.click_policy = "hide"  # hides traces when clicked in legend
     plot.legend.location = legend_loc  # type: ignore[assignment]
@@ -237,6 +258,8 @@ def create_capacity_planning_plot(
 
     allocations = timeseries.get_allocation_timeseries(start_date, end_date)
     individual_plots = []
+    vareas = ((("Capacity", ""), "green"),)
+
     for name in capacities.columns:
         traces = [
             {
@@ -246,11 +269,21 @@ def create_capacity_planning_plot(
             }
         ]
         allocation = allocations[name]
+        all_projects = allocation.sum(axis=1)
+        traces.append(
+            {
+                "timeseries": all_projects,
+                "colour": None,
+                "label": "",
+            }
+        )
+
+        colours = cycle(["red", "purple", "yellow", "navy"])
         for project in allocation.columns:
             traces.append(
                 {
                     "timeseries": allocation[project],
-                    "colour": "red",
+                    "colour": next(colours),
                     "label": project,
                 }
             )
@@ -259,6 +292,7 @@ def create_capacity_planning_plot(
                 title=name,
                 traces=traces,
                 x_range=x_range,
+                vareas=vareas,
                 height=150,
                 legend_loc="top_right",
             )
