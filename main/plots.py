@@ -778,11 +778,11 @@ def create_analytics_layout() -> figure:
     one_year_ago = today - timedelta(days=365)
 
     fcn_map = {
-        "Department": analytics.get_num_projects_per_department,
-        "Faculty": analytics.get_num_projects_per_faculty,
+        "Department": analytics.get_project_count_per_department,
+        "Faculty": analytics.get_project_count_per_faculty,
     }
-    for division, get_num_projects_per_division in fcn_map.items():
-        data = get_num_projects_per_division(
+    for division, get_project_count_per_division in fcn_map.items():
+        data = get_project_count_per_division(
             analytics.get_projects_active_between(one_year_ago, today)
         )
         plots.append(create_pie_chart(category_name=division, data=data))

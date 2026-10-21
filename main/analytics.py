@@ -6,7 +6,7 @@ from datetime import date
 from . import models
 
 
-def get_num_projects_per_department(projects: list[models.Project]) -> dict[str, int]:
+def get_project_count_per_department(projects: list[models.Project]) -> dict[str, int]:
     """Determine the number of projects per department.
 
     Args:
@@ -18,7 +18,7 @@ def get_num_projects_per_department(projects: list[models.Project]) -> dict[str,
     return Counter([project.department.name for project in projects])
 
 
-def get_num_projects_per_faculty(projects: list[models.Project]) -> dict[str, int]:
+def get_project_count_per_faculty(projects: list[models.Project]) -> dict[str, int]:
     """Determine the number of projects per faculty.
 
     Args:

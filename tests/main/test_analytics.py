@@ -5,8 +5,8 @@ import datetime as dt
 import pytest
 
 from main.analytics import (
-    get_num_projects_per_department,
-    get_num_projects_per_faculty,
+    get_project_count_per_department,
+    get_project_count_per_faculty,
     get_projects_active_between,
 )
 from main.models import Department, Project
@@ -92,8 +92,8 @@ def projects_list(db):
     return projects_list
 
 
-def test_get_num_projects_per_department(projects_list: list[Project]):
-    """Test the get_num_projects_per_department function.
+def test_get_project_count_per_department(projects_list: list[Project]):
+    """Test the get_project_count_per_department function.
 
     projects_list fixture contains:
     - 1 Mathematics
@@ -103,7 +103,7 @@ def test_get_num_projects_per_department(projects_list: list[Project]):
     - 2 Immunology and Inflammation
     - 1 ICT
     """
-    proj_per_dept = get_num_projects_per_department(projects_list)
+    proj_per_dept = get_project_count_per_department(projects_list)
 
     assert proj_per_dept["Mathematics"] == 1
     assert proj_per_dept["Computing"] == 2
@@ -113,8 +113,8 @@ def test_get_num_projects_per_department(projects_list: list[Project]):
     assert proj_per_dept["ICT"] == 1
 
 
-def test_get_num_projects_per_faculty(projects_list: list[Project]):
-    """Test the get_num_projects_per_faculty function.
+def test_get_project_count_per_faculty(projects_list: list[Project]):
+    """Test the get_project_count_per_faculty function.
 
     projects_list fixture contains:
     - 2 FoNS,
@@ -123,7 +123,7 @@ def test_get_num_projects_per_faculty(projects_list: list[Project]):
     - 0 IBS,
     - 1 Other
     """
-    proj_per_faculty = get_num_projects_per_faculty(projects_list)
+    proj_per_faculty = get_project_count_per_faculty(projects_list)
 
     assert proj_per_faculty["Faculty of Natural Sciences"] == 2
     assert proj_per_faculty["Faculty of Engineering"] == 3
