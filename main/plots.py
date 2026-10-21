@@ -789,7 +789,7 @@ def create_analytics_layout() -> figure:
     # Generate the list of plots we wish to display
     plots = []
     today = date.today()
-    one_year_ago = date(today.year - 1, today.month, today.day)
+    one_year_ago = today - timedelta(days=365)
     for division in ("department", "faculty"):
         source = AjaxDataSource(
             data_url=(
