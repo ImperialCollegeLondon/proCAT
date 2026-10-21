@@ -154,7 +154,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         label = trace["label"]
 
         # If there's no label, that's the mark of a ghost trace used for area filling
-        # and hoover tooltips only. Should not appear in the legend
+        # and hover tooltips only. Should not appear in the legend
         if not label:
             hover_renderer = [
                 plot.line("index", label, source=source, alpha=0, line_width=20)
