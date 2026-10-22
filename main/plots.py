@@ -16,6 +16,8 @@ from bokeh.models import (  # type: ignore
     Range,
     Range1d,
     Span,
+    TabPanel,
+    Tabs,
     VArea,
 )
 from bokeh.models.layouts import Row
@@ -799,6 +801,7 @@ def create_pie_chart(
         title=title,
         toolbar_location=None,
         x_range=(-0.5, 1.0),  # type: ignore[arg-type]
+        sizing_mode="stretch_width",
     )
 
     plot.wedge(
@@ -862,11 +865,28 @@ def create_analytics_layout() -> figure:
         )
     )
 
+    projects_tabs = Tabs(
+        tabs=[
+            TabPanel(child=plots[0], title="Departments"),
+            TabPanel(child=plots[1], title="Faculties"),
+        ],
+        sizing_mode="stretch_width",
+    )
+    funding_tabs = Tabs(
+        tabs=[
+            TabPanel(child=plots[2], title="Departments"),
+            TabPanel(child=plots[3], title="Faculties"),
+        ],
+        sizing_mode="stretch_width",
+    )
+
     # Arrange the plots into a two-column grid layout
     layout = column(  # type: ignore[call-overload]
         [
             gridplot(  # type: ignore[call-overload]
-                plots, ncols=2, sizing_mode="stretch_width"
+                (projects_tabs, funding_tabs),
+                ncols=2,
+                sizing_mode="stretch_width",
             ),
         ],
         sizing_mode="stretch_width",
