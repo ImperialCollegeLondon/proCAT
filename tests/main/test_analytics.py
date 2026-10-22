@@ -6,6 +6,7 @@ import pytest
 
 from main.analytics import (
     get_funding_per_department,
+    get_funding_per_faculty,
     get_project_count_per_department,
     get_project_count_per_faculty,
     get_projects_active_between,
@@ -204,6 +205,19 @@ def test_get_funding_per_department(
     assert fund_per_dept["Physics"] == 0
     assert fund_per_dept["Immunology and Inflammation"] == 34.56 + 45.67 + 56.78
     assert fund_per_dept["ICT"] == 23.45
+
+
+def test_get_funding_per_faculty(
+    projects_list: list[Project], fundings_list: list[Funding]
+):
+    """Test the get_funding_per_faculty function."""
+    fund_per_fac = get_funding_per_faculty(projects_list)
+
+    assert fund_per_fac["Faculty of Natural Sciences"] == 12.34
+    assert fund_per_fac["Faculty of Engineering"] == 67.89 + 78.90
+    assert fund_per_fac["Faculty of Medicine"] == 34.56 + 45.67 + 56.78
+    assert fund_per_fac.get("Imperial Business School") is None
+    assert fund_per_fac["Other"] == 23.45
 
 
 def test_get_projects_active_between(projects_list: list[Project]):
