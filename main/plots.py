@@ -138,7 +138,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         title=title,
         height=height,
         background_fill_color="#efefef",
-        x_axis_type="datetime",  # type: ignore[call-arg]
+        x_axis_type="datetime",
         tools="save,xpan,xwheel_zoom,reset",
         sizing_mode="stretch_width",
     )
