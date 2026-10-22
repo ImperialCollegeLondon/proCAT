@@ -2,6 +2,7 @@
 
 from datetime import date, datetime, time, timedelta
 from itertools import cycle
+from math import pi
 from typing import Any
 
 import pandas as pd
@@ -18,10 +19,12 @@ from bokeh.models import (  # type: ignore
 )
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
+from bokeh.palettes import Category20c
 from bokeh.plotting import figure
+from bokeh.transform import cumsum
 from django.utils import timezone
 
-from . import models, timeseries, widgets
+from . import analytics, models, timeseries, widgets
 from .utils import (
     get_calendar_year_dates,
     get_financial_year_dates,
@@ -117,7 +120,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         vareas: (optional) tuple of tuples, containing a tuple of trace labels to apply
             shading between and the colour to use, e.g.
             ((("Capacity", "Project effort"), "Green"), ...)
-        height: Height of the plto in pixels. Defaults to 500.
+        height: Height of the plot in pixels. Defaults to 500.
         legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
             for valid options. Defaults to 'bottom_left'
 
@@ -766,6 +769,86 @@ def create_project_evolution_layout(project: models.Project) -> Row | None:
         column(*plots, sizing_mode="stretch_width"), sizing_mode="stretch_width"
     )
     return plot_layout
+
+
+def create_pie_chart(category_name: str, data: dict[str, int]) -> figure:
+    """Create a pie chart.
+
+    Args:
+        category_name: The name of the category being displayed.
+        data: The data being displayed.
+
+    Returns:
+        The Bokeh figure for the pie chart.
+    """
+    source = (
+        pd.Series(data)
+        .reset_index(name="value")
+        .rename(columns={"index": category_name})
+    )
+    source = source.sort_values(by=category_name)
+    source["angle"] = source["value"] / source["value"].sum() * 2 * pi
+    source["colour"] = Category20c[len(data)]
+
+    plot = figure(
+        title=f"Projects per {category_name.lower()}",
+        toolbar_location=None,
+        x_range=(-0.5, 1.0),  # type: ignore[arg-type]
+    )
+
+    plot.wedge(
+        x=0,
+        y=1,
+        start_angle=cumsum("angle", include_zero=True),
+        end_angle=cumsum("angle"),
+        radius=0.4,
+        line_color="white",
+        fill_color="colour",
+        legend_field=category_name,
+        source=source,
+    )
+
+    plot.add_tools(HoverTool(tooltips=f"@{category_name}: @value"))
+
+    plot.axis.axis_label = None
+    plot.axis.visible = False
+    plot.grid.grid_line_color = None
+
+    return plot
+
+
+def create_analytics_layout() -> figure:
+    """Create the analytics charts in a layout with widgets.
+
+    Creates the project analytics charts plus the associated widgets.
+
+    Returns:
+        A layout containing each of the analytics plots.
+    """
+    # Get projects active in past 12 months
+    today = date.today()
+    one_year_ago = today - timedelta(days=365)
+    projects_this_year = analytics.get_projects_active_between(one_year_ago, today)
+
+    # Generate the list of plots we wish to display
+    plots = []
+
+    proj_per_dept = analytics.get_project_count_per_department(projects_this_year)
+    plots.append(create_pie_chart(category_name="department", data=proj_per_dept))
+
+    proj_per_fac = analytics.get_project_count_per_faculty(projects_this_year)
+    plots.append(create_pie_chart(category_name="faculty", data=proj_per_fac))
+
+    # Arrange the plots into a two-column grid layout
+    layout = column(  # type: ignore[call-overload]
+        [
+            gridplot(  # type: ignore[call-overload]
+                plots, ncols=2, sizing_mode="stretch_width"
+            ),
+        ],
+        sizing_mode="stretch_width",
+    )
+    return layout
 
 
 def html_components_from_plot(

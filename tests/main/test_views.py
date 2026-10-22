@@ -784,3 +784,36 @@ class TestCostRecoveryView(LoginRequiredMixin, TemplateOkMixin):
         response = views.CostRecoveryView.as_view()(request)
         assert response.headers["Content-Type"] == "text/csv"
         assert f"charges_report_{month}-{year}.csv" in response["Content-Disposition"]
+
+
+class TestIndexView(TemplateOkMixin):
+    """Test suite for the Index view."""
+
+    _template_name = "main/home.html"
+
+    def _get_url(self):
+        return reverse("main:home")
+
+    @patch("main.analytics.get_project_count_per_department")
+    @patch("main.analytics.get_project_count_per_faculty")
+    def test_template_used(self, per_faculty_mock, per_dept_mock, admin_client):
+        """Test the correct template is used by the GET request."""
+        per_dept_mock.return_value = {"a": 5, "b": 4, "c": 7}
+        per_faculty_mock.return_value = {"D": 7, "E": 9, "F": 2}
+        super().test_template_used(admin_client)
+
+    @patch("main.analytics.get_project_count_per_department")
+    @patch("main.analytics.get_project_count_per_faculty")
+    def test_get(self, per_faculty_mock, per_dept_mock, auth_client):
+        """Tests the get method and the data provided."""
+        import bokeh
+
+        per_dept_mock.return_value = {"a": 5, "b": 4, "c": 7}
+        per_faculty_mock.return_value = {"D": 7, "E": 9, "F": 2}
+
+        endpoint = reverse("main:home")
+        response = auth_client.get(endpoint)
+        assert response.status_code == HTTPStatus.OK
+        assert "<script" in response.context["script"]
+        assert "<div" in response.context["div"]
+        assert response.context["bokeh_version"] == bokeh.__version__
