@@ -794,22 +794,28 @@ class TestIndexView(TemplateOkMixin):
     def _get_url(self):
         return reverse("main:home")
 
-    @patch("main.analytics.get_project_count_per_department")
-    @patch("main.analytics.get_project_count_per_faculty")
-    def test_template_used(self, per_faculty_mock, per_dept_mock, admin_client):
+    @patch("main.plots.create_analytics_layout")
+    @patch("main.plots.html_components_from_plot")
+    def test_template_used(
+        self, html_components_mock, create_layout_mock, admin_client
+    ):
         """Test the correct template is used by the GET request."""
-        per_dept_mock.return_value = {"a": 5, "b": 4, "c": 7}
-        per_faculty_mock.return_value = {"D": 7, "E": 9, "F": 2}
+        html_components_mock.return_value = {
+            "script": "<script>js</script>",
+            "div": "<div>html</div>",
+        }
         super().test_template_used(admin_client)
 
-    @patch("main.analytics.get_project_count_per_department")
-    @patch("main.analytics.get_project_count_per_faculty")
-    def test_get(self, per_faculty_mock, per_dept_mock, auth_client):
+    @patch("main.plots.create_analytics_layout")
+    @patch("main.plots.html_components_from_plot")
+    def test_get(self, html_components_mock, create_layout_mock, auth_client):
         """Tests the get method and the data provided."""
         import bokeh
 
-        per_dept_mock.return_value = {"a": 5, "b": 4, "c": 7}
-        per_faculty_mock.return_value = {"D": 7, "E": 9, "F": 2}
+        html_components_mock.return_value = {
+            "script": "<script>js</script>",
+            "div": "<div>html</div>",
+        }
 
         endpoint = reverse("main:home")
         response = auth_client.get(endpoint)

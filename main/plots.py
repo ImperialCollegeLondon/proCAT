@@ -1,5 +1,6 @@
 """Plots for displaying database data."""
 
+from collections.abc import Mapping
 from datetime import date, datetime, time, timedelta
 from itertools import cycle
 from math import pi
@@ -771,16 +772,20 @@ def create_project_evolution_layout(project: models.Project) -> Row | None:
     return plot_layout
 
 
-def create_pie_chart(category_name: str, data: dict[str, int]) -> figure:
+def create_pie_chart(
+    title: str, data: Mapping[str, int | float], tooltip_fmt: str = "@value"
+) -> figure:
     """Create a pie chart.
 
     Args:
-        category_name: The name of the category being displayed.
+        title: The title to display above the pie chart.
         data: The data being displayed.
+        tooltip_fmt: The format string for the tooltip.
 
     Returns:
         The Bokeh figure for the pie chart.
     """
+    category_name = title.replace(" ", "_")
     source = (
         pd.Series(data)
         .reset_index(name="value")
@@ -791,7 +796,7 @@ def create_pie_chart(category_name: str, data: dict[str, int]) -> figure:
     source["colour"] = Category20c[len(data)]
 
     plot = figure(
-        title=f"Projects per {category_name.lower()}",
+        title=title,
         toolbar_location=None,
         x_range=(-0.5, 1.0),  # type: ignore[arg-type]
     )
@@ -808,7 +813,7 @@ def create_pie_chart(category_name: str, data: dict[str, int]) -> figure:
         source=source,
     )
 
-    plot.add_tools(HoverTool(tooltips=f"@{category_name}: @value"))
+    plot.add_tools(HoverTool(tooltips=f"@{category_name}: {tooltip_fmt}"))
 
     plot.axis.axis_label = None
     plot.axis.visible = False
@@ -834,10 +839,19 @@ def create_analytics_layout() -> figure:
     plots = []
 
     proj_per_dept = analytics.get_project_count_per_department(projects_this_year)
-    plots.append(create_pie_chart(category_name="department", data=proj_per_dept))
+    plots.append(create_pie_chart(title="Projects per department", data=proj_per_dept))
 
     proj_per_fac = analytics.get_project_count_per_faculty(projects_this_year)
-    plots.append(create_pie_chart(category_name="faculty", data=proj_per_fac))
+    plots.append(create_pie_chart(title="Projects per faculty", data=proj_per_fac))
+
+    fund_per_dept = analytics.get_funding_per_department(projects_this_year)
+    plots.append(
+        create_pie_chart(
+            title="Funding per department",
+            data=fund_per_dept,
+            tooltip_fmt="£@value{0,0}",
+        )
+    )
 
     # Arrange the plots into a two-column grid layout
     layout = column(  # type: ignore[call-overload]

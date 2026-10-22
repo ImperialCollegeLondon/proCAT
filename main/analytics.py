@@ -30,6 +30,24 @@ def get_project_count_per_faculty(projects: list[models.Project]) -> dict[str, i
     return Counter([project.department.faculty for project in projects])
 
 
+def get_funding_per_department(projects: list[models.Project]) -> dict[str, float]:
+    """Determine the total project funding per department.
+
+    Args:
+        projects: The list of projects.
+
+    Returns:
+        A dictionary with department names and the project funding per department.
+    """
+    departments = [project.department.name for project in projects]
+    funding_per_department = dict.fromkeys(departments, 0.0)
+    for project in projects:
+        funding_per_department[project.department.name] += float(
+            sum([funding.budget for funding in project.funding_source.all()])
+        )
+    return funding_per_department
+
+
 def get_projects_active_between(from_date: date, to_date: date) -> list[models.Project]:
     """Get the projects under active development within a time frame.
 
