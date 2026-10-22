@@ -63,6 +63,41 @@ def get_funding_per_faculty(projects: list[models.Project]) -> dict[str, float]:
         )
     return funding_per_faculty
 
+def get_project_count_per_budget_type(projects: list[models.Project]) -> dict[str, int]:
+    """Determine the number of projects per type of budget.
+
+    Budget types are:
+    1. Internal (internal projects)
+    2. External FEC DI (directly incurred)
+    3. External FEC DA (directly allocated)
+    4. External Non-FEC
+    5. Other (internal funds for external projects)
+
+    Args:
+        projects: The list of projects.
+
+    Returns:
+        A dictionary with budget types and the number of projects per type.
+    """
+    # Select only funding instances that fund one of the input queried projects
+    project_fundings = models.Funding.objects.filter(project__in=projects)
+
+    # Categorise according to funding source
+    budget_types = ["Internal" for _ in project_fundings.filter(source="Internal")]
+    budget_types += [
+        "Other" for _ in project_fundings.filter(analysis_code__code=165138)
+    ]
+    budget_types += [
+        "FEC DI" for _ in project_fundings.filter(analysis_code__code=165133)
+    ]
+    budget_types += [
+        "FEC DA" for _ in project_fundings.filter(analysis_code__code=182130)
+    ]
+    budget_types += [
+        "Non-FEC" for _ in project_fundings.filter(analysis_code__code=165134)
+    ]
+
+    return Counter(budget_types)
 
 def get_projects_active_between(from_date: date, to_date: date) -> list[models.Project]:
     """Get the projects under active development within a time frame.
