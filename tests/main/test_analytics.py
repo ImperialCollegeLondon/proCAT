@@ -5,11 +5,13 @@ import datetime as dt
 import pytest
 
 from main.analytics import (
+    get_funding_per_department,
+    get_funding_per_faculty,
     get_project_count_per_department,
     get_project_count_per_faculty,
     get_projects_active_between,
 )
-from main.models import Department, Project
+from main.models import AnalysisCode, Department, Funding, Project
 
 
 @pytest.fixture
@@ -92,6 +94,65 @@ def projects_list(db):
     return projects_list
 
 
+@pytest.fixture
+def fundings_list(db):
+    """A list of fundings to cover a broad range of budget types."""
+    fundings_list = [
+        Funding(
+            project=Project.objects.get(name="Calcul8"),
+            cost_centre="abc",
+            source="External",
+            analysis_code=AnalysisCode.objects.get(code=165138),
+            budget=12.34,
+        ),
+        Funding(
+            project=Project.objects.get(name="Great Project"),
+            cost_centre=None,
+            source="Internal",
+            analysis_code=None,
+            budget=23.45,
+        ),
+        Funding(
+            project=Project.objects.get(name="Vaxin7"),
+            cost_centre="jkl",
+            source="External",
+            analysis_code=AnalysisCode.objects.get(code=182130),
+            budget=34.56,
+        ),
+        Funding(
+            project=Project.objects.get(name="Vaxin8"),
+            cost_centre="jkl",
+            source="External",
+            analysis_code=AnalysisCode.objects.get(code=182130),
+            budget=45.67,
+        ),
+        Funding(
+            project=Project.objects.get(name="Vaxin8"),
+            cost_centre="jkl",
+            source="External",
+            analysis_code=AnalysisCode.objects.get(code=165138),
+            budget=56.78,
+        ),
+        Funding(
+            project=Project.objects.get(name="ProjectX"),
+            cost_centre="uvw",
+            source="External",
+            analysis_code=AnalysisCode.objects.get(code=165134),
+            budget=67.89,
+        ),
+        Funding(
+            project=Project.objects.get(name="Picobots"),
+            cost_centre="pqr",
+            source="External",
+            analysis_code=AnalysisCode.objects.get(code=165138),
+            budget=78.90,
+        ),
+    ]
+    Funding.objects.bulk_create(fundings_list)
+
+    return fundings_list
+
+
 def test_get_project_count_per_department(projects_list: list[Project]):
     """Test the get_project_count_per_department function.
 
@@ -130,6 +191,33 @@ def test_get_project_count_per_faculty(projects_list: list[Project]):
     assert proj_per_faculty["Faculty of Medicine"] == 2
     assert proj_per_faculty.get("Imperial Business School") is None
     assert proj_per_faculty["Other"] == 1
+
+
+def test_get_funding_per_department(
+    projects_list: list[Project], fundings_list: list[Funding]
+):
+    """Test the get_funding_per_department function."""
+    fund_per_dept = get_funding_per_department(projects_list)
+
+    assert fund_per_dept["Mathematics"] == 12.34
+    assert fund_per_dept["Computing"] == 67.89
+    assert fund_per_dept["Materials"] == 78.90
+    assert fund_per_dept["Physics"] == 0
+    assert fund_per_dept["Immunology and Inflammation"] == 34.56 + 45.67 + 56.78
+    assert fund_per_dept["ICT"] == 23.45
+
+
+def test_get_funding_per_faculty(
+    projects_list: list[Project], fundings_list: list[Funding]
+):
+    """Test the get_funding_per_faculty function."""
+    fund_per_fac = get_funding_per_faculty(projects_list)
+
+    assert fund_per_fac["Faculty of Natural Sciences"] == 12.34
+    assert fund_per_fac["Faculty of Engineering"] == 67.89 + 78.90
+    assert fund_per_fac["Faculty of Medicine"] == 34.56 + 45.67 + 56.78
+    assert fund_per_fac.get("Imperial Business School") is None
+    assert fund_per_fac["Other"] == 23.45
 
 
 def test_get_projects_active_between(projects_list: list[Project]):

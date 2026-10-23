@@ -1,6 +1,6 @@
 """Functions for calculating team activity stats."""
 
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date
 
 from . import models
@@ -28,6 +28,40 @@ def get_project_count_per_faculty(projects: list[models.Project]) -> dict[str, i
         A dictionary with faculty names and the number of projects per faculty.
     """
     return Counter([project.department.faculty for project in projects])
+
+
+def get_funding_per_department(projects: list[models.Project]) -> dict[str, float]:
+    """Determine the total project funding per department.
+
+    Args:
+        projects: The list of projects.
+
+    Returns:
+        A dictionary with department names and the project funding per department.
+    """
+    funding_per_department: dict[str, float] = defaultdict(float)
+    for project in projects:
+        funding_per_department[project.department.name] += float(
+            sum([funding.budget for funding in project.funding_source.all()])
+        )
+    return funding_per_department
+
+
+def get_funding_per_faculty(projects: list[models.Project]) -> dict[str, float]:
+    """Determine the total project funding per faculty.
+
+    Args:
+        projects: The list of projects.
+
+    Returns:
+        A dictionary with faculty names and the project funding per faculty.
+    """
+    funding_per_faculty: dict[str, float] = defaultdict(float)
+    for project in projects:
+        funding_per_faculty[project.department.faculty] += float(
+            sum([funding.budget for funding in project.funding_source.all()])
+        )
+    return funding_per_faculty
 
 
 def get_projects_active_between(from_date: date, to_date: date) -> list[models.Project]:
