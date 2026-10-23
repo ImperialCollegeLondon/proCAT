@@ -10,6 +10,7 @@ from main.analytics import (
     get_funding_per_faculty,
     get_project_count_per_department,
     get_project_count_per_faculty,
+    get_project_count_per_funding_body,
     get_projects_active_between,
 )
 from main.models import AnalysisCode, Department, Funding, Project
@@ -103,6 +104,7 @@ def fundings_list(db):
             project=Project.objects.get(name="Calcul8"),
             cost_centre="abc",
             source="External",
+            funding_body="MathsProjectFunder55",
             analysis_code=AnalysisCode.objects.get(code=165138),
             budget=12.34,
         ),
@@ -117,6 +119,7 @@ def fundings_list(db):
             project=Project.objects.get(name="Vaxin7"),
             cost_centre="jkl",
             source="External",
+            funding_body="MedFunds (Tech)",
             analysis_code=AnalysisCode.objects.get(code=182130),
             budget=34.56,
         ),
@@ -124,6 +127,7 @@ def fundings_list(db):
             project=Project.objects.get(name="Vaxin8"),
             cost_centre="jkl",
             source="External",
+            funding_body="MedFunds (Core)",
             analysis_code=AnalysisCode.objects.get(code=182130),
             budget=45.67,
         ),
@@ -131,6 +135,7 @@ def fundings_list(db):
             project=Project.objects.get(name="Vaxin8"),
             cost_centre="jkl",
             source="External",
+            funding_body="MedFunds (Tech)",
             analysis_code=AnalysisCode.objects.get(code=165138),
             budget=56.78,
         ),
@@ -138,6 +143,7 @@ def fundings_list(db):
             project=Project.objects.get(name="ProjectX"),
             cost_centre="uvw",
             source="External",
+            funding_body="SecretTechOrg (Division51)",
             analysis_code=AnalysisCode.objects.get(code=165134),
             budget=67.89,
         ),
@@ -145,6 +151,7 @@ def fundings_list(db):
             project=Project.objects.get(name="Picobots"),
             cost_centre="pqr",
             source="External",
+            funding_body="Picotechnology Research Centre",
             analysis_code=AnalysisCode.objects.get(code=165138),
             budget=78.90,
         ),
@@ -241,6 +248,19 @@ def test_get_funding_per_budget_type(
 
     # Zero with code=165133 (FEC DI)
     assert fund_per_budget_type.get("FEC DI") == 0
+
+
+def test_get_project_count_per_funding_body(
+    projects_list: list[Project], fundings_list: list[Funding]
+):
+    """Test the get_project_count_per_funding_body function."""
+    proj_per_funder = get_project_count_per_funding_body(projects_list)
+
+    assert proj_per_funder["MathsProjectFunder55"] == 1
+    assert proj_per_funder["Internal"] == 1
+    assert proj_per_funder["MedFunds"] == 3
+    assert proj_per_funder["SecretTechOrg"] == 1
+    assert proj_per_funder["Picotechnology Research Centre"] == 1
 
 
 def test_get_projects_active_between(projects_list: list[Project]):
