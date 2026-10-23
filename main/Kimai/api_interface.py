@@ -1,7 +1,7 @@
 """Kimai API Interface Module."""
 
 from collections.abc import Mapping
-from datetime import datetime, timedelta
+from datetime import datetime
 from logging import getLogger
 from typing import Any
 
@@ -64,14 +64,7 @@ class KimaiAPI:
         )
 
         if response.status_code == 200:
-            try:
-                return [_process_entry(p) for p in response.json()]
-            except ValueError as e:
-                logger.error(
-                    "There was a problem processing time entries for project "
-                    f"{project_id}: {e}"
-                )
-                return []
+            return [_process_entry(p) for p in response.json()]
         else:
             response.raise_for_status()
         return []
@@ -82,9 +75,6 @@ def _process_entry(entry: dict[str, Any]) -> dict[str, Any]:  # type: ignore[exp
 
     Args:
         entry: The raw entry to process.
-
-    Raises:
-        ValueError if any of the values to extract are None/empty.
 
     Return:
         A dictionary containing the entry id, project id, user email and
@@ -98,23 +88,4 @@ def _process_entry(entry: dict[str, Any]) -> dict[str, Any]:  # type: ignore[exp
         end=entry.get("end"),
     )
 
-    is_none = [key for key, value in processed.items() if not value]
-    if is_none:
-        raise ValueError(f"Error processing time entry for project {entry}.")
-
     return processed
-
-
-if __name__ == "__main__":
-    import os
-
-    KIMAI_BASE_URL = os.environ.get("KIMAI_BASE_URL", "")
-    KIMAI_API_TOKEN = os.environ.get("KIMAI_API_TOKEN", "")
-    project_id = 78
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=30)
-
-    kimai = KimaiAPI(KIMAI_API_TOKEN, KIMAI_BASE_URL)
-    entries = kimai.get_time_entries(start_date, end_date, project_id)
-
-    print(entries)
