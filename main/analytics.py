@@ -1,6 +1,6 @@
 """Functions for calculating team activity stats."""
 
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date
 
 from . import models
@@ -39,8 +39,7 @@ def get_funding_per_department(projects: list[models.Project]) -> dict[str, floa
     Returns:
         A dictionary with department names and the project funding per department.
     """
-    departments = [project.department.name for project in projects]
-    funding_per_department = dict.fromkeys(departments, 0.0)
+    funding_per_department: dict[str, float] = defaultdict(float)
     for project in projects:
         funding_per_department[project.department.name] += float(
             sum([funding.budget for funding in project.funding_source.all()])
@@ -57,8 +56,7 @@ def get_funding_per_faculty(projects: list[models.Project]) -> dict[str, float]:
     Returns:
         A dictionary with faculty names and the project funding per faculty.
     """
-    faculties = [project.department.faculty for project in projects]
-    funding_per_faculty = dict.fromkeys(faculties, 0.0)
+    funding_per_faculty: dict[str, float] = defaultdict(float)
     for project in projects:
         funding_per_faculty[project.department.faculty] += float(
             sum([funding.budget for funding in project.funding_source.all()])
