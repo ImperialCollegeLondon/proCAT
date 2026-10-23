@@ -643,9 +643,48 @@ class TestSyncKimaiTimeEntries:
             },
         ]
 
-        sync_kimai_time_entries()
+        issues = sync_kimai_time_entries()
 
-        assert "User non.existent.user@example.com not found" in caplog.text
+        msg = "User non.existent.user@example.com not found. Skipping entry 1."
+        assert msg in caplog.text
+        assert msg in issues
+        assert TimeEntry.objects.count() == 0
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.KimaiAPI")
+    def test_skips_entry_if_times_incomplete(
+        self, mock_kimai_api, mock_settings, funding, caplog, user
+    ):
+        """Test that entries are skipped if the user does not exist in the database."""
+        mock_settings.KIMAI_API_TOKEN = "fake_key"
+        mock_settings.KIMAI_BASE_URL = "some_url"
+        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
+            datetime(2020, 7, 16, 10, 0, 0)
+        )
+        project = funding.project
+        project.kimai_id = 1
+        project.status = "Active"
+        project.save()
+
+        mock_api_instance = mock_kimai_api.return_value
+        mock_api_instance.get_time_entries.return_value = [
+            {
+                "entry_id": 1,
+                "project_id": project.kimai_id,
+                "user_email": user.email,
+                "start": "2025-07-15T12:00:00Z",
+                "end": None,
+            },
+        ]
+
+        issues = sync_kimai_time_entries()
+
+        msg = (
+            "Start or end times for entry 1 in project "
+            f"{project.kimai_id} - {project.name} could not processed."
+        )
+        assert msg in caplog.text
+        assert msg in issues
         assert TimeEntry.objects.count() == 0
 
     @patch("main.tasks.settings")
