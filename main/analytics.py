@@ -63,8 +63,9 @@ def get_funding_per_faculty(projects: list[models.Project]) -> dict[str, float]:
         )
     return funding_per_faculty
 
-def get_project_count_per_budget_type(projects: list[models.Project]) -> dict[str, int]:
-    """Determine the number of projects per type of budget.
+
+def get_funding_per_budget_type(projects: list[models.Project]) -> dict[str, int]:
+    """Determine the total project funding per type of budget.
 
     Budget types are:
     1. Internal (internal projects)
@@ -73,31 +74,57 @@ def get_project_count_per_budget_type(projects: list[models.Project]) -> dict[st
     4. External Non-FEC
     5. Other (internal funds for external projects)
 
+    Projects with status='Tentative' or 'Not done' will be excluded, as they have no
+    analysis code.
+
     Args:
         projects: The list of projects.
 
     Returns:
-        A dictionary with budget types and the number of projects per type.
+        A dictionary with budget types and the total project funding per type.
     """
     # Select only funding instances that fund one of the input queried projects
     project_fundings = models.Funding.objects.filter(project__in=projects)
 
-    # Categorise according to funding source
-    budget_types = ["Internal" for _ in project_fundings.filter(source="Internal")]
-    budget_types += [
-        "Other" for _ in project_fundings.filter(analysis_code__code=165138)
-    ]
-    budget_types += [
-        "FEC DI" for _ in project_fundings.filter(analysis_code__code=165133)
-    ]
-    budget_types += [
-        "FEC DA" for _ in project_fundings.filter(analysis_code__code=182130)
-    ]
-    budget_types += [
-        "Non-FEC" for _ in project_fundings.filter(analysis_code__code=165134)
-    ]
+    funding_per_budget_type: dict[str, float] = {}
+    funding_per_budget_type["Internal"] = float(
+        sum([funding.budget for funding in project_fundings.filter(source="Internal")])
+    )
+    funding_per_budget_type["Other"] = float(
+        sum(
+            [
+                funding.budget
+                for funding in project_fundings.filter(analysis_code__code=165138)
+            ]
+        )
+    )
+    funding_per_budget_type["FEC DI"] = float(
+        sum(
+            [
+                funding.budget
+                for funding in project_fundings.filter(analysis_code__code=165133)
+            ]
+        )
+    )
+    funding_per_budget_type["FEC DA"] = float(
+        sum(
+            [
+                funding.budget
+                for funding in project_fundings.filter(analysis_code__code=182130)
+            ]
+        )
+    )
+    funding_per_budget_type["Non-FEC"] = float(
+        sum(
+            [
+                funding.budget
+                for funding in project_fundings.filter(analysis_code__code=165134)
+            ]
+        )
+    )
 
-    return Counter(budget_types)
+    return Counter(funding_per_budget_type)
+
 
 def get_projects_active_between(from_date: date, to_date: date) -> list[models.Project]:
     """Get the projects under active development within a time frame.

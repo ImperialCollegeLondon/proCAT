@@ -5,9 +5,9 @@ import datetime as dt
 import pytest
 
 from main.analytics import (
+    get_funding_per_budget_type,
     get_funding_per_department,
     get_funding_per_faculty,
-    get_project_count_per_budget_type,
     get_project_count_per_department,
     get_project_count_per_faculty,
     get_projects_active_between,
@@ -221,26 +221,26 @@ def test_get_funding_per_faculty(
     assert fund_per_fac["Other"] == 23.45
 
 
-def test_get_project_count_per_budget_type(
+def test_get_funding_per_budget_type(
     projects_list: list[Project], fundings_list: list[Funding]
 ):
-    """Test the get_project_count_per_budget_type function."""
-    proj_per_budget_type = get_project_count_per_budget_type(projects_list)
+    """Test the get_budget_per_budget_type function."""
+    fund_per_budget_type = get_funding_per_budget_type(projects_list)
 
     # Three with code=165138 (Other)
-    assert proj_per_budget_type["Other"] == 3
+    assert fund_per_budget_type["Other"] == 12.34 + 56.78 + 78.90
 
     # One with None (Internal)
-    assert proj_per_budget_type["Internal"] == 1
+    assert fund_per_budget_type["Internal"] == 23.45
 
     # One with code=165134 (Non-FEC)
-    assert proj_per_budget_type["Non-FEC"] == 1
+    assert fund_per_budget_type["Non-FEC"] == 67.89
 
     # Two with code=182130 (FEC DA)
-    assert proj_per_budget_type["FEC DA"] == 2
+    assert fund_per_budget_type["FEC DA"] == 34.56 + 45.67
 
     # Zero with code=165133 (FEC DI)
-    assert proj_per_budget_type.get("FEC DI") is None
+    assert fund_per_budget_type.get("FEC DI") == 0
 
 
 def test_get_projects_active_between(projects_list: list[Project]):
