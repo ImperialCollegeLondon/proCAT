@@ -1,7 +1,8 @@
 """Tests for the plots module."""
 
 from datetime import datetime, time, timedelta
-from unittest.mock import patch
+from math import pi
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -106,3 +107,63 @@ def test_create_cost_recovery_plot(project, funding):
     assert bar_plot.yaxis.axis_label == "Total charge (£)"
     assert bar_plot.xaxis.axis_label == "Month-Year"
     assert isinstance(bar_plot.tools[-1], HoverTool)
+
+
+@patch("main.plots.figure")
+@patch("main.plots.HoverTool")
+@patch("main.plots.cumsum")
+def test_create_pie_chart(cumsum_mock, hovertool_mock, figure_mock):
+    """Test the create_pie_chart function."""
+    from bokeh.palettes import Category20c
+
+    from main.plots import create_pie_chart
+
+    # Create raw parameters
+    data = {"a": 2, "b": 5, "c": 11, "d": 3, "e": 7}
+    title = "Pie chart title"
+
+    # Create expected intermediary parameters
+    category_name = "Pie_chart_title"
+    source = (
+        pd.Series(data)
+        .reset_index(name="value")
+        .rename(columns={"index": category_name})
+    )
+    source = source.sort_values(by=category_name)
+    source["angle"] = [val * 2 * pi / 28 for val in (2, 5, 11, 3, 7)]
+    source["colour"] = Category20c[len(data)]
+
+    plot_mock = MagicMock()
+    figure_mock.return_value = plot_mock
+    hovertool = hovertool_mock(tooltips=f"@{category_name}: value")
+
+    # Call the function to generate the plot
+    plot = create_pie_chart(title=title, data=data)
+
+    # Check figure created correctly
+    figure_mock.assert_called_once_with(
+        title=title, toolbar_location=None, x_range=(-0.5, 1.0)
+    )
+
+    # Check pie chart created correctly
+    plot_mock.wedge.assert_called_once()
+    # Need to check arguments individually as source is complex
+    plot_mock.wedge.call_args[1]["x"] == 0
+    plot_mock.wedge.call_args[1]["y"] == 1
+    plot_mock.wedge.call_args[1]["start_angle"] == cumsum_mock(
+        "angle", include_zero=True
+    )
+    plot_mock.wedge.call_args[1]["end_angle"] == cumsum_mock("angle")
+    plot_mock.wedge.call_args[1]["radius"] == 0.4
+    plot_mock.wedge.call_args[1]["line_color"] == "white"
+    plot_mock.wedge.call_args[1]["fill_color"] == "colour"
+    plot_mock.wedge.call_args[1]["legend_field"] == "Pie_chart_title"
+    pd.testing.assert_frame_equal(plot_mock.wedge.call_args[1]["source"], source)
+
+    # Check hover tool added correctly
+    plot_mock.add_tools.assert_called_once_with(hovertool)
+
+    # Check axis properties set correctly
+    assert plot.axis.axis_label is None
+    assert not plot.axis.visible
+    assert plot.grid.grid_line_color is None
