@@ -8,6 +8,7 @@ from main.analytics import (
     get_funding_per_budget_type,
     get_funding_per_department,
     get_funding_per_faculty,
+    get_funding_per_funding_body,
     get_project_count_per_department,
     get_project_count_per_faculty,
     get_project_count_per_funding_body,
@@ -261,6 +262,19 @@ def test_get_project_count_per_funding_body(
     assert proj_per_funder["MedFunds"] == 3
     assert proj_per_funder["SecretTechOrg"] == 1
     assert proj_per_funder["Picotechnology Research Centre"] == 1
+
+
+def test_get_funding_per_funding_body(
+    projects_list: list[Project], fundings_list: list[Funding]
+):
+    """Test the get_funding_per_funding_body function."""
+    fund_per_funder = get_funding_per_funding_body(projects_list)
+
+    assert fund_per_funder["MathsProjectFunder55"] == 12.34
+    assert fund_per_funder["Internal"] == 23.45
+    assert fund_per_funder["MedFunds"] == 34.56 + 45.67 + 56.78
+    assert fund_per_funder["SecretTechOrg"] == 67.89
+    assert fund_per_funder["Picotechnology Research Centre"] == 78.90
 
 
 def test_get_projects_active_between(projects_list: list[Project]):
