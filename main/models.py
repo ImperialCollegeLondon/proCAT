@@ -752,7 +752,15 @@ class Funding(models.Model):
         return f"{self.project} - £{self.budget:.2f} - {self.project_code}"
 
     def clean(self) -> None:
-        """Ensure that the activity code has a valid value."""
+        """Perform validation of the Funding instance.
+
+        Raises:
+            ValidationError: If active, confirmed, or projects in maintenance have
+                incomplete funding sources.
+            ValidationError: If an internal funding source has the a non-null funding
+                body, cost centre, activity or analysis code.
+            ValidationError: If the activity code is not of the correct format.
+        """
         try:
             project = self.project
         except ObjectDoesNotExist:
@@ -779,6 +787,12 @@ class Funding(models.Model):
                 "G or I."
             )
 
+        if not self.is_valid_internal():
+            raise ValidationError(
+                "Internally funded projects cannot have a funding body, cost centre,"
+                " activity or analysis code."
+            )
+
     def is_complete(self) -> bool:
         """Checks if funding record is complete.
 
@@ -794,6 +808,21 @@ class Funding(models.Model):
             and self.analysis_code
             and self.expiry_date
         )
+
+    def is_valid_internal(self) -> bool:
+        """Checks an internal funding source has the relevant null fields."""
+        if self.source == "Internal" and any(
+            value not in (None, "")
+            for value in (
+                self.funding_body,
+                self.cost_centre,
+                self.activity,
+                self.analysis_code,
+            )
+        ):
+            return False
+        else:
+            return True
 
     @property
     def project_code(self) -> str:
