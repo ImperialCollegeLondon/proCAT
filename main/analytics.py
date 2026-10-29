@@ -98,10 +98,7 @@ def get_funding_per_budget_type(projects: list[models.Project]) -> dict[str, int
     }
     for ac in models.AnalysisCode.objects.all():
         funding_per_budget_type[names[ac.code]] = float(
-            sum(
-                funding.budget
-                for funding in project_fundings.filter(analysis_code=ac)
-            )
+            sum(funding.budget for funding in project_fundings.filter(analysis_code=ac))
         )
 
     return Counter(funding_per_budget_type)
