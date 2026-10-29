@@ -811,14 +811,8 @@ class Funding(models.Model):
 
     def is_valid_internal(self) -> bool:
         """Checks an internal funding source has the relevant null fields."""
-        if self.source == "Internal" and any(
-            value not in (None, "")
-            for value in (
-                self.funding_body,
-                self.cost_centre,
-                self.activity,
-                self.analysis_code,
-            )
+        if self.source == "Internal" and (
+            self.funding_body or self.cost_centre or self.activity or self.analysis_code
         ):
             return False
         else:
