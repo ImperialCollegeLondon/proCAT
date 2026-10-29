@@ -995,6 +995,26 @@ class TestFunding:
         with expectation:
             funding.clean()
 
+    def test_clean_invalid_internal(self):
+        """Test the clean method on an internal project with invalid properties.
+
+        Project and Funding instances taken from test_clean, so is otherwise valid, but
+        now has source="Internal".
+        """
+        from main import models
+
+        project = models.Project(name="ProCAT")
+        funding = models.Funding(
+            project=project,
+            budget=10000.00,
+            cost_centre="centre",
+            activity="G12345",
+            source="Internal",
+            daily_rate=389.00,
+        )
+        with pytest.raises(ValidationError, match="Internally funded projects cannot"):
+            funding.clean()
+
     @pytest.mark.parametrize(
         ["budget", "expectation"],
         [
@@ -1155,6 +1175,57 @@ class TestFunding:
         assert funding.monthly_pro_rata_charge(start_date) == expected_charge
         # Last month is not charged, so the charge is None
         assert funding.monthly_pro_rata_charge(end_date) is None
+
+    @pytest.mark.django_db
+    def test_is_valid_internal(self, project):
+        """Test Funding's is_valid_internal method."""
+        from main.models import Funding
+
+        valid_internal1 = Funding(
+            project=project,
+            source="Internal",
+            funding_body=None,
+            cost_centre=None,
+            activity=None,
+            budget=98.76,
+            daily_rate=12.34,
+        )
+        assert valid_internal1.is_valid_internal()
+
+        valid_internal2 = Funding(
+            project=project,
+            source="Internal",
+            funding_body="",
+            cost_centre="",
+            activity="",
+            budget=98.76,
+            daily_rate=12.34,
+        )
+        assert valid_internal2.is_valid_internal()
+
+        invalid_internal1 = Funding(
+            project=project,
+            source="Internal",
+            funding_body="UKFB",  # forbidden
+            cost_centre=None,
+            activity=None,
+            budget=98.76,
+            daily_rate=12.34,
+        )
+
+        assert not invalid_internal1.is_valid_internal()
+
+        invalid_internal2 = Funding(
+            project=project,
+            source="Internal",
+            funding_body=None,
+            cost_centre="QWERTY",  # forbidden
+            activity="G23456",  # also forbidden
+            budget=98.76,
+            daily_rate=12.34,
+        )
+
+        assert not invalid_internal2.is_valid_internal()
 
 
 class TestCapacity:
