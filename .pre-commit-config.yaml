@@ -38,7 +38,7 @@ repos:
   # locally (`.venv/bin/djlint --version`) can make it flip-flop the same
   # lines back and forth across commits.
   - repo: https://github.com/djlint/djLint
-    rev: v1.47.0
+    rev: v1.47.1
     hooks:
       - id: djlint-reformat-django
       - id: djlint-django

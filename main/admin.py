@@ -115,16 +115,16 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
     def sync_time_entries_view(self, request: HttpRequest) -> HttpResponse:
         """Forces a synchronisation of timesheets."""
-        issues = sync_clockify_time_entries()
-        issues = sync_kimai_time_entries() or issues
+        issues = []
+        clockify_issues = sync_clockify_time_entries()
+        if clockify_issues:
+            issues.append("There were issues when pulling time entries from Clockify.")
+        issues = issues + sync_kimai_time_entries()
         if not issues:
-            self.message_user(request, "Syncronysation completted successfully!")
+            self.message_user(request, "Synchronisation completed successfully!")
         else:
-            self.message_user(
-                request,
-                "Something went wrong with the synchronisation. Check the logs.",
-                level=messages.ERROR,
-            )
+            msg = "\n".join(issues)
+            self.message_user(request, msg, level=messages.ERROR)
         return HttpResponseRedirect(reverse("admin:main_timeentry_changelist"))
 
 

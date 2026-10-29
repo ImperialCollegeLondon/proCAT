@@ -398,7 +398,7 @@ def sync_clockify_time_entries(
 def sync_kimai_time_entries(
     days_back: int = 30,
     end_date: datetime.datetime = timezone.now(),
-) -> bool:
+) -> list[str]:
     """Task to sync time entries from Kimai API to TimeEntry model.
 
     Args:
@@ -406,16 +406,16 @@ def sync_kimai_time_entries(
         end_date (datetime.datetime): The end date for the time entries to fetch.
 
     Returns:
-        True if there is any issue, and False if all went well.
+        A list with the issues found, if any. If all goes well, returns an empty list.
     """
-    issues = False
+    issues = []
     if (
         not settings.KIMAI_API_TOKEN
         or not settings.KIMAI_BASE_URL
         or not settings.CLOCKIFY_CUTOVER_DATE
     ):
         logger.warning("Kimai API information not found in environment variables")
-        return False
+        return []
 
     api = KimaiAPI(settings.KIMAI_API_TOKEN, settings.KIMAI_BASE_URL)
     start_date = end_date - datetime.timedelta(days=days_back)
@@ -427,7 +427,7 @@ def sync_kimai_time_entries(
         else settings.CLOCKIFY_CUTOVER_DATE
     )
     if end_date < start_date:
-        return False
+        return []
 
     projects = Project.objects.filter(status__in=["Active", "Maintenance"]).exclude(
         kimai_id=-1
@@ -439,11 +439,11 @@ def sync_kimai_time_entries(
         try:
             entries = api.get_time_entries(start_date, end_date, project.kimai_id)
         except Exception as e:
-            logger.error(
+            issues.append(
                 f"Error fetching time entries for project {project.kimai_id} - "
                 f"{project.name}: {e}"
             )
-            issues = issues or True
+            logger.warning(issues[-1])
             continue
 
         seen_entry_ids: set[str] = set()
@@ -457,18 +457,29 @@ def sync_kimai_time_entries(
             start = entry["start"]
             end = entry["end"]
 
+            # We check that the user exists
             try:
                 user = User.objects.get(email=user_email)
             except User.DoesNotExist:
-                logger.warning(
+                issues.append(
                     f"User {user_email} not found. Skipping entry {entry_id}."
                 )
-                issues = issues or True
+                logger.warning(issues[-1])
                 continue
 
-            start_time = datetime.datetime.fromisoformat(start)
-            end_time = datetime.datetime.fromisoformat(end)
+            # And that the time entry has start and end times
+            try:
+                start_time = datetime.datetime.fromisoformat(start)
+                end_time = datetime.datetime.fromisoformat(end)
+            except Exception:
+                issues.append(
+                    f"Start or end times for entry {entry_id} in project "
+                    f"{project.kimai_id} - {project.name} could not processed."
+                )
+                logger.warning(issues[-1])
+                continue
 
+            # Only then, we create the time entry
             TimeEntry.objects.update_or_create(
                 kimai_id=entry_id,
                 defaults={
