@@ -158,7 +158,9 @@ def get_funding_per_funding_body(projects: list[models.Project]) -> dict[str, fl
     for funding_body, budget in project_fundings.values_list("funding_body", "budget"):
         # Assume funding bodies are in the form "Name (...)" or simply "Name"
         body = (
-            funding_body.split("(")[0].strip() if isinstance(funding_body, str) else "Internal"
+            funding_body.split("(")[0].strip()
+            if isinstance(funding_body, str)
+            else "Internal"
         )
         funding_per_body[body] += float(budget)
 
