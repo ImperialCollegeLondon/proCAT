@@ -90,38 +90,19 @@ def get_funding_per_budget_type(projects: list[models.Project]) -> dict[str, int
     funding_per_budget_type["Internal"] = float(
         sum([funding.budget for funding in project_fundings.filter(source="Internal")])
     )
-    funding_per_budget_type["Other"] = float(
-        sum(
-            [
+    names = {
+        165138: "Other",
+        165133: "FEC DI",
+        182130: "FEC DA",
+        165134: "Non-FEC",
+    }
+    for ac in models.AnalysisCode.objects.all():
+        funding_per_budget_type[names[ac.code]] = float(
+            sum(
                 funding.budget
-                for funding in project_fundings.filter(analysis_code__code=165138)
-            ]
+                for funding in project_fundings.filter(analysis_code=ac)
+            )
         )
-    )
-    funding_per_budget_type["FEC DI"] = float(
-        sum(
-            [
-                funding.budget
-                for funding in project_fundings.filter(analysis_code__code=165133)
-            ]
-        )
-    )
-    funding_per_budget_type["FEC DA"] = float(
-        sum(
-            [
-                funding.budget
-                for funding in project_fundings.filter(analysis_code__code=182130)
-            ]
-        )
-    )
-    funding_per_budget_type["Non-FEC"] = float(
-        sum(
-            [
-                funding.budget
-                for funding in project_fundings.filter(analysis_code__code=165134)
-            ]
-        )
-    )
 
     return Counter(funding_per_budget_type)
 
