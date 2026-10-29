@@ -464,7 +464,7 @@ def sync_kimai_time_entries(
                 issues.append(
                     f"User {user_email} not found. Skipping entry {entry_id}."
                 )
-                logging.warning(issues[-1])
+                logger.warning(issues[-1])
                 continue
 
             # And that the time entry has start and end times

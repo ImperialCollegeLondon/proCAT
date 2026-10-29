@@ -121,7 +121,7 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
             issues.append("There were issues when pulling time entries from Clockify.")
         issues = issues + sync_kimai_time_entries()
         if not issues:
-            self.message_user(request, "Synchronisation completted successfully!")
+            self.message_user(request, "Synchronisation completed successfully!")
         else:
             msg = "\n".join(issues)
             self.message_user(request, msg, level=messages.ERROR)
