@@ -862,6 +862,15 @@ def create_analytics_layout() -> figure:
         )
     )
 
+    fund_per_budget_type = analytics.get_funding_per_budget_type(projects_this_year)
+    plots.append(
+        create_pie_chart(
+            title="Funding per budget type",
+            data=fund_per_budget_type,
+            tooltip_fmt="£@value{0,0}",
+        )
+    )
+
     # Arrange the plots into a two-column grid layout
     layout = column(  # type: ignore[call-overload]
         [
