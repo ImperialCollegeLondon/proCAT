@@ -127,7 +127,7 @@ def get_project_count_per_funding_body(
     # Assume funding bodies are named in the form "Name (...)" or simply "Name"
     return Counter(
         [
-            fund.funding_body.split(" (")[0]
+            fund.funding_body.split("(")[0].strip()
             if isinstance(fund.funding_body, str)
             else "Internal"
             for fund in project_fundings
