@@ -871,6 +871,20 @@ def create_analytics_layout() -> figure:
         )
     )
 
+    proj_per_funder = analytics.get_project_count_per_funding_body(projects_this_year)
+    plots.append(
+        create_pie_chart(title="Projects per funding body", data=proj_per_funder)
+    )
+
+    funds_per_funder = analytics.get_funding_per_funding_body(projects_this_year)
+    plots.append(
+        create_pie_chart(
+            title="Funding per funding body",
+            data=funds_per_funder,
+            tooltip_fmt="£@value{0,0}",
+        )
+    )
+
     # Arrange the plots into a two-column grid layout
     layout = column(  # type: ignore[call-overload]
         [

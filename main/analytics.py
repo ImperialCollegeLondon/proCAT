@@ -104,6 +104,69 @@ def get_funding_per_budget_type(projects: list[models.Project]) -> dict[str, int
     return Counter(funding_per_budget_type)
 
 
+def get_project_count_per_funding_body(
+    projects: list[models.Project],
+) -> dict[str, int]:
+    """Determine the number of projects per funding body.
+
+    Projects with funding body TBC are excluded, as are tentative projects.
+
+    Args:
+        projects: The list of projects.
+
+    Returns:
+        A dictionary with funding bodies and the number of projects per body.
+    """
+    # Select only funding instances that fund one of the input queried projects
+    project_fundings = (
+        models.Funding.objects.filter(project__in=projects)
+        .exclude(project__status="Tentative")
+        .exclude(funding_body="TBC")
+    )
+
+    # Assume funding bodies are named in the form "Name (...)" or simply "Name"
+    return Counter(
+        [
+            fund.funding_body.split("(")[0].strip()
+            if isinstance(fund.funding_body, str)
+            else "Internal"
+            for fund in project_fundings
+        ]
+    )
+
+
+def get_funding_per_funding_body(projects: list[models.Project]) -> dict[str, float]:
+    """Determine the total project funding per funding body.
+
+    Projects with funding body TBC are excluded, as are tentative projects.
+
+    Args:
+        projects: The list of projects.
+
+    Returns:
+        A dictionary with funding bodies and the total project funding per body.
+    """
+    # Select only funding instances that fund one of the input queried projects
+    project_fundings = (
+        models.Funding.objects.filter(project__in=projects)
+        .exclude(project__status="Tentative")
+        .exclude(funding_body="TBC")
+    )
+
+    # Determine total funding from each funding body across queried projects
+    funding_per_body: dict[str, float] = defaultdict(float)
+    for funding_body, budget in project_fundings.values_list("funding_body", "budget"):
+        # Assume funding bodies are in the form "Name (...)" or simply "Name"
+        body = (
+            funding_body.split("(")[0].strip()
+            if isinstance(funding_body, str)
+            else "Internal"
+        )
+        funding_per_body[body] += float(budget)
+
+    return funding_per_body
+
+
 def get_projects_active_between(from_date: date, to_date: date) -> list[models.Project]:
     """Get the projects under active development within a time frame.
 
