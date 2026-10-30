@@ -1,6 +1,7 @@
 """Plots for displaying database data."""
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from itertools import cycle
 from math import pi
@@ -33,6 +34,17 @@ from .utils import (
     get_financial_year_dates,
     get_month_dates_for_previous_years,
 )
+
+
+@dataclass
+class AnalyticsFigure:
+    """A plot to show in a group on the analytics page."""
+
+    plot: figure
+    """The plot to be displayed."""
+
+    group: str
+    """The group to which the plot belongs."""
 
 
 def add_varea_glyph(
@@ -825,59 +837,91 @@ def create_pie_chart(
     return plot
 
 
-def _create_analytics_plots(projects: list[models.Project]) -> dict[str, figure]:
+def _create_analytics_plots(projects: list[models.Project]) -> list[AnalyticsFigure]:
     """Create the set of analytics charts to display on the landing page.
 
     Args:
         projects: The list of projects to get analytics for.
 
     Returns:
-        A dictionary of plots keyed by title.
+        A list of AnalyticsFigures, each containing their plot and group.
     """
-    plots = {}
+    figures = []
     proj_per_dept = analytics.get_project_count_per_department(projects)
-    plots["Projects per department"] = create_pie_chart(
-        title="Projects per department", data=proj_per_dept
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(title="Projects per department", data=proj_per_dept),
+            group="projects",
+        )
     )
 
     proj_per_fac = analytics.get_project_count_per_faculty(projects)
-    plots["Projects per faculty"] = create_pie_chart(
-        title="Projects per faculty", data=proj_per_fac
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(title="Projects per faculty", data=proj_per_fac),
+            group="projects",
+        )
     )
 
     fund_per_dept = analytics.get_funding_per_department(projects)
-    plots["Funding per department"] = create_pie_chart(
-        title="Funding per department",
-        data=fund_per_dept,
-        tooltip_fmt="£@value{0,0}",
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Funding per department",
+                data=fund_per_dept,
+                tooltip_fmt="£@value{0,0}",
+            ),
+            group="funding",
+        )
     )
 
     fund_per_fac = analytics.get_funding_per_faculty(projects)
-    plots["Funding per faculty"] = create_pie_chart(
-        title="Funding per faculty",
-        data=fund_per_fac,
-        tooltip_fmt="£@value{0,0}",
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Funding per faculty",
+                data=fund_per_fac,
+                tooltip_fmt="£@value{0,0}",
+            ),
+            group="funding",
+        )
     )
 
     fund_per_budget_type = analytics.get_funding_per_budget_type(projects)
-    plots["Funding per budget type"] = create_pie_chart(
-        title="Funding per budget type",
-        data=fund_per_budget_type,
-        tooltip_fmt="£@value{0,0}",
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Funding per budget type",
+                data=fund_per_budget_type,
+                tooltip_fmt="£@value{0,0}",
+            ),
+            group="budget",
+        )
     )
 
     proj_per_funder = analytics.get_project_count_per_funding_body(projects)
-    plots["Projects per funding body"] = create_pie_chart(
-        title="Projects per funding body", data=proj_per_funder
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Projects per funding body", data=proj_per_funder
+            ),
+            group="funder",
+        )
     )
 
     funds_per_funder = analytics.get_funding_per_funding_body(projects)
-    plots["Funding per funding body"] = create_pie_chart(
-        title="Funding per funding body",
-        data=funds_per_funder,
-        tooltip_fmt="£@value{0,0}",
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Funding per funding body",
+                data=funds_per_funder,
+                tooltip_fmt="£@value{0,0}",
+            ),
+            group="funder",
+        )
     )
-    return plots
+
+    return figures
 
 
 def create_analytics_layout() -> figure:
@@ -895,44 +939,32 @@ def create_analytics_layout() -> figure:
     projects_this_year = analytics.get_projects_active_between(one_year_ago, today)
 
     # Generate the list of plots we wish to display
-    plots = _create_analytics_plots(projects_this_year)
+    figures = _create_analytics_plots(projects_this_year)
 
     # Hide titles to avoid duplication
-    for plot in plots.values():
-        plot.title.visible = False  # type: ignore[union-attr]
+    for fig in figures:
+        fig.plot.title.visible = False  # type: ignore[union-attr]
 
     # Arrange into tabbed groups of related plots
-    projects_tabs = Tabs(
-        tabs=[
-            TabPanel(title=title, child=plot)
-            for (title, plot) in list(plots.items())[:2]
-        ],
-        sizing_mode="stretch_width",
-    )
-    funding_tabs = Tabs(
-        tabs=[
-            TabPanel(title=title, child=plot)
-            for (title, plot) in list(plots.items())[2:4]
-        ],
-        sizing_mode="stretch_width",
-    )
-    budget_tabs = Tabs(
-        tabs=[TabPanel(title=list(plots.keys())[4], child=list(plots.values())[4])],
-        sizing_mode="stretch_width",
-    )
-    funder_tabs = Tabs(
-        tabs=[
-            TabPanel(title=title, child=plot)
-            for (title, plot) in list(plots.items())[5:]
-        ],
-        sizing_mode="stretch_width",
-    )
+    groups = ("projects", "funding", "budget", "funder")
+    all_tabs = []
+    for group in groups:
+        all_tabs.append(
+            Tabs(
+                tabs=[
+                    TabPanel(title=fig.plot.title.text, child=fig.plot)  # type: ignore
+                    for fig in figures
+                    if fig.group == group
+                ],
+                sizing_mode="stretch_width",
+            )
+        )
 
     # Arrange the plots into a two-column grid layout
     layout = column(  # type: ignore[call-overload]
         [
             gridplot(  # type: ignore[call-overload]
-                (projects_tabs, funding_tabs, budget_tabs, funder_tabs),
+                all_tabs,
                 ncols=2,
                 sizing_mode="stretch_width",
             ),
