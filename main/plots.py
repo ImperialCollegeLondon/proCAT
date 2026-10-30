@@ -1,6 +1,7 @@
 """Plots for displaying database data."""
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from itertools import cycle
 from math import pi
@@ -16,6 +17,8 @@ from bokeh.models import (  # type: ignore
     Range,
     Range1d,
     Span,
+    TabPanel,
+    Tabs,
     VArea,
 )
 from bokeh.models.layouts import Row
@@ -31,6 +34,17 @@ from .utils import (
     get_financial_year_dates,
     get_month_dates_for_previous_years,
 )
+
+
+@dataclass
+class AnalyticsFigure:
+    """A plot to show in a group on the analytics page."""
+
+    plot: figure
+    """The plot to be displayed."""
+
+    group: str
+    """The group to which the plot belongs."""
 
 
 def add_varea_glyph(
@@ -799,6 +813,7 @@ def create_pie_chart(
         title=title,
         toolbar_location=None,
         x_range=(-0.5, 1.0),  # type: ignore[arg-type]
+        sizing_mode="stretch_width",
     )
 
     plot.wedge(
@@ -822,10 +837,98 @@ def create_pie_chart(
     return plot
 
 
+def _create_analytics_plots(projects: list[models.Project]) -> list[AnalyticsFigure]:
+    """Create the set of analytics charts to display on the landing page.
+
+    Args:
+        projects: The list of projects to get analytics for.
+
+    Returns:
+        A list of AnalyticsFigures, each containing their plot and group.
+    """
+    figures = []
+    proj_per_dept = analytics.get_project_count_per_department(projects)
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(title="Projects per department", data=proj_per_dept),
+            group="projects",
+        )
+    )
+
+    proj_per_fac = analytics.get_project_count_per_faculty(projects)
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(title="Projects per faculty", data=proj_per_fac),
+            group="projects",
+        )
+    )
+
+    fund_per_dept = analytics.get_funding_per_department(projects)
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Funding per department",
+                data=fund_per_dept,
+                tooltip_fmt="£@value{0,0}",
+            ),
+            group="funding",
+        )
+    )
+
+    fund_per_fac = analytics.get_funding_per_faculty(projects)
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Funding per faculty",
+                data=fund_per_fac,
+                tooltip_fmt="£@value{0,0}",
+            ),
+            group="funding",
+        )
+    )
+
+    fund_per_budget_type = analytics.get_funding_per_budget_type(projects)
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Funding per budget type",
+                data=fund_per_budget_type,
+                tooltip_fmt="£@value{0,0}",
+            ),
+            group="budget",
+        )
+    )
+
+    proj_per_funder = analytics.get_project_count_per_funding_body(projects)
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Projects per funding body", data=proj_per_funder
+            ),
+            group="funder",
+        )
+    )
+
+    funds_per_funder = analytics.get_funding_per_funding_body(projects)
+    figures.append(
+        AnalyticsFigure(
+            plot=create_pie_chart(
+                title="Funding per funding body",
+                data=funds_per_funder,
+                tooltip_fmt="£@value{0,0}",
+            ),
+            group="funder",
+        )
+    )
+
+    return figures
+
+
 def create_analytics_layout() -> figure:
     """Create the analytics charts in a layout with widgets.
 
-    Creates the project analytics charts plus the associated widgets.
+    Obtains the analytics charts for projects in the last 12 months and arranges them
+    into a grid of tab-grouped plots.
 
     Returns:
         A layout containing each of the analytics plots.
@@ -836,60 +939,34 @@ def create_analytics_layout() -> figure:
     projects_this_year = analytics.get_projects_active_between(one_year_ago, today)
 
     # Generate the list of plots we wish to display
-    plots = []
+    figures = _create_analytics_plots(projects_this_year)
 
-    proj_per_dept = analytics.get_project_count_per_department(projects_this_year)
-    plots.append(create_pie_chart(title="Projects per department", data=proj_per_dept))
+    # Hide titles to avoid duplication
+    for fig in figures:
+        fig.plot.title.visible = False  # type: ignore[union-attr]
 
-    proj_per_fac = analytics.get_project_count_per_faculty(projects_this_year)
-    plots.append(create_pie_chart(title="Projects per faculty", data=proj_per_fac))
-
-    fund_per_dept = analytics.get_funding_per_department(projects_this_year)
-    plots.append(
-        create_pie_chart(
-            title="Funding per department",
-            data=fund_per_dept,
-            tooltip_fmt="£@value{0,0}",
+    # Arrange into tabbed groups of related plots
+    groups = ("projects", "funding", "budget", "funder")
+    all_tabs = []
+    for group in groups:
+        all_tabs.append(
+            Tabs(
+                tabs=[
+                    TabPanel(title=fig.plot.title.text, child=fig.plot)  # type: ignore
+                    for fig in figures
+                    if fig.group == group
+                ],
+                sizing_mode="stretch_width",
+            )
         )
-    )
-
-    fund_per_fac = analytics.get_funding_per_faculty(projects_this_year)
-    plots.append(
-        create_pie_chart(
-            title="Funding per faculty",
-            data=fund_per_fac,
-            tooltip_fmt="£@value{0,0}",
-        )
-    )
-
-    fund_per_budget_type = analytics.get_funding_per_budget_type(projects_this_year)
-    plots.append(
-        create_pie_chart(
-            title="Funding per budget type",
-            data=fund_per_budget_type,
-            tooltip_fmt="£@value{0,0}",
-        )
-    )
-
-    proj_per_funder = analytics.get_project_count_per_funding_body(projects_this_year)
-    plots.append(
-        create_pie_chart(title="Projects per funding body", data=proj_per_funder)
-    )
-
-    funds_per_funder = analytics.get_funding_per_funding_body(projects_this_year)
-    plots.append(
-        create_pie_chart(
-            title="Funding per funding body",
-            data=funds_per_funder,
-            tooltip_fmt="£@value{0,0}",
-        )
-    )
 
     # Arrange the plots into a two-column grid layout
     layout = column(  # type: ignore[call-overload]
         [
             gridplot(  # type: ignore[call-overload]
-                plots, ncols=2, sizing_mode="stretch_width"
+                all_tabs,
+                ncols=2,
+                sizing_mode="stretch_width",
             ),
         ],
         sizing_mode="stretch_width",
