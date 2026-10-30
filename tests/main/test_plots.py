@@ -176,7 +176,7 @@ def test_create_pie_chart(cumsum_mock, hovertool_mock, figure_mock):
 @patch("main.plots.create_pie_chart")
 def test_create_analytics_plots(create_pie_chart_mock, analytics_mock):
     """Test the _create_analytics_plots function."""
-    from main.plots import _create_analytics_plots
+    from main.plots import AnalyticsFigure, _create_analytics_plots
 
     projects = MagicMock()
 
@@ -213,15 +213,15 @@ def test_create_analytics_plots(create_pie_chart_mock, analytics_mock):
         fund_per_funder_plot,
     )
 
-    plots_expected = {
-        "Projects per department": proj_per_dept_plot,
-        "Projects per faculty": proj_per_fac_plot,
-        "Funding per department": fund_per_dept_plot,
-        "Funding per faculty": fund_per_fac_plot,
-        "Funding per budget type": fund_per_budget_type_plot,
-        "Projects per funding body": proj_per_funder_plot,
-        "Funding per funding body": fund_per_funder_plot,
-    }
+    plots_expected = [
+        AnalyticsFigure(plot=proj_per_dept_plot, group="projects"),
+        AnalyticsFigure(plot=proj_per_fac_plot, group="projects"),
+        AnalyticsFigure(plot=fund_per_dept_plot, group="funding"),
+        AnalyticsFigure(plot=fund_per_fac_plot, group="funding"),
+        AnalyticsFigure(plot=fund_per_budget_type_plot, group="budget"),
+        AnalyticsFigure(plot=proj_per_funder_plot, group="funder"),
+        AnalyticsFigure(plot=fund_per_funder_plot, group="funder"),
+    ]
 
     # Call the function
     plots_actual = _create_analytics_plots(projects)
@@ -282,7 +282,7 @@ def test_create_analytics_layout(
     date_mock,
 ):
     """Test the create_analytics_layout function."""
-    from main.plots import create_analytics_layout
+    from main.plots import AnalyticsFigure, create_analytics_layout
 
     # Mock the functions called internally
     date_mock.today.return_value = date(2026, 10, 26)
@@ -290,23 +290,29 @@ def test_create_analytics_layout(
     proj_this_year = MagicMock()
     analytics_mock.get_projects_active_between.return_value = proj_this_year
 
-    proj_per_dept_plot = MagicMock()
-    proj_per_fac_plot = MagicMock()
-    fund_per_dept_plot = MagicMock()
-    fund_per_fac_plot = MagicMock()
-    fund_per_budget_type_plot = MagicMock()
-    proj_per_funder_plot = MagicMock()
-    fund_per_funder_plot = MagicMock()
+    proj_per_dept_plot = MagicMock(title=MagicMock(text="Proj per dept", visible=True))
+    proj_per_fac_plot = MagicMock(title=MagicMock(text="Proj per fac", visible=True))
+    fund_per_dept_plot = MagicMock(title=MagicMock(text="Fund per dept", visible=True))
+    fund_per_fac_plot = MagicMock(title=MagicMock(text="Fund per fac", visible=True))
+    fund_per_budget_type_plot = MagicMock(
+        title=MagicMock(text="Fund per budget type", visible=True)
+    )
+    proj_per_funder_plot = MagicMock(
+        title=MagicMock(text="Proj per funder", visible=True)
+    )
+    fund_per_funder_plot = MagicMock(
+        title=MagicMock(text="Fund per funder", visible=True)
+    )
 
-    plots = {
-        "Projects per department": proj_per_dept_plot,
-        "Projects per faculty": proj_per_fac_plot,
-        "Funding per department": fund_per_dept_plot,
-        "Funding per faculty": fund_per_fac_plot,
-        "Funding per budget type": fund_per_budget_type_plot,
-        "Projects per funding body": proj_per_funder_plot,
-        "Funding per funding body": fund_per_funder_plot,
-    }
+    plots = [
+        AnalyticsFigure(plot=proj_per_dept_plot, group="projects"),
+        AnalyticsFigure(plot=proj_per_fac_plot, group="projects"),
+        AnalyticsFigure(plot=fund_per_dept_plot, group="funding"),
+        AnalyticsFigure(plot=fund_per_fac_plot, group="funding"),
+        AnalyticsFigure(plot=fund_per_budget_type_plot, group="budget"),
+        AnalyticsFigure(plot=proj_per_funder_plot, group="funder"),
+        AnalyticsFigure(plot=fund_per_funder_plot, group="funder"),
+    ]
 
     create_analytics_plots_mock.return_value = plots
 
@@ -334,46 +340,34 @@ def test_create_analytics_layout(
     # Check plot generating function called as expected
     create_analytics_plots_mock.assert_called_once_with(proj_this_year)
 
-    assert all([not plot.title.visible for plot in plots.values()])
+    assert all([not plot.plot.title.visible for plot in plots])
 
     # Check plots arranged into tabs as expected
-    tabs_mock.assert_any_call(
-        tabs=[
-            tab_panel_mock(title="Projects per department", child=proj_per_dept_plot),
-            tab_panel_mock(title="Projects per faculty", child=proj_per_fac_plot),
-        ],
-        sizing_mode="stretch_width",
+    tab_panel_mock.assert_any_call(
+        title=proj_per_dept_plot.title.text, child=proj_per_dept_plot
     )
-    tabs_mock.assert_any_call(
-        tabs=[
-            tab_panel_mock(title="Funding per department", child=fund_per_dept_plot),
-            tab_panel_mock(title="Funding per faculty", child=fund_per_fac_plot),
-        ],
-        sizing_mode="stretch_width",
+    tab_panel_mock.assert_any_call(
+        title=proj_per_fac_plot.title.text, child=proj_per_fac_plot
     )
-    tabs_mock.assert_any_call(
-        tabs=[
-            tab_panel_mock(
-                title="Funding per budget_type", child=fund_per_budget_type_plot
-            ),
-        ],
-        sizing_mode="stretch_width",
+    tab_panel_mock.assert_any_call(
+        title=fund_per_dept_plot.title.text, child=fund_per_dept_plot
     )
-    tabs_mock.assert_any_call(
-        tabs=[
-            tab_panel_mock(
-                title="Projects per funding body", child=proj_per_funder_plot
-            ),
-            tab_panel_mock(
-                title="Funding per funding body", child=fund_per_funder_plot
-            ),
-        ],
-        sizing_mode="stretch_width",
+    tab_panel_mock.assert_any_call(
+        title=fund_per_fac_plot.title.text, child=fund_per_fac_plot
+    )
+    tab_panel_mock.assert_any_call(
+        title=fund_per_budget_type_plot.title.text, child=fund_per_budget_type_plot
+    )
+    tab_panel_mock.assert_any_call(
+        title=proj_per_funder_plot.title.text, child=proj_per_funder_plot
+    )
+    tab_panel_mock.assert_any_call(
+        title=fund_per_funder_plot.title.text, child=fund_per_funder_plot
     )
 
     # Check layout created as expected
     gridplot_mock.assert_called_once_with(
-        (projects_tabs, funding_tabs, budget_tabs, funder_tabs),
+        [projects_tabs, funding_tabs, budget_tabs, funder_tabs],
         ncols=2,
         sizing_mode="stretch_width",
     )
