@@ -1,7 +1,7 @@
 """Forms needed by ProCAT."""
 
 from datetime import timedelta
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar
 
 from django import forms
 from django.contrib.auth import get_user_model
@@ -73,7 +73,7 @@ class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
             .objects.filter(groups__name="RSETeam")
             .order_by("first_name", "last_name")
         )
-        cast(forms.Field, self.fields["lead"]).queryset = rse_team_users  # type: ignore[attr-defined]
+        self.fields["lead"].queryset = rse_team_users  # type: ignore[attr-defined]
 
     class Meta:
         """Meta class for the form."""
@@ -252,7 +252,7 @@ class AllocationInlineForm(forms.ModelForm):  # type: ignore [type-arg]
             .objects.filter(groups__name="RSETeam")
             .order_by("first_name", "last_name")
         )
-        cast(forms.Field, self.fields["user"]).queryset = rse_team_users  # type: ignore[attr-defined]
+        self.fields["user"].queryset = rse_team_users  # type: ignore[attr-defined]
 
     class Meta:
         """Meta class for the form."""
