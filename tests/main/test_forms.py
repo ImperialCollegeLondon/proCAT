@@ -306,7 +306,7 @@ class TestAllocationInlineFormUserFiltering:
         assert unauthorized_user not in user_queryset
 
     def test_allocation_form_users_sorted_alphabetically(self):
-        """AllocationInlineForm user field should show RSETeam users sorted alphabetically."""
+        """AllocationInlineForm users sorted alphabetically by first and last name."""
         from django.contrib.auth.models import Group
 
         rse_team = Group.objects.get(name="RSETeam")
