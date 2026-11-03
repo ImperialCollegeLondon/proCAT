@@ -1,6 +1,6 @@
  <!-- markdownlint-disable MD041 -->
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-14-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-15-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/proCAT/graph/badge.svg?token=A9KNEMYXXN)](https://codecov.io/gh/ImperialCollegeLondon/proCAT)
@@ -235,6 +235,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Max-Gamill"><img src="https://avatars.githubusercontent.com/u/91465918?v=4?s=100" width="100px;" alt="Max Gamill"/><br /><sub><b>Max Gamill</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=Max-Gamill" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://sabifo4.github.io/"><img src="https://avatars.githubusercontent.com/u/23108019?v=4?s=100" width="100px;" alt="Sandra AC"/><br /><sub><b>Sandra AC</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=sabifo4" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/issues?q=author%3Asabifo4" title="Bug reports">🐛</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=sabifo4" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/SomeshRamakanth"><img src="https://avatars.githubusercontent.com/u/113796019?v=4?s=100" width="100px;" alt="Somesh Ramisetty"/><br /><sub><b>Somesh Ramisetty</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=SomeshRamakanth" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=SomeshRamakanth" title="Tests">⚠️</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/AdithNG"><img src="https://avatars.githubusercontent.com/u/54245667?v=4?s=100" width="100px;" alt="Adith Gunaseelan"/><br /><sub><b>Adith Gunaseelan</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=AdithNG" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=AdithNG" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
 </table>
