@@ -139,6 +139,16 @@
         "bug",
         "test"
       ]
+    },
+    {
+      "login": "SomeshRamakanth",
+      "name": "Somesh Ramisetty",
+      "avatar_url": "https://avatars.githubusercontent.com/u/113796019?v=4",
+      "profile": "https://github.com/SomeshRamakanth",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
