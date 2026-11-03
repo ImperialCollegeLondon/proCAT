@@ -395,7 +395,7 @@ def test_create_allocation_plot_for_project_with_zero_allocations(phase):
 
 
 def test_create_allocation_plot_for_project_with_allocations(phase, user):
-    """A project with allocations gets one line per allocated user, plus the FTE line."""
+    """A project with allocations gets one line per user, plus the FTE line."""
     from bokeh.plotting import figure
 
     from main import models, plots
