@@ -232,7 +232,9 @@ class TestProjectPhaseInlineFormSet:
 class TestProjectFormUserFiltering:
     """Tests for ProjectForm user filtering by RSETeam group."""
 
-    def test_project_form_lead_filtered_to_rseteam(self, user, unauthorized_user, department):
+    def test_project_form_lead_filtered_to_rseteam(
+        self, user, unauthorized_user, department
+    ):
         """ProjectForm lead field should only show RSETeam users."""
         from main import models
 
@@ -251,6 +253,7 @@ class TestProjectFormUserFiltering:
     def test_project_form_lead_users_sorted_alphabetically(self, department):
         """ProjectForm lead field should show RSETeam users sorted alphabetically."""
         from django.contrib.auth.models import Group
+
         from main import models
 
         rse_team = Group.objects.get(name="RSETeam")
