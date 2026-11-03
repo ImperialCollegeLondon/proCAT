@@ -373,3 +373,61 @@ def test_create_analytics_layout(
     )
     column_mock.assert_called_once_with([gridplot], sizing_mode="stretch_width")
     assert layout_actual == layout_expected
+
+
+def test_create_allocation_plot_for_project_with_zero_allocations(phase):
+    """A project with a date range but zero allocations still gets a plot.
+
+    Only the "Project FTE" line should be present, per #860.
+    """
+    from bokeh.plotting import figure
+
+    from main import plots
+
+    project = phase.project
+    assert not project.allocation_set.exists()
+
+    plot = plots.create_allocation_plot_for_project(project, x_range=None)
+
+    assert isinstance(plot, figure)
+    legend_items = [item.label.value for item in plot.legend.items]
+    assert legend_items == ["Project FTE"]
+
+
+def test_create_allocation_plot_for_project_with_allocations(phase, user):
+    """A project with allocations gets one line per allocated user, plus the FTE line."""
+    from bokeh.plotting import figure
+
+    from main import models, plots
+
+    project = phase.project
+    models.Allocation.objects.create(
+        project=project,
+        user=user,
+        start_date=project.start_date,
+        end_date=project.end_date,
+        value=0.5,
+    )
+
+    plot = plots.create_allocation_plot_for_project(project, x_range=None)
+
+    assert isinstance(plot, figure)
+    legend_items = [item.label.value for item in plot.legend.items]
+    assert "Project FTE" in legend_items
+    assert str(user) in legend_items
+
+
+def test_create_allocation_plot_for_project_without_dates(user, department):
+    """A project with no date range (e.g. Tentative) gets no plot at all."""
+    from main import models, plots
+
+    project = models.Project.objects.create(
+        name="Tentative project",
+        department=department,
+        lead=user,
+        status="Tentative",
+        start_date=None,
+        end_date=None,
+    )
+
+    assert plots.create_allocation_plot_for_project(project, x_range=None) is None
