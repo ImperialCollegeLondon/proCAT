@@ -699,7 +699,9 @@ class TestProjectDetailInlineView(PermissionRequiredMixin, TemplateOkMixin):
         assert "<div" in response.context["div"]
         assert response.context["bokeh_version"] == bokeh.__version__
 
-    def test_time_evolution_plot_no_plot_without_dates(self, admin_client, user, department):
+    def test_time_evolution_plot_no_plot_without_dates(
+        self, admin_client, user, department
+    ):
         """Check that a Tentative project with no dates has no time evolution plot.
 
         Without a date range there's nothing to plot at all: no phases, no
