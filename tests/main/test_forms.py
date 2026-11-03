@@ -4,6 +4,7 @@ from datetime import date
 from typing import Any
 
 import pytest
+from django.contrib.auth import get_user_model
 
 from main import forms
 
@@ -225,3 +226,118 @@ class TestProjectPhaseInlineFormSet:
         assert "Phase period must be within the project period" in str(
             formset.forms[0].errors
         )
+
+
+@pytest.mark.django_db
+class TestProjectFormUserFiltering:
+    """Tests for ProjectForm user filtering by RSETeam group."""
+
+    def test_project_form_lead_filtered_to_rseteam(self, user, unauthorized_user, department):
+        """ProjectForm lead field should only show RSETeam users."""
+        from main import models
+
+        project = models.Project.objects.create(
+            name="Test Project",
+            department=department,
+            lead=user,
+        )
+
+        form = forms.ProjectForm(instance=project)
+        lead_queryset = form.fields["lead"].queryset
+
+        assert user in lead_queryset
+        assert unauthorized_user not in lead_queryset
+
+    def test_project_form_lead_users_sorted_alphabetically(self, department):
+        """ProjectForm lead field should show RSETeam users sorted alphabetically."""
+        from django.contrib.auth.models import Group
+        from main import models
+
+        rse_team = Group.objects.get(name="RSETeam")
+
+        user_model = get_user_model()
+        user1 = user_model.objects.create_user(
+            username="zulu",
+            first_name="Zoe",
+            last_name="Anderson",
+            email="zoe@test.com",
+            password="test",
+        )
+        user2 = user_model.objects.create_user(
+            username="alpha",
+            first_name="Alice",
+            last_name="Zeller",
+            email="alice@test.com",
+            password="test",
+        )
+        user3 = user_model.objects.create_user(
+            username="bravo",
+            first_name="Bob",
+            last_name="Adams",
+            email="bob@test.com",
+            password="test",
+        )
+
+        rse_team.user_set.add(user1, user2, user3)
+
+        project = models.Project.objects.create(
+            name="Test Project",
+            department=department,
+            lead=user1,
+        )
+
+        form = forms.ProjectForm(instance=project)
+        lead_users = list(form.fields["lead"].queryset)
+
+        expected_order = [user2, user3, user1]
+        assert lead_users == expected_order
+
+
+@pytest.mark.django_db
+class TestAllocationInlineFormUserFiltering:
+    """Tests for AllocationInlineForm user filtering by RSETeam group."""
+
+    def test_allocation_form_user_filtered_to_rseteam(self, user, unauthorized_user):
+        """AllocationInlineForm user field should only show RSETeam users."""
+        form = forms.AllocationInlineForm()
+        user_queryset = form.fields["user"].queryset
+
+        assert user in user_queryset
+        assert unauthorized_user not in user_queryset
+
+    def test_allocation_form_users_sorted_alphabetically(self):
+        """AllocationInlineForm user field should show RSETeam users sorted alphabetically."""
+        from django.contrib.auth.models import Group
+
+        rse_team = Group.objects.get(name="RSETeam")
+
+        user_model = get_user_model()
+        user1 = user_model.objects.create_user(
+            username="zulu",
+            first_name="Zoe",
+            last_name="Anderson",
+            email="zoe@test.com",
+            password="test",
+        )
+        user2 = user_model.objects.create_user(
+            username="alpha",
+            first_name="Alice",
+            last_name="Zeller",
+            email="alice@test.com",
+            password="test",
+        )
+        user3 = user_model.objects.create_user(
+            username="bravo",
+            first_name="Bob",
+            last_name="Adams",
+            email="bob@test.com",
+            password="test",
+        )
+
+        rse_team.user_set.add(user1, user2, user3)
+
+        form = forms.AllocationInlineForm()
+        users = list(form.fields["user"].queryset)
+
+        expected_order = [user2, user3, user1]
+        assert users == expected_order
