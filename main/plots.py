@@ -678,15 +678,19 @@ def _actual_days_charged(  # type: ignore[explicit-any]
 def create_allocation_plot_for_project(
     project: models.Project, x_range: Range | None
 ) -> figure | None:
-    """Create an allocation plot for the detail project page."""
-    allocations = models.Allocation.objects.filter(project=project)
-    if not allocations.exists():
+    """Create an allocation plot for the detail project page.
+
+    Always shown when the project has a date range, even with zero
+    allocations, so there's an initial idea of the required FTE before
+    anyone is assigned.
+    """
+    if project.start_date is None or project.end_date is None:
         return None
 
     fte = project.fte(include_excess=False)
     traces = [{"timeseries": fte, "label": "Project FTE", "colour": "green"}]
     colours = cycle(["red", "purple", "yellow", "navy"])
-    for allocation in allocations:
+    for allocation in models.Allocation.objects.filter(project=project):
         traces.append(
             {
                 "timeseries": allocation.trace(fte.index),  # type: ignore[arg-type]
