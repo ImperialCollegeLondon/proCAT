@@ -65,6 +65,16 @@ class CostRecoveryForm(forms.Form):
 class ProjectForm(forms.ModelForm):  # type: ignore [type-arg]
     """Form to create and edit Project instances."""
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[explicit-any]
+        """Override init to filter lead field to RSETeam members only."""
+        super().__init__(*args, **kwargs)
+        rse_team_users = (
+            get_user_model()
+            .objects.filter(groups__name="RSETeam")
+            .order_by("first_name", "last_name")
+        )
+        self.fields["lead"].queryset = rse_team_users
+
     class Meta:
         """Meta class for the form."""
 
@@ -233,6 +243,16 @@ class AllocationInlineForm(forms.ModelForm):  # type: ignore [type-arg]
     The `project` field is left out, since it is supplied automatically by
     the enclosing formset (see `AllocationInlineFormSet`).
     """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[explicit-any]
+        """Override init to filter user field to RSETeam members only."""
+        super().__init__(*args, **kwargs)
+        rse_team_users = (
+            get_user_model()
+            .objects.filter(groups__name="RSETeam")
+            .order_by("first_name", "last_name")
+        )
+        self.fields["user"].queryset = rse_team_users
 
     class Meta:
         """Meta class for the form."""
