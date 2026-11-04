@@ -25,6 +25,7 @@ dependencies = [
     "mozilla-django-oidc",
     "django-admin-rangefilter",
     "gunicorn",
+    "django-bootstrap5-dark-mode-switch>=0.2.2",
 ]
 
 [dependency-groups]
