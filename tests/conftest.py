@@ -1,5 +1,6 @@
 """Pytest configuration file."""
 
+import os
 from datetime import datetime, timedelta
 
 import pytest
@@ -7,6 +8,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.test import Client
 from django.utils import timezone
+
+# This allows using playwright in tests. See:
+# https://github.com/microsoft/playwright-pytest/issues/29#issuecomment-731515676
+os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
 
 @pytest.fixture(autouse=True)
