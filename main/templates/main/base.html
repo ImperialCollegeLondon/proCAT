@@ -17,7 +17,10 @@
     {% endblock extra_js %}
     {% load django_bootstrap5 %}
     {% bootstrap_css %}
+    <link href="{% static 'dark_mode_switch/dark-mode-switch.css' %}"
+          rel="stylesheet">
     {% bootstrap_javascript %}
+    <script src="{% static 'dark_mode_switch/dark-mode-switch.js' %}"></script>
     <style>
       /* Marks fields that are always mandatory (not just conditionally,
          depending e.g. on a Project's status) with a red asterisk after

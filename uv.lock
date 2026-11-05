@@ -596,6 +596,19 @@ wheels = [
 ]
 
 [[package]]
+name = "django-bootstrap5-dark-mode-switch"
+version = "0.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "django-bootstrap5" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/98/35/ee868ed049fdedf89dcda7caf64553a814e7304d97bf9baa54af6ef36cbb/django_bootstrap5_dark_mode_switch-0.2.2.tar.gz", hash = "sha256:bb2b6d523fc65a6df1a664a0a86ee5fed93b14c3b51c5c47a2237a7de63438d2", size = 5294, upload-time = "2024-05-20T14:14:57.23Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/80/ff/11dff316ecaec645afa6bd6a1dc43f7124887e8c8cea702ad85766a6a3cf/django_bootstrap5_dark_mode_switch-0.2.2-py3-none-any.whl", hash = "sha256:c267da689768af94f96a910a1c0ea45e7dab6fae4b287edd9dec0957ef838764", size = 5569, upload-time = "2024-05-20T14:14:22.395Z" },
+]
+
+[[package]]
 name = "django-crispy-forms"
 version = "2.7"
 source = { registry = "https://pypi.org/simple" }
@@ -1594,6 +1607,7 @@ dependencies = [
     { name = "django" },
     { name = "django-admin-rangefilter" },
     { name = "django-bootstrap5" },
+    { name = "django-bootstrap5-dark-mode-switch" },
     { name = "django-crispy-forms" },
     { name = "django-filter" },
     { name = "django-tables2" },
@@ -1637,6 +1651,7 @@ requires-dist = [
     { name = "django" },
     { name = "django-admin-rangefilter" },
     { name = "django-bootstrap5" },
+    { name = "django-bootstrap5-dark-mode-switch", specifier = ">=0.2.2" },
     { name = "django-crispy-forms" },
     { name = "django-filter" },
     { name = "django-tables2" },
