@@ -679,14 +679,44 @@ class TestProjectDetailInlineView(PermissionRequiredMixin, TemplateOkMixin):
         assert response.context["total_days_badge"] == na_badge
         assert response.context["days_left_badge"] == na_badge
 
-    def test_time_evolution_plot_no_plot(self, admin_client, project):
-        """Check that a project with no phases has a time evolution plot.
+    def test_time_evolution_plot_no_phases_still_shows_allocation_plot(
+        self, admin_client, project
+    ):
+        """Check that a project with no phases still shows the allocation plot.
 
-        If there were time entries or charges, there could be a plot, but
-        this is meant to test the primary logic of not showing plot if
-        there's no data.
+        A project with no phases and no allocations has nothing to show on
+        the (separate) evolution/usage plot, but the allocation plot should
+        still render, with just the zero-valued "Project FTE" line, per #860.
         """
+        import bokeh
+
         assert not project.phases.exists()
+        assert not project.allocation_set.exists()
+        response = admin_client.get(
+            reverse("main:project_detail", kwargs={"pk": project.pk})
+        )
+        assert "<script" in response.context["script"]
+        assert "<div" in response.context["div"]
+        assert response.context["bokeh_version"] == bokeh.__version__
+
+    def test_time_evolution_plot_no_plot_without_dates(
+        self, admin_client, user, department
+    ):
+        """Check that a Tentative project with no dates has no time evolution plot.
+
+        Without a date range there's nothing to plot at all: no phases, no
+        allocations, and no FTE trace can be computed.
+        """
+        from main import models
+
+        project = models.Project.objects.create(
+            name="Tentative project",
+            department=department,
+            lead=user,
+            status="Tentative",
+            start_date=None,
+            end_date=None,
+        )
         response = admin_client.get(
             reverse("main:project_detail", kwargs={"pk": project.pk})
         )
