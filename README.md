@@ -82,6 +82,8 @@ To get started:
    pytest
    ```
 
+  Reports about the coverage of the tests will be generated in `htmlcov/index.html` and `coverage.xml`, while the accessibility tests will generate a report in the `axe-reports` folder, one document per page.
+
 1. Create an admin account to access admin backend:
 
    ```bash
