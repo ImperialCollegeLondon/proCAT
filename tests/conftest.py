@@ -1,5 +1,6 @@
 """Pytest configuration file."""
 
+import os
 from datetime import datetime, timedelta
 
 import pytest
@@ -7,6 +8,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.test import Client
 from django.utils import timezone
+
+# This allows using playwright in tests. See:
+# https://github.com/microsoft/playwright-pytest/issues/29#issuecomment-731515676
+os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
 
 @pytest.fixture(autouse=True)
@@ -17,7 +22,20 @@ def use_model_backend(settings):
 
 
 @pytest.fixture
-def user(django_user_model):
+def rseteam():
+    """Provides the RSE Team group with the right permissions."""
+    rseteam, created = Group.objects.get_or_create(name="RSETeam")
+    if created:
+        vp = Permission.objects.get(codename="view_project")
+        vf = Permission.objects.get(codename="view_funding")
+        vph = Permission.objects.get(codename="view_projectphase")
+        va = Permission.objects.get(codename="view_allocation")
+        rseteam.permissions.add(vp, vf, vph, va)
+    return rseteam
+
+
+@pytest.fixture
+def user(django_user_model, rseteam):
     """Provides a Django user with predefined attributes."""
     user = django_user_model.objects.create_user(
         first_name="test",
@@ -26,9 +44,6 @@ def user(django_user_model):
         password="1234",
         username="testuser",
     )
-    permission = Permission.objects.get(codename="view_project")
-    user.user_permissions.add(permission)
-    rseteam = Group.objects.get(name="RSETeam")
     rseteam.user_set.add(user)
 
     return user
