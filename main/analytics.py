@@ -96,8 +96,9 @@ def get_funding_per_budget_type(projects: list[models.Project]) -> dict[str, int
         182130: "FEC DA",
         165134: "Non-FEC",
     }
-    for ac in models.AnalysisCode.objects.all():
-        funding_per_budget_type[names[ac.code]] = float(
+    for code, value in names.items():
+        ac = models.AnalysisCode.objects.get(code=code)
+        funding_per_budget_type[value] = float(
             sum(funding.budget for funding in project_fundings.filter(analysis_code=ac))
         )
 
