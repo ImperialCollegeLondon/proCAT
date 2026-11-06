@@ -22,7 +22,20 @@ def use_model_backend(settings):
 
 
 @pytest.fixture
-def user(django_user_model):
+def rseteam():
+    """Provides the RSE Team group with the right permissions."""
+    rseteam, created = Group.objects.get_or_create(name="RSETeam")
+    if created:
+        vp = Permission.objects.get(codename="view_project")
+        vf = Permission.objects.get(codename="view_funding")
+        vph = Permission.objects.get(codename="view_projectphase")
+        va = Permission.objects.get(codename="view_allocation")
+        rseteam.permissions.add(vp, vf, vph, va)
+    return rseteam
+
+
+@pytest.fixture
+def user(django_user_model, rseteam):
     """Provides a Django user with predefined attributes."""
     user = django_user_model.objects.create_user(
         first_name="test",
@@ -31,9 +44,6 @@ def user(django_user_model):
         password="1234",
         username="testuser",
     )
-    permission = Permission.objects.get(codename="view_project")
-    user.user_permissions.add(permission)
-    rseteam = Group.objects.get(name="RSETeam")
     rseteam.user_set.add(user)
 
     return user
