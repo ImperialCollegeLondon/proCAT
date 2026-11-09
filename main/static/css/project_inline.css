@@ -12,14 +12,15 @@ p {
    box, with a shaded header bar, so the boundary between them is
    obvious at a glance rather than relying on heading size alone. */
 .section-box {
-  border: 1px solid #b8dcf2;
+  border: 1px solid var(--bs-border-color);
   border-radius: 0.375rem;
   margin-bottom: 1.5rem;
 }
 
 .section-header {
-  background-color: #eaf6ff;
-  border-bottom: 1px solid #b8dcf2;
+  background-color: var(--bs-info-bg-subtle);
+  color: var(--bs-info-text-emphasis);
+  border-bottom: 1px solid var(--bs-info-border-subtle);
   border-radius: 0.375rem 0.375rem 0 0;
   padding: 0.5rem 1rem;
   margin: 0;
