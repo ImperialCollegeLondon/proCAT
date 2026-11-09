@@ -69,7 +69,9 @@
         -->
           <table class="d-none">
             <tbody id="empty-funding-form">
-              <tr>{% include "main/_inline_table_row.html" with form=formset.empty_form %}</tr>
+              <tr>
+                {% include "main/_inline_table_row.html" with form=formset.empty_form %}
+              </tr>
             </tbody>
           </table>
         {% endwith %}
@@ -100,7 +102,9 @@
         -->
           <table class="d-none">
             <tbody id="empty-phase-form">
-              <tr>{% include "main/_inline_table_row.html" with form=formset.empty_form %}</tr>
+              <tr>
+                {% include "main/_inline_table_row.html" with form=formset.empty_form %}
+              </tr>
             </tbody>
           </table>
         {% endwith %}
@@ -126,7 +130,9 @@
         -->
           <table class="d-none">
             <tbody id="empty-allocation-form">
-              <tr>{% include "main/_inline_table_row.html" with form=formset.empty_form %}</tr>
+              <tr>
+                {% include "main/_inline_table_row.html" with form=formset.empty_form %}
+              </tr>
             </tbody>
           </table>
         {% endwith %}
