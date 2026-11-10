@@ -74,7 +74,7 @@ def test_homepage(live_server, page: Page):
 )
 @pytest.mark.xfail(reason="Accessibility violations found.")
 def test_team_pages(live_server, page: Page, login, user, page_url):
-    """Test accessibility in selected pages."""
+    """Test accessibility in project list, capacity planning and cost recovery pages."""
     login(user)
     url = live_server.url + reverse(page_url)
     page.goto(url)
