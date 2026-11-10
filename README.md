@@ -246,7 +246,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/AdithNG"><img src="https://avatars.githubusercontent.com/u/54245667?v=4&size=100" width="100px" height="100px" alt="Adith Gunaseelan"/><br /><sub><b>Adith Gunaseelan</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=AdithNG" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=AdithNG" title="Tests">⚠️</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/service-offering/research-software-engineering/"><img src="https://avatars.githubusercontent.com/u/23149834?v=4&size=100" width="100px" height="100px" alt="Alex Dewar"/><br /><sub><b>Alex Dewar</b></sub></a><br /><a href="#infra-alexdewar" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/service-offering/research-software-engineering/"><img src="https://avatars.githubusercontent.com/u/23149834?v=4&size=100" width="100px" height="100px" alt="Alex Dewar"/><br /><sub><b>Alex Dewar</b></sub></a><br /><a href="#infra-alexdewar" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#tool-alexdewar" title="Tools">🔧</a></td>
     </tr>
   </tbody>
 </table>
