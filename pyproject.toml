@@ -41,6 +41,8 @@ dev = [
     "django-stubs[compatible-mypy]",
     "djlint==1.49.2",  # keep in sync with the rev pinned in .pre-commit-config.yaml
     "pandas-stubs",
+    "pytest-playwright>=0.10.0",
+    "pytest-playwright-axe>=4.14.0",
 ]
 doc = [
     "mkdocs",

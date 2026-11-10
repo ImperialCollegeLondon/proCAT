@@ -34,6 +34,9 @@ jobs:
       - name: Run mypy
         run: mypy .
 
+      - name: Install playwright browser and dependencies
+        run: playwright install --with-deps chromium
+
       - name: Run tests
         run: pytest
 

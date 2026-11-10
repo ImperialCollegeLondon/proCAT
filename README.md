@@ -1,5 +1,6 @@
  <!-- markdownlint-disable MD041 -->
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-15-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
@@ -69,11 +70,19 @@ To get started:
 
     then restart it.
 
-1. Run the tests:
+1. Run the tests: To run the accessibility tests, you will need to install the browsers for Playwright. You can do this by running once:
+
+    ```bash
+    playwright install --with-deps chromium
+    ```
+
+    Then you can run the tests with:
 
     ```bash
     pytest
     ```
+
+    Reports about the coverage of the tests will be generated in `htmlcov/index.html` and `coverage.xml`, while the accessibility tests will generate a report in the `axe-reports` folder, one document per page.
 
 1. Create an admin account to access admin backend:
 
