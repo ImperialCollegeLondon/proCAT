@@ -39,7 +39,7 @@ def check_accessibility(page: Page, filename: str) -> None:
         filename: The filename (ex. extension) to be used in the reports.
 
     Raises:
-        ValueError: if any accsibility violation is found.
+        ValueError: if any accessibility violation is found.
     """
     violations = Axe().run(
         page,
