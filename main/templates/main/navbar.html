@@ -29,6 +29,7 @@
       {% endif %}
     </ul>
     <ul class="navbar-nav">
+      {% include "dark_mode_switch/dark_mode_switch.html" %}
       {% if user.is_authenticated %}
         <!-- We welcome the user and include a few useful links -->
         <li class="nav-item">

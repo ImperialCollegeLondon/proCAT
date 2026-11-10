@@ -236,7 +236,15 @@ def get_allocation_timeseries(
         for allocation in models.Allocation.objects.filter(user=user).order_by(
             "start_date"
         ):
-            allocations[full_name][allocation.project.name] = allocation.trace(dates)
+            # If the project is already there, we add the allocation
+            if allocation.project.name in allocations[full_name].columns:
+                allocations[full_name][allocation.project.name] += allocation.trace(
+                    dates
+                )
+            else:
+                allocations[full_name][allocation.project.name] = allocation.trace(
+                    dates
+                )
 
     return allocations
 
