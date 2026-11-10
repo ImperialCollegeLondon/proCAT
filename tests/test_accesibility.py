@@ -84,7 +84,7 @@ def test_team_pages(live_server, page: Page, login, user, page_url):
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.xfail(reason="Accessibility violations found.")
 def test_project_detail_page(live_server, page: Page, login, user, project_mid):
-    """Test accessibility in selected pages."""
+    """Test accessibility in the project detail page."""
     page_url = "main:project_detail"
     login(user)
     url = live_server.url + reverse(page_url, kwargs={"pk": project_mid.pk})
@@ -95,7 +95,7 @@ def test_project_detail_page(live_server, page: Page, login, user, project_mid):
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.xfail(reason="Accessibility violations found.")
 def test_create_project_page(live_server, page: Page, login, admin_user):
-    """Test accessibility in selected pages."""
+    """Test accessibility in the create project page."""
     page_url = "main:project_create"
     login(admin_user)
     url = live_server.url + reverse(page_url)
@@ -106,7 +106,7 @@ def test_create_project_page(live_server, page: Page, login, admin_user):
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.xfail(reason="Accessibility violations found.")
 def test_project_update_page(live_server, page: Page, login, admin_user, project_mid):
-    """Test accessibility in selected pages."""
+    """Test accessibility in the update project page."""
     page_url = "main:project_update"
     login(admin_user)
     url = live_server.url + reverse(page_url, kwargs={"pk": project_mid.pk})
