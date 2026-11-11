@@ -1411,3 +1411,27 @@ class Allocation(FullTimeEquivalent):
         help_text="Project this allocation relates to.",
         on_delete=models.CASCADE,
     )
+
+
+class FundingBody(models.Model):
+    """Model to manage different funding bodies."""
+
+    name = models.CharField(
+        "Name",
+        blank=False,
+        null=False,
+        help_text="The name of the funding body, possibly an acronym.",
+    )
+
+    programme = models.CharField(
+        "Programme",
+        blank=True,
+        null=True,
+        help_text="Name of the funding body programme or scheme, if any.",
+    )
+
+    def __str__(self) -> str:
+        """String representation of the FundingBody object."""
+        if self.programme:
+            return f"{self.name} ({self.programme})"
+        return self.name
