@@ -125,13 +125,12 @@ def get_project_count_per_funding_body(
         .exclude(funding_body__name="TBC")
     )
 
-    # Assume funding bodies are named in the form "Name (...)" or simply "Name"
     return Counter(
         [
-            fund.funding_body.split("(")[0].strip()
-            if isinstance(fund.funding_body, str)
-            else "Internal"
-            for fund in project_fundings
+            "Internal" if source == "Internal" else name
+            for source, name in project_fundings.values_list(
+                "source", "funding_body__name"
+            )
         ]
     )
 
@@ -156,13 +155,10 @@ def get_funding_per_funding_body(projects: list[models.Project]) -> dict[str, fl
 
     # Determine total funding from each funding body across queried projects
     funding_per_body: dict[str, float] = defaultdict(float)
-    for funding_body, budget in project_fundings.values_list("funding_body", "budget"):
-        # Assume funding bodies are in the form "Name (...)" or simply "Name"
-        body = (
-            funding_body.split("(")[0].strip()
-            if isinstance(funding_body, str)
-            else "Internal"
-        )
+    for source, name, budget in project_fundings.values_list(
+        "source", "funding_body__name", "budget"
+    ):
+        body = "Internal" if source == "Internal" else name
         funding_per_body[body] += float(budget)
 
     return funding_per_body

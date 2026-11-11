@@ -133,6 +133,8 @@ class FundingInlineForm(forms.ModelForm):  # type: ignore [type-arg]
 
     The `project` field is left out, since it is supplied automatically by
     the enclosing formset (see `FundingInlineFormSet`).
+
+    The funding body defaults to the 'None' funding body when not provided.
     """
 
     class Meta:
@@ -143,6 +145,20 @@ class FundingInlineForm(forms.ModelForm):  # type: ignore [type-arg]
         widgets: ClassVar = {
             "expiry_date": forms.DateInput(format=("%Y-%m-%d"), attrs={"type": "date"}),
         }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[explicit-any]
+        """Make the funding body optional, with no blank choice."""
+        super().__init__(*args, **kwargs)
+        field = self.fields["funding_body"]
+        field.required = False
+        if isinstance(field, forms.ModelChoiceField):
+            field.empty_label = None
+
+    def clean_funding_body(self) -> models.FundingBody:
+        """Use the 'None' funding body when none is provided."""
+        return self.cleaned_data["funding_body"] or models.FundingBody.objects.get(
+            pk=models.get_none_funding_body()
+        )
 
 
 FundingInlineFormSet = forms.inlineformset_factory(
