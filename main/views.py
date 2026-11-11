@@ -139,12 +139,12 @@ class CostRecoveryView(LoginRequiredMixin, PermissionRequiredMixin, FormView):  
 
 
 class ProjectCreateInlineView(PermissionRequiredMixin, View):
-    """Create a Project together with its Funding and Phases in one page.
+    """Create a Project together with its Funding, Phases and Allocations in one page.
 
-    This view lets a new project be created with its funding and phases all
+    This view lets a new project be created with its funding, phases and allocations all
     filled in together on a single page, via the `FundingInlineFormSet` and
-    `ProjectPhaseInlineFormSet` formsets, rather than requiring the project
-    to be created first and its funding/phases added separately afterwards.
+    `ProjectPhaseInlineFormSet` formsets, rather than requiring the project to be
+    created first and its funding/phases/allocations added separately afterwards.
     """
 
     permission_required = (
@@ -157,7 +157,7 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
     template_name = "main/project_inline_form.html"
 
     def get(self, request: HttpRequest) -> HttpResponse:
-        """Render an empty Project form with empty Funding/Phase formsets."""
+        """Render an empty Project form with empty Funding/Phase/Allocation formsets."""
         context = {
             "project_form": forms.ProjectForm(),
             "funding_formset": forms.FundingInlineFormSet(prefix="funding"),
@@ -167,14 +167,13 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request: HttpRequest) -> HttpResponse:
-        """Validate and save the Project, then its Funding and Phase rows.
+        """Validate and save the Project, then its Funding, Phase and Allocation rows.
 
-        The project is saved first, so that the funding and phase rows (which
-        reference it via a foreign key) can be validated and saved against a
-        real primary key. Everything happens inside one atomic transaction:
-        if the funding, phase or allocation formsets turn out to be invalid,
-        the project creation is rolled back too, and the whole page is
-        redisplayed with every error shown together.
+        The project is saved first, so that the funding and phase rows (which reference
+        it via a foreign key) can be validated and saved against a real primary
+        key. Everything happens inside one atomic transaction: if the funding, phase or
+        allocation formsets turn out to be invalid, the project creation is rolled back
+        too, and the whole page is redisplayed with every error shown together.
         """
         project_form = forms.ProjectForm(request.POST)
 
@@ -232,7 +231,7 @@ class ProjectCreateInlineView(PermissionRequiredMixin, View):
 
 
 class ProjectUpdateInlineView(PermissionRequiredMixin, View):
-    """Update a Project together with its Funding and Phases in one page."""
+    """Update a Project with its Funding, Phases and Allocations in one page."""
 
     permission_required = (
         "main.change_project",
@@ -262,7 +261,7 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request: HttpRequest, pk: int) -> HttpResponse:
-        """Validate and save the Project together with its Funding/Phase rows.
+        """Validate and save the Project together with its Funding/Phase/Allocations.
 
         Unlike the create view, the project already has a primary key, so all
         forms/formsets can be validated together up front.
@@ -307,12 +306,12 @@ class ProjectUpdateInlineView(PermissionRequiredMixin, View):
 
 
 class ProjectDetailInlineView(PermissionRequiredMixin, View):
-    """Display a Project together with its Funding and Phases in one page.
+    """Display a Project with its Funding, Phases and Allocations in one page.
 
     This is the read-only counterpart of `ProjectCreateInlineView` and
-    `ProjectUpdateInlineView`: it shows the same Project/Funding/Phases
-    layout, but with every field disabled and without any of the
-    add-row/save affordances, since nothing here can be edited.
+    `ProjectUpdateInlineView`: it shows the same Project/Funding/Phases/Allocations
+    layout, but with every field disabled and without any of the add-row/save
+    affordances, since nothing here can be edited.
     """
 
     permission_required = (
@@ -340,12 +339,12 @@ class ProjectDetailInlineView(PermissionRequiredMixin, View):
         return form
 
     def get(self, request: HttpRequest, pk: int) -> HttpResponse:
-        """Render the Project, Funding and Phase details, all read-only.
+        """Render the Project, Funding, Phase and Allocations details, all read-only.
 
-        Unlike the create/update views, no formsets are used here: each
-        existing Funding/Phase row is rendered as its own disabled
-        `ModelForm`, since there is no need for the extra blank rows,
-        management form, or delete checkboxes that a formset would add.
+        Unlike the create/update views, no formsets are used here: each existing
+        Funding/Phase row is rendered as its own disabled `ModelForm`, since there is no
+        need for the extra blank rows, management form, or delete checkboxes that a
+        formset would add.
         """
         project = get_object_or_404(models.Project, pk=pk)
 
