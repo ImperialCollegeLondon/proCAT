@@ -10,7 +10,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
-from datetime import datetime
+from logging import getLogger
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -181,13 +181,35 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 WORKING_DAYS = 220  # Number of working days per year
 EFFORT_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for effort left (percent)
 WEEKS_LEFT_THRESHOLD = [50, 30, 10, 0]  # Thresholds for weeks left (percent)
-CLOCKIFY_API_KEY = os.environ.get("CLOCKIFY_API_KEY")
-CLOCKIFY_WORKSPACE_ID = os.environ.get("CLOCKIFY_WORKSPACE_ID")
-KIMAI_BASE_URL = os.environ.get("KIMAI_BASE_URL", "")
-KIMAI_API_TOKEN = os.environ.get("KIMAI_API_TOKEN", "")
-_cutover_date = os.environ.get("CLOCKIFY_CUTOVER_DATE")
-if _cutover_date:
-    CLOCKIFY_CUTOVER_DATE = datetime.fromisoformat(_cutover_date)
+
+# Time tracking settings
+logger = getLogger(__name__)
+TIME_TRACKING_TOOL = os.environ.get("TIME_TRACKING_TOOL", "").lower()
+match TIME_TRACKING_TOOL:
+    case "clockify":
+        CLOCKIFY_API_KEY = os.environ.get("CLOCKIFY_API_KEY")
+        CLOCKIFY_WORKSPACE_ID = os.environ.get("CLOCKIFY_WORKSPACE_ID")
+        if not CLOCKIFY_API_KEY or not CLOCKIFY_WORKSPACE_ID:
+            logger.warning(
+                "CLOCKIFY_API_KEY and/or CLOCKIFY_WORKSPACE_ID environment "
+                "variables not set. Clockify integration will be disabled."
+            )
+            TIME_TRACKING_TOOL = ""
+    case "kimai":
+        KIMAI_BASE_URL = os.environ.get("KIMAI_BASE_URL", "")
+        KIMAI_API_TOKEN = os.environ.get("KIMAI_API_TOKEN", "")
+        if not KIMAI_BASE_URL or not KIMAI_API_TOKEN:
+            logger.warning(
+                "KIMAI_BASE_URL and/or KIMAI_API_TOKEN environment variables "
+                "not set. Kimai integration will be disabled."
+            )
+            TIME_TRACKING_TOOL = ""
+    case _:
+        logger.warning(
+            "TIME_TRACKING_TOOL environment variable not set or invalid. "
+            "Time tracking features will be disabled."
+        )
+        TIME_TRACKING_TOOL = ""
 
 # Azure OIDC settings
 OIDC_RP_CLIENT_ID = os.environ.get("OIDC_RP_CLIENT_ID")
