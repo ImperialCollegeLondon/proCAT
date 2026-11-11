@@ -186,6 +186,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
                 source=source,
                 line_width=2,
                 color=trace["colour"],
+                line_dash=trace.get("line_dash", []),
                 legend_label=label,
             )
         )
@@ -680,30 +681,48 @@ def create_allocation_plot_for_project(
 ) -> figure | None:
     """Create an allocation plot for the detail project page.
 
-    Always shown when the project has a date range, even with zero
-    allocations, so there's an initial idea of the required FTE before
-    anyone is assigned.
+    Always shown when the project has a date range, even with zero allocations, so
+    there's an initial idea of the required FTE before anyone is assigned.
+
+    Args:
+        project: The project to display the allocations for.
+        x_range: The date range to consider the allocations over.
+
+    Returns:
+        The plot, or None if the project has no start or end date
     """
     if project.start_date is None or project.end_date is None:
         return None
 
     fte = project.fte(include_excess=False)
+    total_allocation = pd.Series(0.0, index=fte.index)
+
     traces = [{"timeseries": fte, "label": "Project FTE", "colour": "green"}]
     colours = cycle(["red", "purple", "yellow", "navy"])
     for allocation in models.Allocation.objects.filter(project=project):
+        allocation_trace = allocation.trace(fte.index)  # type: ignore[arg-type]
         traces.append(
             {
-                "timeseries": allocation.trace(fte.index),  # type: ignore[arg-type]
+                "timeseries": allocation_trace,
                 "label": str(allocation.user),
                 "colour": next(colours),
             }
         )
+        total_allocation += allocation_trace
+
+    # Plot total allocation only if allocations exist
+    if len(traces) > 1:
+        traces.append(
+            {
+                "timeseries": total_allocation,
+                "label": "Allocated FTE",
+                "colour": "black",
+                "line_dash": "dashed",
+            }
+        )
 
     plot = create_timeseries_plot(
-        "Allocations",
-        traces,
-        height=200,
-        legend_loc="bottom_right",
+        "Allocations", traces, height=200, legend_loc="bottom_right"
     )
     plot.yaxis.axis_label = "FTE"
     plot.legend.nrows = 1
