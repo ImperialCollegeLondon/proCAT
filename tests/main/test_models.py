@@ -414,7 +414,7 @@ class TestProject:
         assert project.days_left == pytest.approx((left, left / phase1.days * 100))
 
     @pytest.mark.django_db
-    def test_total_funding_left(self, project, analysis_code):
+    def test_total_funding_left(self, project, analysis_code, funding_body):
         """Test the total_funding_left method."""
         from main import models
 
@@ -425,7 +425,7 @@ class TestProject:
         funding = models.Funding.objects.create(
             project=project,
             source="External",
-            funding_body="Funding body",
+            funding_body=funding_body,
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
@@ -462,7 +462,7 @@ class TestProject:
         assert project.total_funding_left == expected_funding_left
 
     @pytest.mark.django_db
-    def test_percent_effort_left(self, project, analysis_code):
+    def test_percent_effort_left(self, project, analysis_code, funding_body):
         """Test the percent_effort_left method."""
         from main import models
 
@@ -473,7 +473,7 @@ class TestProject:
         funding = models.Funding.objects.create(
             project=project,
             source="External",
-            funding_body="Funding body",
+            funding_body=funding_body,
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
@@ -840,6 +840,7 @@ class TestDailyRate:
         assert models.get_current_daily_rate() == latest.rate
 
 
+@pytest.mark.django_db
 class TestFunding:
     """Tests for the funding model."""
 
@@ -901,7 +902,7 @@ class TestFunding:
         funding = models.Funding(source="Internal", daily_rate=389.00)
         assert funding.is_complete()
 
-    def test_is_complete_when_external(self):
+    def test_is_complete_when_external(self, funding_body, none_funding_body):
         """Test the is_complete method."""
         from main import models
 
@@ -916,14 +917,30 @@ class TestFunding:
 
         funding = models.Funding(
             source="External",
-            funding_body="EPSRC",
+            funding_body=funding_body,
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
             expiry_date=timezone.now().date(),
             daily_rate=389.00,
         )
-        funding.is_complete()
+        assert funding.is_complete()
+
+        # the 'None' funding body does not count as a funding body
+        funding.funding_body = none_funding_body
+        assert not funding.is_complete()
+
+        # no funding body at all
+        funding = models.Funding(
+            source="External",
+            funding_body_id=None,
+            cost_centre="centre",
+            activity="G12345",
+            analysis_code=analysis_code,
+            expiry_date=timezone.now().date(),
+            daily_rate=389.00,
+        )
+        assert not funding.is_complete()
 
     def test_clean(self):
         """Test the clean method."""
@@ -977,14 +994,16 @@ class TestFunding:
             ["G12345", does_not_raise()],
         ],
     )
-    def test_clean_activity(self, activity, expectation, project, analysis_code):
+    def test_clean_activity(
+        self, activity, expectation, project, analysis_code, funding_body
+    ):
         """Test the clean method for validation of the activity code."""
         from main import models
 
         funding = models.Funding(
             project=project,
             source="External",
-            funding_body="EPSRC",
+            funding_body=funding_body,
             cost_centre="centre",
             activity=activity,
             analysis_code=analysis_code,
@@ -1023,14 +1042,14 @@ class TestFunding:
             [1000.00, does_not_raise()],
         ],
     )
-    def test_budget(self, project, analysis_code, budget, expectation):
+    def test_budget(self, project, analysis_code, funding_body, budget, expectation):
         """Test that the budget cannot be a negative value."""
         from main import models
 
         funding = models.Funding.objects.create(
             project=project,
             source="External",
-            funding_body="EPSRC",
+            funding_body=funding_body,
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
@@ -1049,14 +1068,16 @@ class TestFunding:
             [389.00, does_not_raise()],
         ],
     )
-    def test_daily_rate(self, project, analysis_code, daily_rate, expectation):
+    def test_daily_rate(
+        self, project, analysis_code, funding_body, daily_rate, expectation
+    ):
         """Test that the daily rate cannot be a negative value."""
         from main import models
 
         funding = models.Funding(
             project=project,
             source="External",
-            funding_body="EPSRC",
+            funding_body=funding_body,
             cost_centre="centre",
             activity="G12345",
             analysis_code=analysis_code,
@@ -1176,15 +1197,16 @@ class TestFunding:
         # Last month is not charged, so the charge is None
         assert funding.monthly_pro_rata_charge(end_date) is None
 
-    @pytest.mark.django_db
-    def test_is_valid_internal(self, project):
-        """Test Funding's is_valid_internal method."""
+    def test_is_valid_internal(self, project, funding_body):
+        """Test Funding's is_valid_internal method.
+
+        The funding body is not taken into account, so any funding body is valid.
+        """
         from main.models import Funding
 
         valid_internal1 = Funding(
             project=project,
             source="Internal",
-            funding_body=None,
             cost_centre=None,
             activity=None,
             budget=98.76,
@@ -1195,7 +1217,7 @@ class TestFunding:
         valid_internal2 = Funding(
             project=project,
             source="Internal",
-            funding_body="",
+            funding_body=funding_body,
             cost_centre="",
             activity="",
             budget=98.76,
@@ -1206,8 +1228,7 @@ class TestFunding:
         invalid_internal1 = Funding(
             project=project,
             source="Internal",
-            funding_body="UKFB",  # forbidden
-            cost_centre=None,
+            cost_centre="QWERTY",  # forbidden
             activity=None,
             budget=98.76,
             daily_rate=12.34,
@@ -1218,9 +1239,8 @@ class TestFunding:
         invalid_internal2 = Funding(
             project=project,
             source="Internal",
-            funding_body=None,
-            cost_centre="QWERTY",  # forbidden
-            activity="G23456",  # also forbidden
+            cost_centre=None,
+            activity="G23456",  # forbidden
             budget=98.76,
             daily_rate=12.34,
         )

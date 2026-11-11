@@ -14,7 +14,7 @@ from main.analytics import (
     get_project_count_per_funding_body,
     get_projects_active_between,
 )
-from main.models import AnalysisCode, Department, Funding, Project
+from main.models import AnalysisCode, Department, Funding, FundingBody, Project
 
 
 @pytest.fixture
@@ -100,12 +100,18 @@ def projects_list(db):
 @pytest.fixture
 def fundings_list(db):
     """A list of fundings to cover a broad range of budget types."""
+    maths = FundingBody.objects.create(name="MathsProjectFunder55")
+    med_tech = FundingBody.objects.create(name="MedFunds", programme="Tech")
+    med_core = FundingBody.objects.create(name="MedFunds", programme="Core")
+    secret = FundingBody.objects.create(name="SecretTechOrg", programme="Division51")
+    pico = FundingBody.objects.create(name="Picotechnology Research Centre")
+
     fundings_list = [
         Funding(
             project=Project.objects.get(name="Calcul8"),
             cost_centre="abc",
             source="External",
-            funding_body="MathsProjectFunder55",
+            funding_body=maths,
             analysis_code=AnalysisCode.objects.get(code=165138),
             budget=12.34,
         ),
@@ -120,7 +126,7 @@ def fundings_list(db):
             project=Project.objects.get(name="Vaxin7"),
             cost_centre="jkl",
             source="External",
-            funding_body="MedFunds (Tech)",
+            funding_body=med_tech,
             analysis_code=AnalysisCode.objects.get(code=182130),
             budget=34.56,
         ),
@@ -128,7 +134,7 @@ def fundings_list(db):
             project=Project.objects.get(name="Vaxin8"),
             cost_centre="jkl",
             source="External",
-            funding_body="MedFunds (Core)",
+            funding_body=med_core,
             analysis_code=AnalysisCode.objects.get(code=182130),
             budget=45.67,
         ),
@@ -136,7 +142,7 @@ def fundings_list(db):
             project=Project.objects.get(name="Vaxin8"),
             cost_centre="jkl",
             source="External",
-            funding_body="MedFunds (Tech)",
+            funding_body=med_tech,
             analysis_code=AnalysisCode.objects.get(code=165138),
             budget=56.78,
         ),
@@ -144,7 +150,7 @@ def fundings_list(db):
             project=Project.objects.get(name="ProjectX"),
             cost_centre="uvw",
             source="External",
-            funding_body="SecretTechOrg (Division51)",
+            funding_body=secret,
             analysis_code=AnalysisCode.objects.get(code=165134),
             budget=67.89,
         ),
@@ -152,7 +158,7 @@ def fundings_list(db):
             project=Project.objects.get(name="Picobots"),
             cost_centre="pqr",
             source="External",
-            funding_body="Picotechnology Research Centre",
+            funding_body=pico,
             analysis_code=AnalysisCode.objects.get(code=165138),
             budget=78.90,
         ),

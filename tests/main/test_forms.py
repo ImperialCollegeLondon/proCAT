@@ -89,7 +89,7 @@ class TestProjectPhaseForm:
 class TestFundingInlineFormSet:
     """Tests for the FundingInlineFormSet."""
 
-    def test_create_two_funding_rows(self, project_static, analysis_code):
+    def test_create_two_funding_rows(self, project_static, analysis_code, funding_body):
         """Two funding rows can be created together for the same project."""
         data = {
             "funding-TOTAL_FORMS": "2",
@@ -100,7 +100,7 @@ class TestFundingInlineFormSet:
             "funding-0-budget": "1000",
             "funding-0-daily_rate": "389",
             "funding-1-source": "External",
-            "funding-1-funding_body": "UKRI",
+            "funding-1-funding_body": str(funding_body.pk),
             "funding-1-cost_centre": "centre",
             "funding-1-activity": "G12345",
             "funding-1-analysis_code": str(analysis_code.pk),
@@ -117,6 +117,30 @@ class TestFundingInlineFormSet:
         formset.save()
 
         assert project_static.funding_source.count() == 3
+
+    @pytest.mark.parametrize("extra", [{}, {"funding-0-funding_body": ""}])
+    def test_funding_body_defaults_to_none(
+        self, project_static, none_funding_body, extra
+    ):
+        """An omitted or blank funding body falls back to the 'None' funding body."""
+        data = {
+            "funding-TOTAL_FORMS": "1",
+            "funding-INITIAL_FORMS": "0",
+            "funding-MIN_NUM_FORMS": "0",
+            "funding-MAX_NUM_FORMS": "1000",
+            "funding-0-source": "Internal",
+            "funding-0-budget": "1000",
+            "funding-0-daily_rate": "389",
+            **extra,
+        }
+
+        formset = forms.FundingInlineFormSet(
+            data, instance=project_static, prefix="funding"
+        )
+
+        assert formset.is_valid(), formset.errors
+        (funding,) = formset.save()
+        assert funding.funding_body == none_funding_body
 
 
 @pytest.mark.django_db

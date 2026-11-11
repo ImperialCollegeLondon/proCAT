@@ -102,7 +102,7 @@ def project(user, department):
 
 
 @pytest.fixture
-def project_mid(user, department, analysis_code):
+def project_mid(user, department, analysis_code, funding_body):
     """Provides a project object halfway through it lifetime."""
     from main import models
 
@@ -118,7 +118,7 @@ def project_mid(user, department, analysis_code):
     _ = models.Funding.objects.get_or_create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -131,7 +131,7 @@ def project_mid(user, department, analysis_code):
 
 
 @pytest.fixture
-def project_static(user, department, analysis_code):
+def project_static(user, department, analysis_code, funding_body):
     """Provides a statically dated project object with funding."""
     from main import models
 
@@ -147,7 +147,7 @@ def project_static(user, department, analysis_code):
     _ = models.Funding.objects.get_or_create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -170,14 +170,30 @@ def analysis_code():
 
 
 @pytest.fixture
-def funding(project, analysis_code):
+def funding_body():
+    """Provides a default funding body object."""
+    from main import models
+
+    return models.FundingBody.objects.get_or_create(name="Funding body")[0]
+
+
+@pytest.fixture
+def none_funding_body():
+    """Provides the 'None' funding body used as default."""
+    from main import models
+
+    return models.FundingBody.objects.get(pk=models.get_none_funding_body())
+
+
+@pytest.fixture
+def funding(project, analysis_code, funding_body):
     """Provides a default funding object."""
     from main import models
 
     return models.Funding.objects.get_or_create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
