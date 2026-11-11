@@ -175,7 +175,15 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         # If there's no label, that's the mark of a ghost trace used for area filling
         # and hover tooltips only. Should not appear in the legend
         if not label:
-            hover_renderer = [plot.line("index", label, source=source, alpha=0)]
+            hover_renderer = [
+                plot.line(
+                    "index",
+                    label,
+                    source=source,
+                    color=trace["colour"],
+                    line_dash=trace.get("line_dash", []),
+                )
+            ]
             continue
 
         # The other traces are plotted and included in the legend
@@ -294,8 +302,9 @@ def create_capacity_planning_plot(
         traces.append(
             {
                 "timeseries": all_projects,
-                "colour": None,
+                "colour": "black",
                 "label": "",
+                "line_dash": "dashed",
             }
         )
 
