@@ -715,17 +715,11 @@ class Funding(models.Model):
         " projects. If not 'Internal', all fields are mandatory.",
     )
 
-    funding_body = models.CharField(
-        "Funding body",
-        blank=True,
-        null=True,
-        help_text="The organisation or department providing the funding.",
-    )
-
-    funding_body_link = models.ForeignKey(
+    funding_body = models.ForeignKey(
         FundingBody,
         default=get_none_funding_body,
         on_delete=models.SET_DEFAULT,
+        help_text="The organisation or department providing the funding.",
     )
 
     cost_centre = models.CharField(
