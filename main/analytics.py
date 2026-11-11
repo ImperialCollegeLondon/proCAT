@@ -122,7 +122,7 @@ def get_project_count_per_funding_body(
     project_fundings = (
         models.Funding.objects.filter(project__in=projects)
         .exclude(project__status="Tentative")
-        .exclude(funding_body="TBC")
+        .exclude(funding_body__name="TBC")
     )
 
     # Assume funding bodies are named in the form "Name (...)" or simply "Name"
@@ -151,7 +151,7 @@ def get_funding_per_funding_body(projects: list[models.Project]) -> dict[str, fl
     project_fundings = (
         models.Funding.objects.filter(project__in=projects)
         .exclude(project__status="Tentative")
-        .exclude(funding_body="TBC")
+        .exclude(funding_body__name="TBC")
     )
 
     # Determine total funding from each funding body across queried projects
