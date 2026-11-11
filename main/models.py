@@ -687,9 +687,12 @@ class FundingBody(models.Model):
         return self.name
 
 
-def get_none_funding_body():
+NONE_FUNDING_BODY_NAME = "None"
+
+
+def get_none_funding_body() -> int:
     """Get 'None' funding body as default value."""
-    return FundingBody.objects.get_or_create(name="None")[0].pk
+    return FundingBody.objects.get_or_create(name=NONE_FUNDING_BODY_NAME)[0].pk
 
 
 class Funding(models.Model):
@@ -823,8 +826,8 @@ class Funding(models.Model):
 
         if not self.is_valid_internal():
             raise ValidationError(
-                "Internally funded projects cannot have a funding body, cost centre,"
-                " activity or analysis code."
+                "Internally funded projects cannot have a cost centre, activity or"
+                " analysis code."
             )
 
     def is_complete(self) -> bool:
@@ -835,8 +838,13 @@ class Funding(models.Model):
         if self.source == "Internal":
             return True
 
+        try:
+            has_funding_body = self.funding_body.name != NONE_FUNDING_BODY_NAME
+        except ObjectDoesNotExist:
+            has_funding_body = False
+
         return bool(
-            self.funding_body
+            has_funding_body
             and self.cost_centre
             and self.activity
             and self.analysis_code
