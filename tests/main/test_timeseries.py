@@ -225,7 +225,7 @@ def test_get_capacity_timeseries(user):
 
 
 @pytest.mark.django_db
-def test_get_cost_recovery_timeseries(department, user, analysis_code):
+def test_get_cost_recovery_timeseries(department, user, analysis_code, funding_body):
     """Test the get_cost_recovery_timeseries function."""
     from main import models, report, timeseries, utils
 
@@ -245,7 +245,7 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     models.Funding.objects.create(  # expires first
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -256,7 +256,7 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G56789",
         analysis_code=analysis_code,
@@ -311,7 +311,7 @@ def test_get_cost_recovery_timeseries(department, user, analysis_code):
 
 @pytest.mark.django_db
 def test_get_cost_recovery_timeseries_equal_to_num_people(
-    department, user, analysis_code
+    department, user, analysis_code, funding_body
 ):
     """Test the get_cost_recovery_timeseries function when all time in project work.
 
@@ -336,7 +336,7 @@ def test_get_cost_recovery_timeseries_equal_to_num_people(
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -347,7 +347,7 @@ def test_get_cost_recovery_timeseries_equal_to_num_people(
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,

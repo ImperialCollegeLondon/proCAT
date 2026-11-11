@@ -308,7 +308,7 @@ def test_days_used_exceeding_days_left(user, project):
 
 
 @pytest.mark.django_db
-def test_order_queryset_by_property(project, analysis_code):
+def test_order_queryset_by_property(project, analysis_code, funding_body):
     """Test the order_queryset_by_property function."""
     from main import models, utils
 
@@ -316,7 +316,7 @@ def test_order_queryset_by_property(project, analysis_code):
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -329,7 +329,7 @@ def test_order_queryset_by_property(project, analysis_code):
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -342,7 +342,7 @@ def test_order_queryset_by_property(project, analysis_code):
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,

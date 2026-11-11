@@ -61,7 +61,7 @@ def test_get_actual_chargeable_days(user, project, funding):
 
 
 @pytest.mark.django_db
-def test_get_valid_funding_sources(project, analysis_code):
+def test_get_valid_funding_sources(project, analysis_code, funding_body):
     """Test the get_valid_funding_sources function."""
     from main import models, report
 
@@ -71,7 +71,7 @@ def test_get_valid_funding_sources(project, analysis_code):
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -83,7 +83,7 @@ def test_get_valid_funding_sources(project, analysis_code):
     valid_funding = models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G56789",
         analysis_code=analysis_code,
@@ -95,7 +95,7 @@ def test_get_valid_funding_sources(project, analysis_code):
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="F12345",
         analysis_code=analysis_code,
@@ -109,7 +109,9 @@ def test_get_valid_funding_sources(project, analysis_code):
 
 
 @pytest.mark.django_db
-def test_create_pro_rata_monthly_charges_missing_dates(department, user, analysis_code):
+def test_create_pro_rata_monthly_charges_missing_dates(
+    department, user, analysis_code, funding_body
+):
     """Test the create_pro_rata_monthly_charges function with missing dates."""
     from main import models, report
 
@@ -127,7 +129,7 @@ def test_create_pro_rata_monthly_charges_missing_dates(department, user, analysi
     funding = models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -143,7 +145,7 @@ def test_create_pro_rata_monthly_charges_missing_dates(department, user, analysi
 
 
 @pytest.mark.django_db
-def test_create_pro_rata_monthly_charges(department, user, analysis_code):
+def test_create_pro_rata_monthly_charges(department, user, analysis_code, funding_body):
     """Test the create_pro_rata_monthly_charges function."""
     from main import models, report
 
@@ -163,7 +165,7 @@ def test_create_pro_rata_monthly_charges(department, user, analysis_code):
     funding = models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -180,7 +182,7 @@ def test_create_pro_rata_monthly_charges(department, user, analysis_code):
 
 @pytest.mark.django_db
 def test_create_actual_monthly_charges_validate_effort_left(
-    department, user, analysis_code
+    department, user, analysis_code, funding_body
 ):
     """Test the create_actual_monthly_charges function when total effort exceeded."""
     from main import models, report
@@ -201,7 +203,7 @@ def test_create_actual_monthly_charges_validate_effort_left(
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -212,7 +214,7 @@ def test_create_actual_monthly_charges_validate_effort_left(
     models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -253,7 +255,7 @@ def test_create_actual_monthly_charges_validate_effort_left(
 
 
 @pytest.mark.django_db
-def test_create_actual_monthly_charges(department, user, analysis_code):
+def test_create_actual_monthly_charges(department, user, analysis_code, funding_body):
     """Test the create_actual_monthly_charges function."""
     from main import models, report
 
@@ -272,7 +274,7 @@ def test_create_actual_monthly_charges(department, user, analysis_code):
     funding_A = models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -283,7 +285,7 @@ def test_create_actual_monthly_charges(department, user, analysis_code):
     funding_B = models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G56789",
         analysis_code=analysis_code,
@@ -472,7 +474,9 @@ def test_confirmed_charges_are_not_deleted(project, funding):
 
 
 @pytest.mark.django_db
-def test_create_charges_report_for_download(department, user, analysis_code):
+def test_create_charges_report_for_download(
+    department, user, analysis_code, funding_body
+):
     """Test the create_charges_report_for_download function."""
     from main import models, report
 
@@ -492,7 +496,7 @@ def test_create_charges_report_for_download(department, user, analysis_code):
     funding_A = models.Funding.objects.create(
         project=project_A,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -514,7 +518,7 @@ def test_create_charges_report_for_download(department, user, analysis_code):
     funding_B = models.Funding.objects.create(
         project=project_B,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G56789",
         analysis_code=analysis_code,
@@ -572,7 +576,9 @@ def test_create_charges_report_for_download(department, user, analysis_code):
 
 
 @pytest.mark.django_db
-def test_create_charges_report_for_attachment(department, user, analysis_code):
+def test_create_charges_report_for_attachment(
+    department, user, analysis_code, funding_body
+):
     """Test the create_charges_report_for_attachment function."""
     from main import models, report
 
@@ -592,7 +598,7 @@ def test_create_charges_report_for_attachment(department, user, analysis_code):
     funding = models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
@@ -621,7 +627,9 @@ def test_create_charges_report_for_attachment(department, user, analysis_code):
 
 
 @pytest.mark.django_db
-def test_get_projects_to_create_report_for(department, user, analysis_code):
+def test_get_projects_to_create_report_for(
+    department, user, analysis_code, funding_body
+):
     """Test the _get_projects_to_create_report_for function."""
     from main import models, report
 
@@ -641,7 +649,7 @@ def test_get_projects_to_create_report_for(department, user, analysis_code):
     funding = models.Funding.objects.create(
         project=project,
         source="External",
-        funding_body="Funding body",
+        funding_body=funding_body,
         cost_centre="centre",
         activity="G12345",
         analysis_code=analysis_code,
