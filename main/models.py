@@ -658,6 +658,40 @@ def get_current_daily_rate() -> float:
     return float(current.rate) if current is not None else FALLBACK_DAILY_RATE
 
 
+class FundingBody(models.Model):
+    """Model to manage different funding bodies."""
+
+    name = models.CharField(
+        "Name",
+        blank=False,
+        null=False,
+        help_text="The name of the funding body, possibly an acronym.",
+    )
+
+    programme = models.CharField(
+        "Programme",
+        blank=True,
+        null=True,
+        help_text="Name of the funding body programme or scheme, if any.",
+    )
+
+    class Meta:
+        """Meta class for the model."""
+
+        verbose_name_plural = "funding bodies"
+
+    def __str__(self) -> str:
+        """String representation of the FundingBody object."""
+        if self.programme:
+            return f"{self.name} ({self.programme})"
+        return self.name
+
+
+def get_none_funding_body():
+    """Get 'None' funding body as default value."""
+    return FundingBody.objects.get_or_create(name="None")[0].pk
+
+
 class Funding(models.Model):
     """Funding associated with a project."""
 
@@ -686,6 +720,12 @@ class Funding(models.Model):
         blank=True,
         null=True,
         help_text="The organisation or department providing the funding.",
+    )
+
+    funding_body_link = models.ForeignKey(
+        FundingBody,
+        default=get_none_funding_body,
+        on_delete=models.SET_DEFAULT,
     )
 
     cost_centre = models.CharField(
@@ -1411,27 +1451,3 @@ class Allocation(FullTimeEquivalent):
         help_text="Project this allocation relates to.",
         on_delete=models.CASCADE,
     )
-
-
-class FundingBody(models.Model):
-    """Model to manage different funding bodies."""
-
-    name = models.CharField(
-        "Name",
-        blank=False,
-        null=False,
-        help_text="The name of the funding body, possibly an acronym.",
-    )
-
-    programme = models.CharField(
-        "Programme",
-        blank=True,
-        null=True,
-        help_text="Name of the funding body programme or scheme, if any.",
-    )
-
-    def __str__(self) -> str:
-        """String representation of the FundingBody object."""
-        if self.programme:
-            return f"{self.name} ({self.programme})"
-        return self.name
