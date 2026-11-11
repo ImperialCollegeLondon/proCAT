@@ -441,10 +441,15 @@ def sync_kimai_time_entries(
                 logger.warning(issues[-1])
                 continue
 
-            # And that the time entry has start and end times
+            # And that the time entry has start and end times, ensuring awareness
             try:
                 start_time = datetime.datetime.fromisoformat(start)
+                if timezone.is_naive(start_time):
+                    start_time = timezone.make_aware(start_time)
+
                 end_time = datetime.datetime.fromisoformat(end)
+                if timezone.is_naive(end_time):
+                    end_time = timezone.make_aware(end_time)
             except Exception:
                 issues.append(
                     f"Start or end times for entry {entry_id} in project "

@@ -19,6 +19,11 @@ from main.tasks import (
 )
 
 
+def aware(*args):
+    """Helper to create timezone-aware datetimes for tests."""
+    return timezone.make_aware(datetime(*args))
+
+
 @pytest.mark.parametrize(
     "threshold_type, threshold, value, expected_message",
     [
@@ -69,18 +74,15 @@ def test_notify_left_threshold_invalid_type():
 @pytest.mark.django_db
 def test_process_time_logged_summary_sends_email(user, project):
     """Test that the monthly time logged summary sends an email."""
-    from main.models import TimeEntry
-
-    # Create a time entry in April 2025
     TimeEntry.objects.create(
         user=user,
         project=project,
-        start_time=datetime(2025, 4, 10, 11, 0),
-        end_time=datetime(2025, 4, 10, 16, 0),
+        start_time=aware(2025, 4, 10, 11, 0),
+        end_time=aware(2025, 4, 10, 16, 0),
     )
 
-    last_month_start = datetime(2025, 4, 1)
-    current_month_start = datetime(2025, 5, 1)
+    last_month_start = aware(2025, 4, 1)
+    current_month_start = aware(2025, 5, 1)
     last_month_name = "April"
     current_month_name = "May"
 
@@ -116,8 +118,8 @@ def test_process_time_logged_summary_sends_email(user, project):
 @pytest.mark.django_db
 def test_process_time_logged_summary_no_entries(user):
     """Test that no email is sent if there are no time entries."""
-    last_month_start = datetime(2025, 4, 1)
-    current_month_start = datetime(2025, 5, 1)
+    last_month_start = aware(2025, 4, 1)
+    current_month_start = aware(2025, 5, 1)
     last_month_name = "April"
     current_month_name = "May"
 
@@ -135,27 +137,26 @@ def test_process_time_logged_summary_no_entries(user):
 @pytest.mark.django_db
 def test_process_time_logged_summary_multiple_projects(user, department):
     """Test that the summary correctly aggregates time across multiple projects."""
-    from main.models import Project, TimeEntry
+    from main.models import Project
 
     project1 = Project.objects.create(name="Project 1", department=department)
     project2 = Project.objects.create(name="Project 2", department=department)
 
-    # Create time entries for both projects
     TimeEntry.objects.create(
         user=user,
         project=project1,
-        start_time=datetime(2025, 4, 10, 11, 0),
-        end_time=datetime(2025, 4, 10, 16, 0),
+        start_time=aware(2025, 4, 10, 11, 0),
+        end_time=aware(2025, 4, 10, 16, 0),
     )
     TimeEntry.objects.create(
         user=user,
         project=project2,
-        start_time=datetime(2025, 4, 11, 9, 0),
-        end_time=datetime(2025, 4, 11, 17, 0),
+        start_time=aware(2025, 4, 11, 9, 0),
+        end_time=aware(2025, 4, 11, 17, 0),
     )
 
-    last_month_start = datetime(2025, 4, 1)
-    current_month_start = datetime(2025, 5, 1)
+    last_month_start = aware(2025, 4, 1)
+    current_month_start = aware(2025, 5, 1)
     last_month_name = "April"
     current_month_name = "May"
 
@@ -192,7 +193,6 @@ def test_process_time_logged_summary_multiple_projects(user, department):
 @pytest.mark.django_db
 def test_funding_expired_but_has_budget(funding, project):
     """Test that funding expired but has budget."""
-    # Create a funding object with expired date but still has budget
     funding.expiry_date = timezone.now().date() - timedelta(days=1)
     funding.budget = 1000
     funding.save()
@@ -201,7 +201,6 @@ def test_funding_expired_but_has_budget(funding, project):
     assert funding.budget > 0
 
     expected_subject = f"[Funding Expired] {project.name}"
-
     expected_message = (
         f"\nDear {funding.project.lead.get_full_name()},\n\n"
         f"The project {project.name} has expired, but there is still unspent "
@@ -224,7 +223,6 @@ def test_funding_expired_but_has_budget(funding, project):
 @pytest.mark.django_db
 def test_funding_ran_out_not_expired(funding, project):
     """Test that funding ran out but not expired."""
-    # Create a funding object with not expired date but budget ran out
     funding.expiry_date = timezone.now().date() + timedelta(days=30)
     funding.budget = -1000
     funding.save()
@@ -233,7 +231,6 @@ def test_funding_ran_out_not_expired(funding, project):
     assert funding.budget < 0
 
     expected_subject = f"[Funding Update] {project.name}"
-
     expected_message = (
         f"\nDear {funding.project.lead.get_full_name()},\n\n"
         f"The funding {funding.activity} for project {project.name} has run out.\n\n"
@@ -269,7 +266,6 @@ def test_email_monthly_charges_report():
     group = Group.objects.get(name="HoRSE")
     head_user.groups.add(group)
 
-    # Create attachment with empty charges row
     expected_subject = f"Charges report for {month_name}/{year}"
     expected_attachment = report.create_charges_report_for_attachment(month, year)
     expected_fname = f"charges_report_{month}-{year}.csv"
@@ -303,7 +299,7 @@ class TestSyncClockifyTimeEntries:
         self, mock_now, mock_clockify_api, mock_settings, user, funding
     ):
         """Test that a new time entry from the API is created in the database."""
-        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        current_time = aware(2025, 7, 16, 10, 0, 0)
         mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
@@ -439,7 +435,7 @@ class TestSyncClockifyTimeEntries:
         funding,
     ):
         """Existing entries are refreshed when the API reports changes."""
-        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        current_time = aware(2025, 7, 16, 10, 0, 0)
         mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
@@ -450,7 +446,7 @@ class TestSyncClockifyTimeEntries:
         project.status = "Active"
         project.save()
 
-        original_start = timezone.make_aware(datetime(2025, 7, 10, 9, 0, 0))
+        original_start = aware(2025, 7, 10, 9, 0, 0)
         original_end = original_start + timedelta(hours=1)
 
         entry = TimeEntry.objects.create(
@@ -501,7 +497,7 @@ class TestSyncClockifyTimeEntries:
         funding,
     ):
         """Entries absent from the API inside the 30-day window are removed."""
-        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        current_time = aware(2025, 7, 16, 10, 0, 0)
         mock_now.return_value = current_time
         mock_settings.CLOCKIFY_API_KEY = "fake_key"
         mock_settings.CLOCKIFY_WORKSPACE_ID = "fake_workspace"
@@ -552,13 +548,10 @@ class TestSyncKimaiTimeEntries:
         self, mock_now, mock_kimai_api, mock_settings, user, funding
     ):
         """Test that a new time entry from the API is created in the database."""
-        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        current_time = aware(2025, 7, 16, 10, 0, 0)
         mock_now.return_value = current_time
         mock_settings.KIMAI_API_TOKEN = "fake_key"
         mock_settings.KIMAI_BASE_URL = "some_url"
-        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
-            datetime(2020, 7, 16, 10, 0, 0)
-        )
         project = funding.project
         project.kimai_id = 1
         project.status = "Active"
@@ -599,9 +592,6 @@ class TestSyncKimaiTimeEntries:
         """Test that an error is logged if the API call fails."""
         mock_settings.KIMAI_API_TOKEN = "fake_key"
         mock_settings.KIMAI_BASE_URL = "some_url"
-        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
-            datetime(2020, 7, 16, 10, 0, 0)
-        )
         project = funding.project
         project.kimai_id = 1
         project.status = "Active"
@@ -624,9 +614,6 @@ class TestSyncKimaiTimeEntries:
         """Test that entries are skipped if the user does not exist in the database."""
         mock_settings.KIMAI_API_TOKEN = "fake_key"
         mock_settings.KIMAI_BASE_URL = "some_url"
-        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
-            datetime(2020, 7, 16, 10, 0, 0)
-        )
         project = funding.project
         project.kimai_id = 1
         project.status = "Active"
@@ -658,9 +645,6 @@ class TestSyncKimaiTimeEntries:
         """Test that entries are skipped if the user does not exist in the database."""
         mock_settings.KIMAI_API_TOKEN = "fake_key"
         mock_settings.KIMAI_BASE_URL = "some_url"
-        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
-            datetime(2020, 7, 16, 10, 0, 0)
-        )
         project = funding.project
         project.kimai_id = 1
         project.status = "Active"
@@ -680,12 +664,44 @@ class TestSyncKimaiTimeEntries:
         issues = sync_kimai_time_entries()
 
         msg = (
-            "Start or end times for entry 1 in project "
+            f"Start or end times for entry 1 in project "
             f"{project.kimai_id} - {project.name} could not processed."
         )
         assert msg in caplog.text
         assert msg in issues
         assert TimeEntry.objects.count() == 0
+
+    @patch("main.tasks.settings")
+    @patch("main.tasks.KimaiAPI")
+    @patch("main.tasks.timezone.now")
+    def test_sync_kimai_aware_datetimes(
+        self, mock_now, mock_kimai_api, mock_settings, user, funding
+    ):
+        """Test that naive Kimai datetime strings become timezone-aware."""
+        current_time = aware(2025, 7, 16, 10, 0, 0)
+        mock_now.return_value = current_time
+        mock_settings.KIMAI_API_TOKEN = "fake_key"
+        mock_settings.KIMAI_BASE_URL = "some_url"
+        project = funding.project
+        project.kimai_id = 1
+        project.status = "Active"
+        project.save()
+
+        mock_api_instance = mock_kimai_api.return_value
+        mock_api_instance.get_time_entries.return_value = [
+            {
+                "entry_id": 10,
+                "project_id": project.kimai_id,
+                "user_email": user.email,
+                "start": "2025-07-15T12:00:00",  # Naive string
+                "end": "2025-07-15T13:00:00",  # Naive string
+            },
+        ]
+
+        sync_kimai_time_entries(end_date=current_time)
+        entry = TimeEntry.objects.get(kimai_id=10)
+        assert timezone.is_aware(entry.start_time)
+        assert timezone.is_aware(entry.end_time)
 
     @patch("main.tasks.settings")
     @patch("main.tasks.KimaiAPI")
@@ -699,20 +715,17 @@ class TestSyncKimaiTimeEntries:
         funding,
     ):
         """Existing entries are refreshed when the API reports changes."""
-        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        current_time = aware(2025, 7, 16, 10, 0, 0)
         mock_now.return_value = current_time
         mock_settings.KIMAI_API_TOKEN = "fake_key"
         mock_settings.KIMAI_BASE_URL = "some_url"
-        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
-            datetime(2020, 7, 16, 10, 0, 0)
-        )
 
         project = funding.project
         project.kimai_id = 1
         project.status = "Active"
         project.save()
 
-        original_start = timezone.make_aware(datetime(2025, 7, 10, 9, 0, 0))
+        original_start = aware(2025, 7, 10, 9, 0, 0)
         original_end = original_start + timedelta(hours=1)
 
         entry = TimeEntry.objects.create(
@@ -755,13 +768,10 @@ class TestSyncKimaiTimeEntries:
         funding,
     ):
         """Entries absent from the API inside the 30-day window are removed."""
-        current_time = timezone.make_aware(datetime(2025, 7, 16, 10, 0, 0))
+        current_time = aware(2025, 7, 16, 10, 0, 0)
         mock_now.return_value = current_time
         mock_settings.KIMAI_API_TOKEN = "fake_key"
         mock_settings.KIMAI_BASE_URL = "some_url"
-        mock_settings.CLOCKIFY_CUTOVER_DATE = timezone.make_aware(
-            datetime(2020, 7, 16, 10, 0, 0)
-        )
 
         project = funding.project
         project.kimai_id = 1
@@ -800,16 +810,13 @@ class TestSyncKimaiTimeEntries:
 @pytest.mark.django_db
 def test_monthly_days_used_not_exceeding_days_left(user, project, funding):
     """Test that no email is sent if days used do not exceed days left."""
-    from main.models import TimeEntry
-
     funding.project = project
     funding.save()
     project.status = "Active"
     project.save()
 
-    # Create a time entry within the allowed days
-    start_time = datetime(2025, 6, 1, 11, 0)
-    end_time = start_time + timedelta(hours=14)  # So days_used is only 2.0 days
+    start_time = aware(2025, 6, 1, 11, 0)
+    end_time = start_time + timedelta(hours=14)
 
     TimeEntry.objects.create(
         user=user,
@@ -819,23 +826,20 @@ def test_monthly_days_used_not_exceeding_days_left(user, project, funding):
     )
 
     with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
-        notify_monthly_days_used_exceeding_days_left_logic(date=datetime(2025, 7, 10))
+        notify_monthly_days_used_exceeding_days_left_logic(date=aware(2025, 7, 10))
         mock_email_func.assert_not_called()
 
 
 @pytest.mark.django_db
 def test_monthly_days_used_exceeding_days_left(user, project, funding):
     """Test that an email is sent when days used exceed days left."""
-    from main.models import TimeEntry
-
-    funding.project = project  # 26 days total effort
+    funding.project = project
     funding.save()
     project.status = "Active"
     project.save()
 
-    # Create a time entry that exceeds the days left
-    start_time = datetime(2025, 6, 1, 11, 0)
-    end_time = start_time + timedelta(hours=203)  # So days_used is 29.0 days
+    start_time = aware(2025, 6, 1, 11, 0)
+    end_time = start_time + timedelta(hours=203)
 
     TimeEntry.objects.create(
         user=user,
@@ -845,7 +849,7 @@ def test_monthly_days_used_exceeding_days_left(user, project, funding):
     )
 
     with patch("main.tasks.email_user_and_cc_head") as mock_email_func:
-        notify_monthly_days_used_exceeding_days_left_logic(date=datetime(2025, 7, 10))
+        notify_monthly_days_used_exceeding_days_left_logic(date=aware(2025, 7, 10))
 
         mock_email_func.assert_called_once_with(
             subject=f"[Monthly Days Used Exceed Days Left] {project.name}",
