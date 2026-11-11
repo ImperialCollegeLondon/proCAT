@@ -23,7 +23,6 @@ from bokeh.models import (  # type: ignore
 )
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
-from bokeh.palettes import Category20c
 from bokeh.plotting import figure
 from bokeh.transform import cumsum
 from django.utils import timezone
@@ -853,9 +852,6 @@ def create_pie_chart(
     Returns:
         The Bokeh figure for the pie chart.
     """
-    # Manually select the palette colours, needed if less than 3 projects
-    palette = [c for c in Category20c[max(len(data), 3)]][: len(data)]
-
     category_name = title.replace(" ", "_")
     source = (
         pd.Series(data)
@@ -864,7 +860,7 @@ def create_pie_chart(
     )
     source = source.sort_values(by=category_name)
     source["angle"] = source["value"] / source["value"].sum() * 2 * pi
-    source["colour"] = palette
+    source["colour"] = PALETTE[: len(data)]
 
     plot = figure(
         title=title,

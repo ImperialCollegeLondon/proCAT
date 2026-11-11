@@ -114,9 +114,7 @@ def test_create_cost_recovery_plot(project, funding):
 @patch("main.plots.cumsum")
 def test_create_pie_chart(cumsum_mock, hovertool_mock, figure_mock):
     """Test the create_pie_chart function."""
-    from bokeh.palettes import Category20c
-
-    from main.plots import create_pie_chart
+    from main.plots import PALETTE, create_pie_chart
 
     # Create raw parameters
     data = {"a": 2, "b": 5, "c": 11, "d": 3, "e": 7}
@@ -131,7 +129,7 @@ def test_create_pie_chart(cumsum_mock, hovertool_mock, figure_mock):
     )
     source = source.sort_values(by=category_name)
     source["angle"] = [val * 2 * pi / 28 for val in (2, 5, 11, 3, 7)]
-    source["colour"] = Category20c[len(data)]
+    source["colour"] = PALETTE[: len(data)]
 
     plot_mock = MagicMock()
     figure_mock.return_value = plot_mock
