@@ -14,6 +14,7 @@ from .models import (
     DailyRate,
     Department,
     Funding,
+    FundingBody,
     MonthlyCharge,
     Project,
     TimeEntry,
@@ -156,3 +157,10 @@ class AllocationAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     """Admin for the Allocation model."""
 
     list_display = ("pk", "project", "user", "value", "start_date", "end_date")
+
+
+@admin.register(FundingBody)
+class FundingBodyAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    """Admin class for the FundingBody model."""
+
+    list_display = ("pk", "name", "programme")
