@@ -35,6 +35,33 @@ from .utils import (
     get_month_dates_for_previous_years,
 )
 
+PALETTE = (
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+    "#aec7e8",
+    "#ffbb78",
+    "#98df8a",
+    "#ff9896",
+    "#c5b0d5",
+    "#c49c94",
+    "#f7b6d2",
+    "#c7c7c7",
+    "#dbdb8d",
+    "#9edae5",
+)
+"""Colour palette to use across plots (based on matplotlib's tab20 colour sequence)."""
+
+PROJECT_COLOURS: dict[str, str] = {}
+"""Colour to use for each project across all plots."""
+
 
 @dataclass
 class AnalyticsFigure:
@@ -281,6 +308,7 @@ def create_capacity_planning_plot(
         (("", "Capacity"), "red"),
     )
 
+    colours = cycle(PALETTE)
     for name in capacities.columns:
         traces = [
             {
@@ -299,12 +327,15 @@ def create_capacity_planning_plot(
             }
         )
 
-        colours = cycle(["red", "purple", "yellow", "navy"])
+        for project in allocation.columns:
+            if project not in PROJECT_COLOURS:
+                PROJECT_COLOURS[project] = next(colours)
+
         for project in allocation.columns:
             traces.append(
                 {
                     "timeseries": allocation[project],
-                    "colour": next(colours),
+                    "colour": PROJECT_COLOURS[project],
                     "label": project,
                 }
             )
