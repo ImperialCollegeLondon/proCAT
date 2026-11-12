@@ -3,7 +3,7 @@
 
 Thanks for taking the time to contribute to ProCAT!
 
-The following is a set of guidelines for contributing to ProCAT, a Python-based hydroclimatic data management system project. The goal of these guidelines is to make the development of the project efficient and sustainable and to ensure that every commit makes it better, more readable, more robust and better documented. Please, feel free suggest changes and improvements.
+The following is a set of guidelines for contributing to ProCAT, a Python-based Projects Charging and Analytics tool. The goal of these guidelines is to make the development of the project efficient and sustainable and to ensure that every commit makes it better, more readable, more robust and better documented. Please, feel free suggest changes and improvements.
 
 ## Table Of Contents
 
@@ -23,7 +23,7 @@ The following is a set of guidelines for contributing to ProCAT, a Python-based 
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [the repository Administrator](mailto:itc-rse-team@imperial.ac.uk).
+This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [the repository Administrator](mailto:ict-rse-team@imperial.ac.uk).
 
 ## How Can I Contribute?
 
