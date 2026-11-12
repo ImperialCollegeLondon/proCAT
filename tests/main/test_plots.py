@@ -35,19 +35,28 @@ def test_add_varea_glyph():
 
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
-def test_create_capacity_planning_plot():
+def test_create_capacity_planning_plot(phase, user):
     """Test function to create the capacity planning plot."""
     from bokeh.plotting import figure
 
-    from main import plots
+    from main import models
+    from main.plots import create_capacity_planning_plot
 
-    plot, plot_list = plots.create_capacity_planning_plot(
+    project = phase.project
+    models.Allocation.objects.create(
+        project=project,
+        user=user,
+        start_date=project.start_date,
+        end_date=project.end_date,
+        value=0.5,
+    )
+
+    plot, plot_list = create_capacity_planning_plot(
         timezone.now(), timezone.now() + timedelta(365)
     )
+
+    # Check the main plot
     assert isinstance(plot, figure)
-    assert len(plot_list) == 1
-    for plt in plot_list:
-        assert isinstance(plt, figure)
 
     title = "Project effort and team capacity over time"
     assert plot.title.text == title
@@ -60,6 +69,16 @@ def test_create_capacity_planning_plot():
     assert "Confirmed project effort" in legend_items
     assert "Tentative project effort" in legend_items
     assert "Capacity" in legend_items
+
+    # Check the individual plots
+    assert len(plot_list) == 1
+    for plt in plot_list:
+        assert isinstance(plt, figure)
+
+    assert plot_list[0].title.text == user.get_full_name()
+
+    legend_items = [item.label.value for item in plot_list[0].legend.items]
+    assert legend_items == ["Capacity", project.name]
 
 
 def test_create_cost_recovery_plot(project, funding):
