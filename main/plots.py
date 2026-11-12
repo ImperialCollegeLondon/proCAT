@@ -23,7 +23,7 @@ from bokeh.models import (  # type: ignore
 )
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
-from bokeh.palettes import Category20c
+from bokeh.palettes import Category20
 from bokeh.plotting import figure
 from bokeh.transform import cumsum
 from django.utils import timezone
@@ -34,6 +34,9 @@ from .utils import (
     get_financial_year_dates,
     get_month_dates_for_previous_years,
 )
+
+PALETTE = Category20[20][:-1:2] + Category20[20][1::2]
+"""Colour palette to use across plots."""
 
 
 @dataclass
@@ -289,6 +292,10 @@ def create_capacity_planning_plot(
         (("", "Capacity"), "red"),
     )
 
+    # Assign each project its own colour
+    colours = cycle(PALETTE)
+    project_colours: dict[str, str] = {}
+
     for name in capacities.columns:
         traces = [
             {
@@ -308,12 +315,14 @@ def create_capacity_planning_plot(
             }
         )
 
-        colours = cycle(["red", "purple", "yellow", "navy"])
         for project in allocation.columns:
+            if project not in project_colours:
+                project_colours[project] = next(colours)
+
             traces.append(
                 {
                     "timeseries": allocation[project],
-                    "colour": next(colours),
+                    "colour": project_colours[project],
                     "label": project,
                 }
             )
@@ -831,9 +840,6 @@ def create_pie_chart(
     Returns:
         The Bokeh figure for the pie chart.
     """
-    # Manually select the palette colours, needed if less than 3 projects
-    palette = [c for c in Category20c[max(len(data), 3)]][: len(data)]
-
     category_name = title.replace(" ", "_")
     source = (
         pd.Series(data)
@@ -842,7 +848,7 @@ def create_pie_chart(
     )
     source = source.sort_values(by=category_name)
     source["angle"] = source["value"] / source["value"].sum() * 2 * pi
-    source["colour"] = palette
+    source["colour"] = PALETTE[: len(data)]
 
     plot = figure(
         title=title,

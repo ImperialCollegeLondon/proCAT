@@ -35,19 +35,28 @@ def test_add_varea_glyph():
 
 
 @pytest.mark.usefixtures("project", "funding", "capacity")
-def test_create_capacity_planning_plot():
+def test_create_capacity_planning_plot(phase, user):
     """Test function to create the capacity planning plot."""
     from bokeh.plotting import figure
 
-    from main import plots
+    from main import models
+    from main.plots import create_capacity_planning_plot
 
-    plot, plot_list = plots.create_capacity_planning_plot(
+    project = phase.project
+    models.Allocation.objects.create(
+        project=project,
+        user=user,
+        start_date=project.start_date,
+        end_date=project.end_date,
+        value=0.5,
+    )
+
+    plot, plot_list = create_capacity_planning_plot(
         timezone.now(), timezone.now() + timedelta(365)
     )
+
+    # Check the main plot
     assert isinstance(plot, figure)
-    assert len(plot_list) == 1
-    for plt in plot_list:
-        assert isinstance(plt, figure)
 
     title = "Project effort and team capacity over time"
     assert plot.title.text == title
@@ -60,6 +69,16 @@ def test_create_capacity_planning_plot():
     assert "Confirmed project effort" in legend_items
     assert "Tentative project effort" in legend_items
     assert "Capacity" in legend_items
+
+    # Check the individual plots
+    assert len(plot_list) == 1
+    for plt in plot_list:
+        assert isinstance(plt, figure)
+
+    assert plot_list[0].title.text == user.get_full_name()
+
+    legend_items = [item.label.value for item in plot_list[0].legend.items]
+    assert legend_items == ["Capacity", project.name]
 
 
 def test_create_cost_recovery_plot(project, funding):
@@ -114,9 +133,7 @@ def test_create_cost_recovery_plot(project, funding):
 @patch("main.plots.cumsum")
 def test_create_pie_chart(cumsum_mock, hovertool_mock, figure_mock):
     """Test the create_pie_chart function."""
-    from bokeh.palettes import Category20c
-
-    from main.plots import create_pie_chart
+    from main.plots import PALETTE, create_pie_chart
 
     # Create raw parameters
     data = {"a": 2, "b": 5, "c": 11, "d": 3, "e": 7}
@@ -131,7 +148,7 @@ def test_create_pie_chart(cumsum_mock, hovertool_mock, figure_mock):
     )
     source = source.sort_values(by=category_name)
     source["angle"] = [val * 2 * pi / 28 for val in (2, 5, 11, 3, 7)]
-    source["colour"] = Category20c[len(data)]
+    source["colour"] = PALETTE[: len(data)]
 
     plot_mock = MagicMock()
     figure_mock.return_value = plot_mock
