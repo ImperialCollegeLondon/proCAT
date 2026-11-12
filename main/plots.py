@@ -38,9 +38,6 @@ from .utils import (
 PALETTE = Category20[20][:-1:2] + Category20[20][1::2]
 """Colour palette to use across plots."""
 
-PROJECT_COLOURS: dict[str, str] = {}
-"""Colour to use for each project across all plots."""
-
 
 @dataclass
 class AnalyticsFigure:
@@ -287,7 +284,10 @@ def create_capacity_planning_plot(
         (("", "Capacity"), "red"),
     )
 
+    # Assign each project its own colour
     colours = cycle(PALETTE)
+    project_colours: dict[str, str] = {}
+
     for name in capacities.columns:
         traces = [
             {
@@ -307,14 +307,13 @@ def create_capacity_planning_plot(
         )
 
         for project in allocation.columns:
-            if project not in PROJECT_COLOURS:
-                PROJECT_COLOURS[project] = next(colours)
+            if project not in project_colours:
+                project_colours[project] = next(colours)
 
-        for project in allocation.columns:
             traces.append(
                 {
                     "timeseries": allocation[project],
-                    "colour": PROJECT_COLOURS[project],
+                    "colour": project_colours[project],
                     "label": project,
                 }
             )
