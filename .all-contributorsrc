@@ -168,6 +168,16 @@
       "contributions": [
         "tool"
       ]
+    },
+    {
+      "login": "joselynrianaaa",
+      "name": "Joselyn Riana",
+      "avatar_url": "https://avatars.githubusercontent.com/u/113001778?v=4",
+      "profile": "https://github.com/joselynrianaaa",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
