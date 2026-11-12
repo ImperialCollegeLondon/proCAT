@@ -23,6 +23,7 @@ from bokeh.models import (  # type: ignore
 )
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
+from bokeh.palettes import Category20
 from bokeh.plotting import figure
 from bokeh.transform import cumsum
 from django.utils import timezone
@@ -34,29 +35,8 @@ from .utils import (
     get_month_dates_for_previous_years,
 )
 
-PALETTE = (
-    "#1f77b4",
-    "#ff7f0e",
-    "#2ca02c",
-    "#d62728",
-    "#9467bd",
-    "#8c564b",
-    "#e377c2",
-    "#7f7f7f",
-    "#bcbd22",
-    "#17becf",
-    "#aec7e8",
-    "#ffbb78",
-    "#98df8a",
-    "#ff9896",
-    "#c5b0d5",
-    "#c49c94",
-    "#f7b6d2",
-    "#c7c7c7",
-    "#dbdb8d",
-    "#9edae5",
-)
-"""Colour palette to use across plots (based on matplotlib's tab20 colour sequence)."""
+PALETTE = Category20[20][:-1:2] + Category20[20][1::2]
+"""Colour palette to use across plots."""
 
 PROJECT_COLOURS: dict[str, str] = {}
 """Colour to use for each project across all plots."""
