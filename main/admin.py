@@ -20,7 +20,7 @@ from .models import (
     TimeEntry,
     User,
 )
-from .tasks import sync_clockify_time_entries, sync_kimai_time_entries
+from .tasks import sync_timesheets
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Department)
@@ -116,11 +116,7 @@ class TimeEntryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
     def sync_time_entries_view(self, request: HttpRequest) -> HttpResponse:
         """Forces a synchronisation of timesheets."""
-        issues = []
-        clockify_issues = sync_clockify_time_entries()
-        if clockify_issues:
-            issues.append("There were issues when pulling time entries from Clockify.")
-        issues = issues + sync_kimai_time_entries()
+        issues = sync_timesheets()
         if not issues:
             self.message_user(request, "Synchronisation completed successfully!")
         else:

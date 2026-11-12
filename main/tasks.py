@@ -297,25 +297,12 @@ def sync_clockify_time_entries(
         True if there is any issue, and False if all went well.
     """
     issues = False
-    if (
-        not settings.CLOCKIFY_API_KEY
-        or not settings.CLOCKIFY_WORKSPACE_ID
-        or not settings.CLOCKIFY_CUTOVER_DATE
-    ):
+    if not settings.CLOCKIFY_API_KEY or not settings.CLOCKIFY_WORKSPACE_ID:
         logger.warning("Clockify API information not found in environment variables")
         return False
 
     api = ClockifyAPI(settings.CLOCKIFY_API_KEY, settings.CLOCKIFY_WORKSPACE_ID)
     start_date = end_date - datetime.timedelta(days=days_back)
-
-    # The end date can be, at most, the day before the cutover
-    end_date = (
-        end_date
-        if end_date < settings.CLOCKIFY_CUTOVER_DATE
-        else settings.CLOCKIFY_CUTOVER_DATE - datetime.timedelta(days=1)
-    )
-    if end_date < start_date:
-        return False
 
     projects = Project.objects.filter(status__in=["Active", "Maintenance"]).exclude(
         clockify_id=""
@@ -409,25 +396,12 @@ def sync_kimai_time_entries(
         A list with the issues found, if any. If all goes well, returns an empty list.
     """
     issues = []
-    if (
-        not settings.KIMAI_API_TOKEN
-        or not settings.KIMAI_BASE_URL
-        or not settings.CLOCKIFY_CUTOVER_DATE
-    ):
+    if not settings.KIMAI_API_TOKEN or not settings.KIMAI_BASE_URL:
         logger.warning("Kimai API information not found in environment variables")
         return []
 
     api = KimaiAPI(settings.KIMAI_API_TOKEN, settings.KIMAI_BASE_URL)
     start_date = end_date - datetime.timedelta(days=days_back)
-
-    # The start date can be, at most, the day of the cutover
-    start_date = (
-        start_date
-        if start_date >= settings.CLOCKIFY_CUTOVER_DATE
-        else settings.CLOCKIFY_CUTOVER_DATE
-    )
-    if end_date < start_date:
-        return []
 
     projects = Project.objects.filter(status__in=["Active", "Maintenance"]).exclude(
         kimai_id=-1
@@ -508,11 +482,28 @@ def sync_kimai_time_entries(
     return issues
 
 
+def sync_timesheets() -> list[str]:
+    """Sync time entries for the configured time tracking tool."""
+    match settings.TIME_TRACKING_TOOL:
+        case "clockify":
+            _issues = sync_clockify_time_entries()
+            return (
+                ["There were issues when pulling time entries from Clockify."]
+                if _issues
+                else []
+            )
+        case "kimai":
+            return sync_kimai_time_entries()
+        case _:
+            msg = "No TIME_TRACKING_TOOL configured. Skipping timesheet sync."
+            logger.debug(msg)
+            return [msg]
+
+
 @db_periodic_task(crontab(**settings.HUEY_TASK_SCHEDULES["SYNC_TIMESHEETS"]))
 def sync_timesheets_task() -> None:
     """Scheduled task to sync timesheets."""
-    sync_clockify_time_entries()
-    sync_kimai_time_entries()
+    sync_timesheets()
     logger.info("Timesheet sync completed.")
 
 
