@@ -1,6 +1,6 @@
  <!-- markdownlint-disable MD041 -->
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-16-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-17-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/proCAT/graph/badge.svg?token=A9KNEMYXXN)](https://codecov.io/gh/ImperialCollegeLondon/proCAT)
@@ -246,7 +246,8 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/AdithNG"><img src="https://avatars.githubusercontent.com/u/54245667?v=4&size=100" width="100px" height="100px" alt="Adith Gunaseelan"/><br /><sub><b>Adith Gunaseelan</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=AdithNG" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=AdithNG" title="Tests">⚠️</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/service-offering/research-software-engineering/"><img src="https://avatars.githubusercontent.com/u/23149834?v=4&size=100" width="100px" height="100px" alt="Alex Dewar"/><br /><sub><b>Alex Dewar</b></sub></a><br /><a href="#infra-alexdewar" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#tool-alexdewar" title="Tools">🔧</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/service-offering/research-software-engineering/"><img src="https://avatars.githubusercontent.com/u/23149834?v=4&size=100" width="100px" height="100px" alt="Alex Dewar"/><br /><sub><b>Alex Dewar</b></sub></a><br /><a href="#tool-alexdewar" title="Tools">🔧</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/joselynrianaaa"><img src="https://avatars.githubusercontent.com/u/113001778?v=4&size=100" width="100px" height="100px" alt="Joselyn Riana"/><br /><sub><b>Joselyn Riana</b></sub></a><br /><a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=joselynrianaaa" title="Code">💻</a> <a href="https://github.com/ImperialCollegeLondon/proCAT/commits?author=joselynrianaaa" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
 </table>
