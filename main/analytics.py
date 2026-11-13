@@ -167,8 +167,9 @@ def get_funding_per_funding_body(projects: list[models.Project]) -> dict[str, fl
 def get_projects_active_between(from_date: date, to_date: date) -> list[models.Project]:
     """Get the projects under active development within a time frame.
 
-    Exclude "Not done", which is projects whose start date has passed, but are not under
-    development.
+    Exclude "Not done", which are projects whose start date has passed but are not under
+    development. Also exclude not funded projects, reporting only on projects (internal
+    or external) that have received some funding.
 
     Args:
         from_date: A datetime.date marking the start of the search interval.
@@ -177,8 +178,13 @@ def get_projects_active_between(from_date: date, to_date: date) -> list[models.P
     Returns:
         The list of projects under active development within the time interval.
     """
+    none_funding_body = models.get_none_funding_body()
     return list(
-        models.Project.objects.exclude(status="Not done").filter(
+        p
+        for p in models.Project.objects.exclude(status="Not done").filter(
             start_date__lt=to_date, end_date__gte=from_date
         )
+        if models.Funding.objects.exclude(funding_body=none_funding_body)
+        .filter(project=p)
+        .exists()
     )
