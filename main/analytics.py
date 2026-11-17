@@ -179,12 +179,14 @@ def get_projects_active_between(from_date: date, to_date: date) -> list[models.P
         The list of projects under active development within the time interval.
     """
     none_funding_body = models.get_none_funding_body()
-    return list(
-        p
-        for p in models.Project.objects.exclude(status="Not done").filter(
-            start_date__lt=to_date, end_date__gte=from_date
+
+    return [
+        fun.project
+        for fun in models.Funding.objects.exclude(
+            funding_body=none_funding_body
+        ).filter(
+            project__status__in=["Active", "Maintenance", "Finished"],
+            project__start_date__lt=to_date,
+            project__end_date__gte=from_date,
         )
-        if models.Funding.objects.exclude(funding_body=none_funding_body)
-        .filter(project=p)
-        .exists()
-    )
+    ]
