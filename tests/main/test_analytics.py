@@ -98,7 +98,7 @@ def projects_list(db):
 
 
 @pytest.fixture
-def fundings_list(db):
+def fundings_list(db, projects_list):
     """A list of fundings to cover a broad range of budget types."""
     maths = FundingBody.objects.create(name="MathsProjectFunder55")
     med_tech = FundingBody.objects.create(name="MedFunds", programme="Tech")
@@ -283,7 +283,8 @@ def test_get_funding_per_funding_body(
     assert fund_per_funder["Picotechnology Research Centre"] == 78.90
 
 
-def test_get_projects_active_between(projects_list: list[Project]):
+@pytest.mark.usefixtures("fundings_list", "projects_list")
+def test_get_projects_active_between():
     """Test the get_projects_active_between function."""
     from_date = dt.date(2025, 10, 15)
     to_date = dt.date(2026, 10, 14)
@@ -311,5 +312,5 @@ def test_get_projects_active_between(projects_list: list[Project]):
     # Currently in maintenance period
     assert Project.objects.get(name="Vaxin8") in projects
 
-    # Started, not finished
-    assert Project.objects.get(name="Great Project") in projects
+    # Started, not finished, but neither funded
+    assert Project.objects.get(name="Great Project") not in projects
