@@ -19,7 +19,6 @@ from bokeh.models import (  # type: ignore
     Span,
     TabPanel,
     Tabs,
-    VArea,
 )
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
@@ -48,35 +47,6 @@ class AnalyticsFigure:
 
     group: str
     """The group to which the plot belongs."""
-
-
-def add_varea_glyph(
-    plot: figure, df: pd.DataFrame, upper_trace: str, lower_trace: str, colour: str
-) -> None:
-    """Adds a varea glyph to add shading between traces.
-
-    The shading is applied when the upper trace is above the lower trace. If below,
-    no shading is applied. VArea creates this shading between two sets of y-values:
-    the element-wise maximum of the two traces and the lower trace. Otherwise, the
-    shading is applied whenever either trace is above the other.
-
-    Args:
-        plot: the plot to add the glyph to
-        df: pandas DataFrame containing trace data
-        upper_trace: the label of the upper trace
-        lower_trace: the label of the lower trace
-        colour: the colour to apply to the shading
-    """
-    source = ColumnDataSource(
-        {
-            "index": df["index"],
-            "y1": df[lower_trace],
-            "y2": df[upper_trace].combine(df[lower_trace], max),
-        }
-    )
-    plot.add_glyph(
-        source, VArea(x="index", y1="y1", y2="y2", fill_color=colour, fill_alpha=0.3)
-    )
 
 
 def create_bar_plot(
@@ -123,7 +93,6 @@ def _create_timeseries_plot_base(  # type: ignore[explicit-any]
     title: str,
     traces: list[dict[str, Any]],
     x_range: tuple[datetime, datetime] | None = None,
-    vareas: tuple[tuple[tuple[str, str], str], ...] | None = None,
     height: int = 500,
     legend_loc: str = "bottom_left",
 ) -> tuple[ColumnDataSource, figure]:
@@ -135,9 +104,6 @@ def _create_timeseries_plot_base(  # type: ignore[explicit-any]
             'colour'.
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot.
-        vareas: (optional) tuple of tuples, containing a tuple of trace labels to apply
-            shading between and the colour to use, e.g.
-            ((("Capacity", "Project effort"), "Green"), ...)
         height: Height of the plot in pixels. Defaults to 500.
         legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
             for valid options. Defaults to 'bottom_left'.
@@ -174,7 +140,6 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     title: str,
     traces: list[dict[str, Any]],
     x_range: tuple[datetime, datetime] | None = None,
-    vareas: tuple[tuple[tuple[str, str], str], ...] | None = None,
     height: int = 500,
     legend_loc: str = "bottom_left",
 ) -> figure:
@@ -186,9 +151,6 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             'colour'
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot
-        vareas: (optional) tuple of tuples, containing a tuple of trace labels to apply
-            shading between and the colour to use, e.g.
-            ((("Capacity", "Project effort"), "Green"), ...)
         height: Height of the plot in pixels. Defaults to 500.
         legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
             for valid options. Defaults to 'bottom_left'
@@ -196,8 +158,9 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     Returns:
         Bokeh figure containing timeseries data.
     """
+    # Create the base figure
     source, plot = _create_timeseries_plot_base(
-        title, traces, x_range, vareas, height, legend_loc
+        title, traces, x_range, height, legend_loc
     )
 
     # Now we add the data
@@ -235,12 +198,6 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
             )
         )
         tooltips.append((label, f"@{{{label}}}{{0.00}}"))
-
-    # If provided, add varea shading between traces
-    if vareas:
-        df = source.to_df()
-        for labels, colour in vareas:
-            add_varea_glyph(plot, df, labels[0], labels[1], colour)
 
     # The tooltip appears in the hover rendered ghost trace, if any, or the first trace
     # otherwise
@@ -282,7 +239,7 @@ def create_timeseries_stacked(  # type: ignore[explicit-any]
         - The figure containing the plot.
     """
     source, plot = _create_timeseries_plot_base(
-        title, traces, x_range, None, height, legend_loc
+        title, traces, x_range, height, legend_loc
     )
 
     data_to_stack = [trace["label"] for trace in traces]
