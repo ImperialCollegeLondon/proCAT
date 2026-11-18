@@ -299,13 +299,83 @@ def create_timeseries_stacked(  # type: ignore[explicit-any]
     return source, plot
 
 
+def _create_capacity_timeseries_plot(  # type: ignore[explicit-any]
+    title: str,
+    traces: list[dict[str, Any]],
+    aggregated_effort: pd.Series,
+    capacity: pd.Series,
+    x_range: tuple[datetime, datetime] | None = None,
+    height: int = 500,
+    legend_loc: str = "bottom_left",
+) -> figure:
+    """Create a stacked effort plot with remaining capacity and a capacity line.
+
+    Args:
+        title: plot title.
+        traces: effort traces to stack.
+        aggregated_effort: timeseries of summed effort (e.g. over project status or
+            project allocations).
+        capacity: capacity timeseries.
+        x_range: (optional) tuple of datetimes to use as the x_range.
+        height: Height of the plot in pixels. Defaults to 500.
+        legend_loc: Location of the legend within the plot. Defaults to 'bottom_left'.
+
+    Returns:
+        Bokeh figure with stacked effort, remaining capacity and total capacity line.
+    """
+    traces = traces.copy()
+    traces.append(
+        {
+            "timeseries": capacity.combine(aggregated_effort, max) - aggregated_effort,
+            "colour": "darkgreen",
+            "label": "Capacity",
+        }
+    )
+
+    source, plot = create_timeseries_stacked(
+        title=title,
+        traces=traces,
+        x_range=x_range,
+        height=height,
+        legend_loc=legend_loc,
+    )
+
+    # Add line to overlay total capacity. Use aggregated_effort index to achieve
+    # consistent date ranges across plotted elements.
+    source.add(
+        pd.Series(capacity, index=aggregated_effort.index).tolist(), "Total capacity"
+    )
+    capacity_line = plot.line(
+        "index",
+        "Total capacity",
+        source=source,
+        line_width=2,
+        color=traces[-1]["colour"],
+        legend_label=traces[-1]["label"],
+    )
+
+    tooltips = [("Date", "@{index}{%F}")] + [
+        (trace["label"], f"@{{{trace['label']}}}{{0.00}}") for trace in traces
+    ]
+    plot.add_tools(
+        HoverTool(
+            tooltips=tooltips,
+            formatters={"@{index}": "datetime"},
+            renderers=[capacity_line],
+            mode="vline",
+        )
+    )
+
+    return plot
+
+
 def create_team_capacity_plot(
     capacities: pd.DataFrame,
     start_date: datetime,
     end_date: datetime,
     x_range: tuple[datetime, datetime] | None = None,
 ) -> figure:
-    """Create capacity plots for each individual team member.
+    """Create capacity plot for the team.
 
     Includes all business days between the selected start and end date, inclusive of the
     start date. Timeseries for the effort (separate traces depending on project status)
@@ -324,13 +394,13 @@ def create_team_capacity_plot(
     aggregated_capacity = capacities.sum(axis=1)
 
     # Create individual effort timeseries according to project status
+    traces: list[dict[str, Any]] = []  # type: ignore[explicit-any]
     project_status_colour_map = {
         "Active": "navy",
         "Maintenance": "purple",
         "Confirmed": "orange",
         "Tentative": "firebrick",
     }
-    traces: list[dict[str, Any]] = []  # type: ignore[explicit-any]
     for status, colour in project_status_colour_map.items():
         effort_timeseries = timeseries.get_effort_timeseries(
             start_date, end_date, [status]
@@ -344,53 +414,17 @@ def create_team_capacity_plot(
         )
 
     aggregated_effort = sum(trace["timeseries"] for trace in traces)
-    traces.append(
-        {
-            "timeseries": aggregated_capacity.combine(aggregated_effort, max)
-            - aggregated_effort,
-            "colour": "darkgreen",
-            "label": "Capacity",
-        },
-    )
-
-    # Plot stacked areas team effort for each project status, and team capacity
-    source, plot = create_timeseries_stacked(
+    plot = _create_capacity_timeseries_plot(
         title="Project effort and team capacity over time",
         traces=traces,
+        aggregated_effort=aggregated_effort,
+        capacity=aggregated_capacity,
         x_range=x_range,
     )
 
+    # Fix the y-axis lower limit at zero
     max_y_val = max(aggregated_effort.max(), aggregated_capacity.max())
-    plot.y_range = Range1d(0, max_y_val * 1.05)
-
-    # Add line to overlay total team capacity. Use aggregated_effort index to achieve
-    # consistent date ranges across all plotted elements.
-    source.add(
-        pd.Series(aggregated_capacity, index=aggregated_effort.index).tolist(),
-        "Total capacity",
-    )
-    capacity_line = plot.line(
-        "index",
-        "Total capacity",
-        source=source,
-        line_width=2,
-        color=traces[-1]["colour"],
-        legend_label=traces[-1]["label"],
-    )
-
-    # Set legend and hover tool properties
-    plot.legend.location = "bottom_left"
-
-    tooltips = [("Date", "@{index}{%F}")] + [
-        (trace["label"], f"@{{{trace['label']}}}{{0.00}}") for trace in traces
-    ]
-    hover = HoverTool(
-        tooltips=tooltips,
-        formatters={"@{index}": "datetime"},
-        renderers=[capacity_line],
-        mode="vline",
-    )
-    plot.add_tools(hover)
+    plot.y_range = Range1d(0, max_y_val * 1.05)  # type: ignore[arg-type]
 
     return plot
 
@@ -441,50 +475,15 @@ def create_individual_capacity_plots(
                 }
             )
 
-        # Create trace for {name}'s capacity
-        total_allocation = individual_allocations.sum(axis=1)
-        traces.append(
-            {
-                "timeseries": capacities[name].combine(total_allocation, max)
-                - total_allocation,
-                "colour": "darkgreen",
-                "label": "Capacity",
-            }
-        )
-
-        # Create allocation stacked area timeseries
-        source, plot = create_timeseries_stacked(
+        plot = _create_capacity_timeseries_plot(
             title=name,
             traces=traces,
+            aggregated_effort=individual_allocations.sum(axis=1),
+            capacity=capacities[name],
             x_range=x_range,
             height=150,
             legend_loc="top_right",
         )
-
-        # Add capacity line
-        source.add(
-            pd.Series(capacities[name], index=total_allocation.index).tolist(),
-            "Total capacity",
-        )
-        capacity_line = plot.line(
-            "index",
-            "Total capacity",
-            source=source,
-            line_width=2,
-            color=traces[-1]["colour"],
-            legend_label=traces[-1]["label"],
-        )
-
-        tooltips = [("Date", "@{index}{%F}")] + [
-            (trace["label"], f"@{{{trace['label']}}}{{0.00}}") for trace in traces
-        ]
-        hover = HoverTool(
-            tooltips=tooltips,
-            formatters={"@{index}": "datetime"},
-            renderers=[capacity_line],
-            mode="vline",
-        )
-        plot.add_tools(hover)
 
         individual_plots.append(plot)
 
