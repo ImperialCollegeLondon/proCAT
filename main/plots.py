@@ -360,6 +360,9 @@ def create_team_capacity_plot(
         x_range=x_range,
     )
 
+    max_y_val = max(aggregated_effort.max(), aggregated_capacity.max())
+    plot.y_range = Range1d(0, max_y_val * 1.05)
+
     # Add line to overlay total team capacity. Use aggregated_effort index to achieve
     # consistent date ranges across all plotted elements.
     source.add(
