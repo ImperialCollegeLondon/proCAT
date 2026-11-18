@@ -299,28 +299,28 @@ def create_timeseries_stacked(  # type: ignore[explicit-any]
     return source, plot
 
 
-def create_capacity_planning_plots(
+def create_team_capacity_plot(
+    capacities: pd.DataFrame,
     start_date: datetime,
     end_date: datetime,
     x_range: tuple[datetime, datetime] | None = None,
-) -> tuple[figure, list[figure]]:
-    """Generates all the time series data and creates the capacity planning plots.
+) -> figure:
+    """Create capacity plots for each individual team member.
 
     Includes all business days between the selected start and end date, inclusive of the
     start date. Timeseries for the effort (separate traces depending on project status)
     and capacity (aggregated over all users) are calculated.
 
     Args:
+        capacities: pandas dataframe containing team member's capacity timeseries
         start_date: datetime object representing the start of the plotting period
         end_date: datetime object representing the end of the plotting period
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot
 
     Returns:
-        Bokeh figure containing team data, and a list of figures for each team member.
+        Bokeh figure containing team effort and capacity data.
     """
-    # Create overall capacity timeseries
-    capacities = timeseries.get_capacity_timeseries(start_date, end_date)
     aggregated_capacity = capacities.sum(axis=1)
 
     # Create individual effort timeseries according to project status
@@ -389,57 +389,103 @@ def create_capacity_planning_plots(
     )
     plot.add_tools(hover)
 
-    # Create capacity plots for each team member
+    return plot
+
+
+def create_individual_capacity_plots(
+    capacities: pd.DataFrame,
+    start_date: datetime,
+    end_date: datetime,
+    x_range: tuple[datetime, datetime] | None = None,
+) -> list[figure]:
+    """Create allocation plots for each individual team member.
+
+    Includes all business days between the selected start and end date, inclusive of the
+    start date. Timeseries for the allocation and capacity are calculated.
+
+    Args:
+        capacities: pandas dataframe containing team member's capacity timeseries
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
+        x_range: (optional) tuple of datetimes to use as the x_range for the displayed
+            plot
+
+    Returns:
+        List of Bokeh figures displaying allocation and capacity for each team member.
+    """
     allocations = timeseries.get_allocation_timeseries(start_date, end_date)
     individual_plots = []
-    vareas = ((("Capacity", ""), "green"), (("", "Capacity"), "red"))
 
-    # Assign each project its own colour
+    # Assign each project its own colour to show across all plots
     colours = cycle(PALETTE)
     project_colours: dict[str, str] = {}
 
     for name in capacities.columns:
-        traces = [
-            {
-                "timeseries": capacities[name],
-                "colour": "darkgreen",
-                "label": "Capacity",
-            }
-        ]
-        allocation = allocations[name]
-        all_projects = allocation.sum(axis=1)
-        traces.append(
-            {
-                "timeseries": all_projects,
-                "colour": "black",
-                "label": "",
-                "line_dash": "dashed",
-            }
-        )
+        individual_allocations = allocations[name]
+        traces = []
 
-        for project in allocation.columns:
+        for project in individual_allocations.columns:
+            # Assign project colour
             if project not in project_colours:
                 project_colours[project] = next(colours)
 
+            # Create trace for {name}'s allocation to this project
             traces.append(
                 {
-                    "timeseries": allocation[project],
+                    "timeseries": individual_allocations[project],
                     "colour": project_colours[project],
                     "label": project,
                 }
             )
-        individual_plots.append(
-            create_timeseries_plot(
-                title=name,
-                traces=traces,
-                x_range=x_range,
-                vareas=vareas,
-                height=150,
-                legend_loc="top_right",
-            )
+
+        # Create trace for {name}'s capacity
+        total_allocation = individual_allocations.sum(axis=1)
+        traces.append(
+            {
+                "timeseries": capacities[name].combine(total_allocation, max)
+                - total_allocation,
+                "colour": "darkgreen",
+                "label": "Capacity",
+            }
         )
 
-    return plot, individual_plots
+        # Create allocation stacked area timeseries
+        source, plot = create_timeseries_stacked(
+            title=name,
+            traces=traces,
+            x_range=x_range,
+            height=150,
+            legend_loc="top_right",
+        )
+
+        # Add capacity line
+        source.add(
+            pd.Series(capacities[name], index=total_allocation.index).tolist(),
+            "Total capacity",
+        )
+        capacity_line = plot.line(
+            "index",
+            "Total capacity",
+            source=source,
+            line_width=2,
+            color=traces[-1]["colour"],
+            legend_label=traces[-1]["label"],
+        )
+
+        tooltips = [("Date", "@{index}{%F}")] + [
+            (trace["label"], f"@{{{trace['label']}}}{{0.00}}") for trace in traces
+        ]
+        hover = HoverTool(
+            tooltips=tooltips,
+            formatters={"@{index}": "datetime"},
+            renderers=[capacity_line],
+            mode="vline",
+        )
+        plot.add_tools(hover)
+
+        individual_plots.append(plot)
+
+    return individual_plots
 
 
 def create_capacity_planning_layout() -> Row:
@@ -455,11 +501,14 @@ def create_capacity_planning_layout() -> Row:
     # Min and max dates are three years before and ahead of current date
     min_date, max_date = start - timedelta(days=1095), start + timedelta(days=1095)
 
-    # Get the plot to display (it is created with all data, but only the dates
-    # in the x_range provided are shown)
-    plot, individual_plots = create_capacity_planning_plots(
-        start_date=min_date, end_date=max_date, x_range=(start, end)
+    # Get the plot to display (it is created with all data, but only the dates in the
+    # x_range provided are shown)
+    capacities = timeseries.get_capacity_timeseries(min_date, max_date)
+    plot = create_team_capacity_plot(capacities, min_date, max_date, (start, end))
+    individual_plots = create_individual_capacity_plots(
+        capacities, min_date, max_date, (start, end)
     )
+
     plot.title.text_font_size = "20px"  # type: ignore[union-attr]
     plot.yaxis.axis_label = "Capacity and Effort (FTE)"
 
@@ -486,8 +535,7 @@ def create_capacity_planning_layout() -> Row:
             plt.xaxis.major_tick_line_color = None  # Hide tick marks
             plt.xaxis.minor_tick_line_color = None  # Hide minor ticks
 
-    # Create layout with common plot at the top and individual ones in a grid
-    # below
+    # Create layout with common plot at the top and individual ones in a grid below
     plot_layout = column(  # type: ignore[call-overload]
         [
             plot,
