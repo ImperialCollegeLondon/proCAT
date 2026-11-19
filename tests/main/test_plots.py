@@ -2,83 +2,533 @@
 
 from datetime import date, datetime, time, timedelta
 from math import pi
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pandas as pd
-import pytest
 from django.utils import timezone
 
 
-def test_add_varea_glyph():
-    """Test function to add a varea glyph to a plot."""
-    from main.plots import add_varea_glyph
+class TestCapacityTimeseriesPlotting:
+    """Tests for the capacity timeseries plotting functions."""
 
-    with patch("main.plots.figure") as plot_mock:
-        with patch("main.plots.ColumnDataSource") as source_mock:
-            df = pd.DataFrame(
-                {
-                    "index": list(range(10)),
-                    "upper": [5, 5, 5, 3, 3, 7, 2, 10, 10, 12],
-                    "lower": [3, 3, 7, 7, 4, 4, 4, 12, 9, 9],
-                }
+    def setup_method(self):
+        """Define some basic variables for reuse when creating plots."""
+        self.start_date = date(2026, 11, 18)
+        self.end_date = date(2026, 11, 19)
+        self.traces = [
+            {
+                "timeseries": pd.Series({self.start_date: 12, self.end_date: 34}),
+                "colour": "red",
+                "label": "red data",
+            },
+            {
+                "timeseries": pd.Series({self.start_date: 56, self.end_date: 78}),
+                "colour": "green",
+                "label": "green data",
+            },
+            {
+                "timeseries": pd.Series({self.start_date: 98, self.end_date: 76}),
+                "colour": "blue",
+                "label": "blue data",
+            },
+        ]
+        self.capacities = pd.DataFrame(
+            {trace["colour"]: trace["timeseries"].values for trace in self.traces},
+            index=(self.start_date, self.end_date),
+        )
+
+    def test_create_timeseries_plot_base(self):
+        """Test the _create_timeseries_plot_base function.
+
+        Function creates the ColumnDataSource data structure and the figure, but doesn't
+        actually plot the data. Check data structure and figure created as expected.
+        """
+        from bokeh.models import PanTool, ResetTool, SaveTool, WheelZoomTool
+        from numpy import array
+
+        from main.plots import _create_timeseries_plot_base
+
+        # Call the function
+        source, plot = _create_timeseries_plot_base(
+            title="Test plot",
+            traces=self.traces,
+            x_range=(self.start_date, self.end_date),
+            height=250,
+        )
+
+        # Check source is as expected
+        assert (
+            source.data["index"]
+            == array([self.start_date, self.end_date], dtype=object)
+        ).all()
+        assert (source.data["red data"] == array([12, 34])).all()
+        assert (source.data["green data"] == array([56, 78])).all()
+        assert (source.data["blue data"] == array([98, 76])).all()
+
+        # Check plot is as expected
+        assert plot.title.text == "Test plot"
+        assert plot.height == 250
+        assert plot.background_fill_color == "#efefef"
+        assert isinstance(plot.tools[0], SaveTool)
+        assert isinstance(plot.tools[1], PanTool)
+        assert isinstance(plot.tools[2], WheelZoomTool)
+        assert isinstance(plot.tools[3], ResetTool)
+        assert plot.sizing_mode == "stretch_width"
+        assert plot.x_range.start == self.start_date
+        assert plot.x_range.end == self.end_date
+        assert plot.yaxis.axis_label == "Value"
+        assert plot.xaxis.axis_label == "Date"
+
+    @patch("main.plots._create_timeseries_plot_base")
+    def test_create_timeseries_stacked(self, plot_base_mock):
+        """Test the create_timeseries_stacked function."""
+        # Set up the source and base figure
+        from main.plots import create_timeseries_stacked
+
+        source_mock = MagicMock()
+        plot_mock = MagicMock()
+        plot_base_mock.return_value = (source_mock, plot_mock)
+
+        # Call the function
+        source, plot = create_timeseries_stacked(
+            title="Test plot",
+            traces=self.traces,
+            x_range=(self.start_date, self.end_date),
+            height=250,
+            legend_loc="top_right",
+        )
+        assert source is source_mock
+
+        # Check varea_stack called as expected
+        data_to_stack = [trace["label"] for trace in self.traces]
+        colours = [trace["colour"] for trace in self.traces]
+        plot_mock.varea_stack.assert_called_once_with(
+            data_to_stack,
+            x="index",
+            source=source_mock,
+            fill_color=colours,
+            fill_alpha=0.3,
+        )
+
+        # Check vline_stack called as expected
+        plot_mock.vline_stack.assert_called_once_with(
+            data_to_stack,
+            x="index",
+            source=source_mock,
+            line_width=2,
+            color=colours,
+            legend_label=data_to_stack,
+        )
+
+        assert plot.legend.location == "top_right"
+
+    @patch("main.plots.create_timeseries_stacked")
+    @patch("main.plots.HoverTool")
+    def test_create_capacity_timeseries_plot(
+        self, hover_tool_mock, create_timeseries_stacked_mock
+    ):
+        """Test the _create_capacity_timeseries_plot function."""
+        from main.plots import _create_capacity_timeseries_plot
+
+        effort = pd.Series({self.start_date: 123, self.end_date: 456})
+        capacity = pd.Series({self.start_date: 987, self.end_date: 654})
+
+        source_mock = MagicMock()
+        plot_mock = MagicMock()
+        create_timeseries_stacked_mock.return_value = (source_mock, plot_mock)
+
+        capacity_line = MagicMock()
+        plot_mock.line.return_value = capacity_line
+
+        tooltips = [
+            ("Date", "@{index}{%F}"),
+            ("red data", "@{red data}{0.00}"),
+            ("green data", "@{green data}{0.00}"),
+            ("blue data", "@{blue data}{0.00}"),
+            ("Capacity", "@{Capacity}{0.00}"),
+        ]
+
+        hover_tool = MagicMock()
+        hover_tool_mock.return_value = hover_tool
+
+        # Call the function
+        plot = _create_capacity_timeseries_plot(
+            title="Test plot",
+            traces=self.traces,
+            aggregated_effort=effort,
+            capacity=capacity,
+            x_range=(self.start_date, self.end_date),
+            height=999,
+            legend_loc="bottom_right",
+        )
+
+        # Check internal functions called as expected
+        # Traces updated and plot created
+        self.traces.append(
+            {
+                "timeseries": pd.Series(
+                    {self.start_date: 987 - 123, self.end_date: 654 - 456}
+                ),
+                "colour": "darkgreen",
+                "label": "Capacity",
+            }
+        )
+        create_timeseries_stacked_mock.assert_called_once()
+        assert create_timeseries_stacked_mock.call_args.kwargs["title"] == "Test plot"
+        for i in range(len(self.traces)):
+            assert (
+                create_timeseries_stacked_mock.call_args.kwargs["traces"][i][
+                    "timeseries"
+                ]
+                == self.traces[i]["timeseries"]
+            ).all()
+        assert create_timeseries_stacked_mock.call_args.kwargs["x_range"] == (
+            self.start_date,
+            self.end_date,
+        )
+        assert create_timeseries_stacked_mock.call_args.kwargs["height"] == 999
+        assert (
+            create_timeseries_stacked_mock.call_args.kwargs["legend_loc"]
+            == "bottom_right"
+        )
+
+        # Capacity line removed, replaced with total capacity, and then plotted
+        plot.renderers.pop.assert_called_once()
+        assert source_mock.add.call_args_list[0][0] == ([987, 654], "Total capacity")
+
+        plot_mock.line.assert_called_once_with(
+            "index",
+            "Total capacity",
+            source=source_mock,
+            line_width=2,
+            color="darkgreen",
+            legend_label="Capacity",
+        )
+
+        # Hover tool created and added
+        hover_tool_mock.assert_called_once_with(
+            tooltips=tooltips,
+            formatters={"@{index}": "datetime"},
+            renderers=[capacity_line],
+            mode="vline",
+        )
+        plot.add_tools.assert_called_once_with(hover_tool)
+
+    @patch("main.plots.timeseries.get_effort_timeseries")
+    @patch("main.plots._create_capacity_timeseries_plot")
+    def test_create_team_capacity_plot(
+        self, create_capacity_timeseries_plot_mock, get_effort_timeseries_mock
+    ):
+        """Test the create_team_capacity_plot function."""
+        from main.plots import create_team_capacity_plot
+
+        effort = (
+            pd.Series({self.start_date: 1, self.end_date: 2}),
+            pd.Series({self.start_date: 3, self.end_date: 4}),
+            pd.Series({self.start_date: 5, self.end_date: 6}),
+            pd.Series({self.start_date: 7, self.end_date: 8}),
+        )
+        get_effort_timeseries_mock.side_effect = effort
+
+        # Call the function
+        plot = create_team_capacity_plot(
+            self.capacities,
+            self.start_date,
+            self.end_date,
+            (self.start_date, self.end_date),
+        )
+
+        # Check plot created as expected
+        assert get_effort_timeseries_mock.call_args_list == [
+            call(self.start_date, self.end_date, ["Active"]),
+            call(self.start_date, self.end_date, ["Maintenance"]),
+            call(self.start_date, self.end_date, ["Confirmed"]),
+            call(self.start_date, self.end_date, ["Tentative"]),
+        ]
+
+        traces_expected = [
+            {
+                "timeseries": effort[0],
+                "colour": "navy",
+                "label": "Active project effort",
+            },
+            {
+                "timeseries": effort[1],
+                "colour": "purple",
+                "label": "Maintenance project effort",
+            },
+            {
+                "timeseries": effort[2],
+                "colour": "orange",
+                "label": "Confirmed project effort",
+            },
+            {
+                "timeseries": effort[3],
+                "colour": "firebrick",
+                "label": "Tentative project effort",
+            },
+        ]
+        aggregated_effort = pd.Series({self.start_date: 16, self.end_date: 20})
+        aggregated_capacity = pd.Series(
+            {self.start_date: 12 + 56 + 98, self.end_date: 34 + 78 + 76}
+        )
+
+        create_capacity_timeseries_plot_mock.assert_called_once()
+        assert create_capacity_timeseries_plot_mock.call_args.kwargs["title"] == (
+            "Project effort and team capacity over time"
+        )
+        assert create_capacity_timeseries_plot_mock.call_args.kwargs["traces"] == (
+            traces_expected
+        )
+        assert (
+            create_capacity_timeseries_plot_mock.call_args.kwargs["aggregated_effort"]
+            == aggregated_effort
+        ).all()
+        assert (
+            create_capacity_timeseries_plot_mock.call_args.kwargs["capacity"]
+            == aggregated_capacity
+        ).all()
+        assert create_capacity_timeseries_plot_mock.call_args.kwargs["x_range"] == (
+            (self.start_date, self.end_date)
+        )
+
+        assert plot.y_range.start == 0
+        assert plot.y_range.end == 1.05 * (34 + 78 + 76)
+
+    @patch("main.plots.timeseries.get_allocation_timeseries")
+    @patch("main.plots._create_capacity_timeseries_plot")
+    def test_create_individual_capacity_plots(
+        self, create_capacity_timeseries_plot_mock, get_allocation_timeseries_mock
+    ):
+        """Test the create_individual_capacity_plots function."""
+        from main.plots import PALETTE, create_individual_capacity_plots
+
+        allocations = {
+            "red": pd.DataFrame(
+                {"yellow": 0.4, "magenta": 0.8}, index=(self.start_date, self.end_date)
+            ),
+            "green": pd.DataFrame(
+                {"cyan": 0.3, "yellow": 0.6}, index=(self.start_date, self.end_date)
+            ),
+            "blue": pd.DataFrame(
+                {"cyan": 0.7, "magenta": 0.2}, index=(self.start_date, self.end_date)
+            ),
+        }
+        get_allocation_timeseries_mock.return_value = allocations
+
+        red_plot = MagicMock()
+        green_plot = MagicMock()
+        blue_plot = MagicMock()
+        create_capacity_timeseries_plot_mock.side_effect = (
+            red_plot,
+            green_plot,
+            blue_plot,
+        )
+
+        # Call the function
+        plots = create_individual_capacity_plots(
+            self.capacities,
+            self.start_date,
+            self.end_date,
+            (self.start_date, self.end_date),
+        )
+
+        # Check plots created as expected
+        get_allocation_timeseries_mock.assert_called_once_with(
+            self.start_date, self.end_date
+        )
+
+        traces_expected = [
+            {
+                "timeseries": allocations["red"]["yellow"],
+                "colour": PALETTE[0],
+                "label": "yellow",
+            },
+            {
+                "timeseries": allocations["red"]["magenta"],
+                "colour": PALETTE[1],
+                "label": "magenta",
+            },
+            {
+                "timeseries": allocations["green"]["cyan"],
+                "colour": PALETTE[2],
+                "label": "cyan",
+            },
+            {
+                "timeseries": allocations["green"]["yellow"],
+                "colour": PALETTE[0],
+                "label": "yellow",
+            },
+            {
+                "timeseries": allocations["blue"]["cyan"],
+                "colour": PALETTE[2],
+                "label": "cyan",
+            },
+            {
+                "timeseries": allocations["blue"]["magenta"],
+                "colour": PALETTE[1],
+                "label": "magenta",
+            },
+        ]
+        aggregated_efforts = {
+            "red": pd.Series({self.start_date: 0.4 + 0.8, self.end_date: 0.4 + 0.8}),
+            "green": pd.Series({self.start_date: 0.3 + 0.6, self.end_date: 0.3 + 0.6}),
+            "blue": pd.Series({self.start_date: 0.7 + 0.2, self.end_date: 0.7 + 0.2}),
+        }
+
+        assert create_capacity_timeseries_plot_mock.call_count == 3
+
+        # Check plot titles
+        assert (
+            create_capacity_timeseries_plot_mock.call_args_list[0].kwargs["title"]
+            == "red"
+        )
+        assert (
+            create_capacity_timeseries_plot_mock.call_args_list[1].kwargs["title"]
+            == "green"
+        )
+        assert (
+            create_capacity_timeseries_plot_mock.call_args_list[2].kwargs["title"]
+            == "blue"
+        )
+
+        # Check plot data (complex because of nested data structures...)
+        # "red"
+        pd.testing.assert_series_equal(
+            create_capacity_timeseries_plot_mock.call_args_list[0].kwargs["traces"][0][
+                "timeseries"
+            ],
+            traces_expected[0]["timeseries"],
+        )
+        create_capacity_timeseries_plot_mock.call_args_list[0].kwargs["traces"][0][
+            "colour"
+        ] == traces_expected[0]["colour"]
+        create_capacity_timeseries_plot_mock.call_args_list[0].kwargs["traces"][0][
+            "label"
+        ] == traces_expected[0]["label"]
+
+        pd.testing.assert_series_equal(
+            create_capacity_timeseries_plot_mock.call_args_list[0].kwargs["traces"][1][
+                "timeseries"
+            ],
+            traces_expected[1]["timeseries"],
+        )
+        create_capacity_timeseries_plot_mock.call_args_list[0].kwargs["traces"][1][
+            "colour"
+        ] == traces_expected[1]["colour"]
+        create_capacity_timeseries_plot_mock.call_args_list[0].kwargs["traces"][1][
+            "label"
+        ] == traces_expected[1]["label"]
+
+        # "green"
+        pd.testing.assert_series_equal(
+            create_capacity_timeseries_plot_mock.call_args_list[1].kwargs["traces"][0][
+                "timeseries"
+            ],
+            traces_expected[2]["timeseries"],
+        )
+        create_capacity_timeseries_plot_mock.call_args_list[1].kwargs["traces"][0][
+            "colour"
+        ] == traces_expected[2]["colour"]
+        create_capacity_timeseries_plot_mock.call_args_list[1].kwargs["traces"][0][
+            "label"
+        ] == traces_expected[2]["label"]
+
+        pd.testing.assert_series_equal(
+            create_capacity_timeseries_plot_mock.call_args_list[1].kwargs["traces"][1][
+                "timeseries"
+            ],
+            traces_expected[3]["timeseries"],
+        )
+        create_capacity_timeseries_plot_mock.call_args_list[1].kwargs["traces"][1][
+            "colour"
+        ] == traces_expected[3]["colour"]
+        create_capacity_timeseries_plot_mock.call_args_list[1].kwargs["traces"][1][
+            "label"
+        ] == traces_expected[3]["label"]
+
+        # "blue"
+        pd.testing.assert_series_equal(
+            create_capacity_timeseries_plot_mock.call_args_list[2].kwargs["traces"][0][
+                "timeseries"
+            ],
+            traces_expected[4]["timeseries"],
+        )
+        create_capacity_timeseries_plot_mock.call_args_list[2].kwargs["traces"][0][
+            "colour"
+        ] == traces_expected[4]["colour"]
+        create_capacity_timeseries_plot_mock.call_args_list[2].kwargs["traces"][0][
+            "label"
+        ] == traces_expected[4]["label"]
+
+        pd.testing.assert_series_equal(
+            create_capacity_timeseries_plot_mock.call_args_list[2].kwargs["traces"][1][
+                "timeseries"
+            ],
+            traces_expected[5]["timeseries"],
+        )
+        create_capacity_timeseries_plot_mock.call_args_list[2].kwargs["traces"][1][
+            "colour"
+        ] == traces_expected[5]["colour"]
+        create_capacity_timeseries_plot_mock.call_args_list[2].kwargs["traces"][1][
+            "label"
+        ] == traces_expected[5]["label"]
+
+        # Check aggregated efforts
+        assert (
+            create_capacity_timeseries_plot_mock.call_args_list[0].kwargs[
+                "aggregated_effort"
+            ]
+            == aggregated_efforts["red"]
+        ).all()
+        assert (
+            create_capacity_timeseries_plot_mock.call_args_list[1].kwargs[
+                "aggregated_effort"
+            ]
+            == aggregated_efforts["green"]
+        ).all()
+        assert (
+            create_capacity_timeseries_plot_mock.call_args_list[2].kwargs[
+                "aggregated_effort"
+            ]
+            == aggregated_efforts["blue"]
+        ).all()
+
+        # Check individual's capacities
+        assert (
+            create_capacity_timeseries_plot_mock.call_args_list[0].kwargs["capacity"]
+            == self.capacities["red"]
+        ).all()
+        assert (
+            create_capacity_timeseries_plot_mock.call_args_list[1].kwargs["capacity"]
+            == self.capacities["green"]
+        ).all()
+        assert (
+            create_capacity_timeseries_plot_mock.call_args_list[2].kwargs["capacity"]
+            == self.capacities["blue"]
+        ).all()
+
+        # Check plot x_range, height and legend location
+        for i in range(3):
+            assert create_capacity_timeseries_plot_mock.call_args_list[i].kwargs[
+                "x_range"
+            ] == (self.start_date, self.end_date)
+            assert (
+                create_capacity_timeseries_plot_mock.call_args_list[i].kwargs["height"]
+                == 150
             )
-            expected_series = pd.Series([5, 5, 7, 7, 4, 7, 4, 12, 10, 12])
-
-            add_varea_glyph(plot_mock, df, "upper", "lower", "green")
-
-            args = source_mock.call_args[0]
-            pd.testing.assert_series_equal(df["index"], args[0]["index"])
-            pd.testing.assert_series_equal(df["lower"], args[0]["y1"])
-            pd.testing.assert_series_equal(
-                expected_series, args[0]["y2"], check_names=False
+            assert (
+                create_capacity_timeseries_plot_mock.call_args_list[i].kwargs[
+                    "legend_loc"
+                ]
+                == "top_right"
             )
 
-
-@pytest.mark.usefixtures("project", "funding", "capacity")
-def test_create_capacity_planning_plot(phase, user):
-    """Test function to create the capacity planning plot."""
-    from bokeh.plotting import figure
-
-    from main import models
-    from main.plots import create_capacity_planning_plot
-
-    project = phase.project
-    models.Allocation.objects.create(
-        project=project,
-        user=user,
-        start_date=project.start_date,
-        end_date=project.end_date,
-        value=0.5,
-    )
-
-    plot, plot_list = create_capacity_planning_plot(
-        timezone.now(), timezone.now() + timedelta(365)
-    )
-
-    # Check the main plot
-    assert isinstance(plot, figure)
-
-    title = "Project effort and team capacity over time"
-    assert plot.title.text == title
-    assert plot.yaxis.axis_label == "Value"
-    assert plot.xaxis.axis_label == "Date"
-
-    legend_items = [item.label.value for item in plot.legend.items]
-    assert "Active project effort" in legend_items
-    assert "Maintenance project effort" in legend_items
-    assert "Confirmed project effort" in legend_items
-    assert "Tentative project effort" in legend_items
-    assert "Capacity" in legend_items
-
-    # Check the individual plots
-    assert len(plot_list) == 1
-    for plt in plot_list:
-        assert isinstance(plt, figure)
-
-    assert plot_list[0].title.text == user.get_full_name()
-
-    legend_items = [item.label.value for item in plot_list[0].legend.items]
-    assert legend_items == ["Capacity", project.name]
+        # Check output
+        assert len(plots) == 3
+        assert plots[0] is red_plot
+        assert plots[1] is green_plot
+        assert plots[2] is blue_plot
 
 
 def test_create_cost_recovery_plot(project, funding):

@@ -253,7 +253,7 @@ def create_timeseries_stacked(  # type: ignore[explicit-any]
         legend_label=data_to_stack,
     )
 
-    plot.legend.location = legend_loc  # type: ignore [assignment] (should be Literal)
+    plot.legend.location = legend_loc  # type: ignore[assignment]
 
     return source, plot
 

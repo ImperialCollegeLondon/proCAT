@@ -742,6 +742,18 @@ class TestCapacityPlanningView(LoginRequiredMixin, TemplateOkMixin):
 
     _template_name = "main/capacity_planning.html"
 
+    @patch("main.plots.create_capacity_planning_layout")
+    @patch("main.plots.html_components_from_plot")
+    def test_template_used(
+        self, html_components_mock, create_capacity_planning_layout, admin_client
+    ):
+        """Test the correct template is used by the GET request."""
+        html_components_mock.return_value = {
+            "script": "<script>js</script>",
+            "div": "<div>html</div>",
+        }
+        super().test_template_used(admin_client)
+
     def _get_url(self):
         return reverse("main:capacity_planning")
 
