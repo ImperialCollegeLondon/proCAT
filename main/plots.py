@@ -250,9 +250,15 @@ def create_timeseries_stacked(  # type: ignore[explicit-any]
         source=source,
         fill_color=colours,
         fill_alpha=0.3,
+    )
+    plot.vline_stack(
+        data_to_stack,
+        x="index",
+        source=source,
+        line_width=2,
+        color=colours,
         legend_label=data_to_stack,
     )
-
     return source, plot
 
 
@@ -297,8 +303,12 @@ def _create_capacity_timeseries_plot(  # type: ignore[explicit-any]
         legend_loc=legend_loc,
     )
 
-    # Add line to overlay total capacity. Use aggregated_effort index to achieve
-    # consistent date ranges across plotted elements.
+    # Add line to overlay total capacity. First remove last line added, which shows the
+    # "Capacity" trace generated above (i.e. combined capacity and aggregated effort).
+    plot.renderers.pop()
+
+    # Add total capacity to source, using aggregated_effort index to achieve consistent
+    # date ranges across plotted elements.
     source.add(
         pd.Series(capacity, index=aggregated_effort.index).tolist(), "Total capacity"
     )
