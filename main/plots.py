@@ -94,7 +94,6 @@ def _create_timeseries_plot_base(  # type: ignore[explicit-any]
     traces: list[dict[str, Any]],
     x_range: tuple[datetime, datetime] | None = None,
     height: int = 500,
-    legend_loc: str = "bottom_left",
 ) -> tuple[ColumnDataSource, figure]:
     """Creates a generic timeseries base figure.
 
@@ -105,8 +104,6 @@ def _create_timeseries_plot_base(  # type: ignore[explicit-any]
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot.
         height: Height of the plot in pixels. Defaults to 500.
-        legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
-            for valid options. Defaults to 'bottom_left'.
 
     Returns:
         - The data structure for the data to be plotted.
@@ -159,9 +156,7 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         Bokeh figure containing timeseries data.
     """
     # Create the base figure
-    source, plot = _create_timeseries_plot_base(
-        title, traces, x_range, height, legend_loc
-    )
+    source, plot = _create_timeseries_plot_base(title, traces, x_range, height)
 
     # Now we add the data
     lines = []
@@ -238,9 +233,7 @@ def create_timeseries_stacked(  # type: ignore[explicit-any]
         - The data structure for the plotted data.
         - The figure containing the plot.
     """
-    source, plot = _create_timeseries_plot_base(
-        title, traces, x_range, height, legend_loc
-    )
+    source, plot = _create_timeseries_plot_base(title, traces, x_range, height)
 
     data_to_stack = [trace["label"] for trace in traces]
     colours = [trace["colour"] for trace in traces]
@@ -259,6 +252,9 @@ def create_timeseries_stacked(  # type: ignore[explicit-any]
         color=colours,
         legend_label=data_to_stack,
     )
+
+    plot.legend.location = legend_loc  # type: ignore [assignment] (should be Literal)
+
     return source, plot
 
 
