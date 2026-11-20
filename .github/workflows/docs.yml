@@ -43,8 +43,8 @@ jobs:
       - name: Install project
         run: uv sync --group doc
 
-      - name: Build docs with MkDocs
-        run: mkdocs build --strict
+      - name: Build docs with Zensical
+        run: zensical build --strict
       - name: Setup Pages
         uses: actions/configure-pages@v6
       - name: Upload artifact

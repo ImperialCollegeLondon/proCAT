@@ -17,7 +17,7 @@ Fixes # (issue)
 ## Key checklist
 
 - [ ] All tests pass (eg. `python -m pytest`)
-- [ ] The documentation builds and looks OK (eg. `mkdocs serve`)
+- [ ] The documentation builds and looks OK (eg. `zensical serve`)
 - [ ] Pre-commit hooks run successfully (eg. `pre-commit run --all-files`)
 
 ## Further checks
