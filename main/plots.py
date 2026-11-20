@@ -113,7 +113,7 @@ def create_bar_plot(
     hover = HoverTool()
     hover.tooltips = [
         ("Month", "@months"),
-        ("Total", "£@values"),
+        ("Total", "£@values{0,0}"),  # Format values with comma as thousand separator
     ]
     plot.add_tools(hover)
     return plot
