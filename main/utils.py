@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from collections.abc import Callable, Iterable
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, cast
 
 from django.contrib.auth import get_user_model
@@ -132,7 +132,7 @@ def get_current_and_last_month(
     if date is None:
         date = timezone.now()
 
-    current_month_start = datetime(year=date.year, month=date.month, day=1)
+    current_month_start = datetime(year=date.year, month=date.month, day=1, tzinfo=UTC)
     last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
 
     last_month_name = last_month_start.strftime("%B")

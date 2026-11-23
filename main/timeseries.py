@@ -290,8 +290,8 @@ def get_cost_recovery_timeseries(
 
         # calculate the total time entries for the month, and work out the time
         # logged (recovered) per day across all projects
-        start_time = datetime.combine(month[0], datetime.min.time())
-        end_time = datetime.combine(month[1], datetime.min.time())
+        start_time = datetime.combine(month[0], datetime.min.time(), tzinfo=UTC)
+        end_time = datetime.combine(month[1], datetime.min.time(), tzinfo=UTC)
         entries = (
             models.TimeEntry.objects.filter(
                 start_time__gte=start_time, start_time__lt=end_time
