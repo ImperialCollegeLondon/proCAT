@@ -193,7 +193,8 @@ restarts. To also delete the database, add `--volumes` to either command.
 
 ## Documentation
 
-The documentation is built using the [Material theme for MkDocs](https://squidfunk.github.io/mkdocs-material/) and can be found at <https://imperialcollegelondon.github.io/proCAT/>.
+The documentation is built using [Zensical][zensical] and can be found at
+<https://imperialcollegelondon.github.io/proCAT/>.
 
 ## Updating Dependencies
 
@@ -216,6 +217,7 @@ python package version specifiers, i.e. `"black<23"` or `"pip-tools!=6.12.2"`
 [pre-commit.ci]: https://pre-commit.ci
 [Docker]: https://docs.docker.com/desktop/
 [managing dependencies with uv]: https://docs.astral.sh/uv/concepts/projects/dependencies/
+[zensical]: https://zensical.org/
 
 ## Contributors ✨
 
