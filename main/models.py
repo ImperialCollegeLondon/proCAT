@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable
-from datetime import UTC, date, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any, cast
 
 import pandas as pd
@@ -432,7 +432,9 @@ class Project(Warning, models.Model):
             # starts should count towards the (non-maintenance) total_effort.
             if self.status == "Active" and (maint_phase := self.maintenance_phase()):
                 time_entries = time_entries.filter(
-                    start_time__lt=maint_phase.start_date
+                    start_time__lt=datetime.combine(
+                        maint_phase.start_date, time(0, 0), tzinfo=UTC
+                    )
                 )
 
             hours_logged = get_logged_hours(time_entries)[0]
@@ -442,7 +444,11 @@ class Project(Warning, models.Model):
         maint_phase = self.maintenance_phase()
         if maint_phase is None:
             return None
-        time_entries = self.timeentry_set.filter(start_time__gte=maint_phase.start_date)
+        time_entries = self.timeentry_set.filter(
+            start_time__gte=datetime.combine(
+                maint_phase.start_date, time(0, 0), tzinfo=UTC
+            )
+        )
         hours_logged = get_logged_hours(time_entries)[0]
         pro_rata_used_maint = maint_phase.days - maint_phase.expected_days_left
         left = maint_phase.days - max(pro_rata_used_maint, (hours_logged / 7))

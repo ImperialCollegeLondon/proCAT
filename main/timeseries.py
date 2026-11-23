@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import cast
 
 import pandas as pd
@@ -98,14 +98,11 @@ def get_internal_effort_timeseries(
 ) -> pd.Series[float]:
     """Get the timeseries data for projects that are not included in MonthlyCharges.
 
-    This includes internal projects that are not charged to an external
-    funding source.
+    This includes internal projects that are not charged to an external funding source.
 
     Args:
-        start_date: datetime object representing the start of the
-            plotting period
-        end_date: datetime object representing the end of the
-            plotting period
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
 
     Returns:
         Pandas Series containing internal effort timeseries data.
@@ -140,8 +137,7 @@ def get_team_members_timeseries(
     The number of team members is time dependent.
 
     Args:
-        start_date: datetime object representing the start of the plotting
-            period
+        start_date: datetime object representing the start of the plotting period
         end_date: datetime object representing the end of the plotting period
 
     Returns:
@@ -288,10 +284,10 @@ def get_cost_recovery_timeseries(
         monthly_total = monthly_charges.aggregate(Sum("amount"))["amount__sum"]
         monthly_totals.append(float(monthly_total) if monthly_total else 0.0)
 
-        # calculate the total time entries for the month, and work out the time
-        # logged (recovered) per day across all projects
-        start_time = datetime.combine(month[0], datetime.min.time(), tzinfo=UTC)
-        end_time = datetime.combine(month[1], datetime.min.time(), tzinfo=UTC)
+        # calculate the total time entries for the month, and work out the time logged
+        # (recovered) per day across all projects
+        start_time = datetime.combine(month[0], time(0, 0), tzinfo=UTC)
+        end_time = datetime.combine(month[1], time(0, 0), tzinfo=UTC)
         entries = (
             models.TimeEntry.objects.filter(
                 start_time__gte=start_time, start_time__lt=end_time
