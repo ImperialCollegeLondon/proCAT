@@ -47,8 +47,8 @@ jobs:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Check that documentation builds cleanly with MkDocs
+      - name: Check that documentation builds cleanly with Zensical
         if: matrix.os == 'ubuntu-latest'
         run: |
           uv sync --group doc
-          mkdocs build --strict
+          zensical build --strict

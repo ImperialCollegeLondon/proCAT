@@ -1,0 +1,34 @@
+[project]
+site_name = "proCAT"
+extra_css = ["stylesheets/extra.css"]
+
+[project.theme]
+variant = "classic"
+
+[[project.theme.palette]]
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.pymdownx.snippets]
+check_paths = true
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.toc]
+permalink = "¤"
+
+[project.plugins.api-autonav]
+modules = ["main"]
+nav_section_title = "Code Reference"
+exclude = ["re:.*migrations.*", "re:.*__main__$"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+show_source = true
+show_root_heading = true
+show_category_heading = true
+merge_init_into_class = true
