@@ -51,41 +51,50 @@ class AnalyticsFigure:
 
 def create_bar_plot(
     title: str,
-    months: list[str],
-    values: list[float],
+    x: list[str],
+    y: list[float],
+    x_label: str,
+    y_label: str,
     x_range: list[str] | None = None,
+    height: int = 500,
 ) -> figure:
-    """Creates a bar plot with dates versus values.
+    """Creates a generic bar plot with defined height and color.
+
+    The data are stored in a ColumnDataSource with columns ``x`` and ``y``.
+    These can be referred to in tooltips as ``@x`` and ``@y``, for example:
+
+        plot.add_tools(HoverTool(tooltips=[("Month", "@x"), ("Total", "£@y{0,0}")]))
 
     Args:
         title: plot title
-        months: a list of months to display on the x-axis
-        values: a list of total charge values for the bar height indicate on the y-axis
-        x_range: (optional) list of values to use as the x_range for the displayed plot
+        x: a list of categories to display on the x-axis
+        y: a list of values for the bar heights to indicate on the y-axis
+        x_label: label for the x-axis
+        y_label: label for the y-axis
+        x_range: (optional) a subset of x categories to use in the plot.
+            Each entry should be in ``x``; any that aren't still appear on the
+            x-axis but with no bar above them, and no error is raised.
+            All of ``x`` and ``y`` stay in the data source, so widget callbacks can
+            change the displayed categories later by updating ``plot.x_range.factors``.
+            If ``x_range = None``, all categories in ``x`` are shown.
+        height: (optional) height of the plot in pixels. Defaults to 500.
 
     Returns:
         Bokeh figure for the bar chart.
     """
-    source = ColumnDataSource(data=dict(months=months, values=values))
+    source = ColumnDataSource(data=dict(x=x, y=y))
     plot = figure(
-        x_range=months,  # type: ignore[arg-type]
+        x_range=x,  # type: ignore[arg-type]
         title=title,
-        height=500,
+        height=height,
         background_fill_color="#efefef",
         sizing_mode="stretch_width",
     )
-    plot.yaxis.axis_label = "Total charge (£)"
-    plot.xaxis.axis_label = "Month-Year"
-    plot.vbar(x="months", top="values", width=0.5, source=source)
+    plot.yaxis.axis_label = y_label
+    plot.xaxis.axis_label = x_label
+    plot.vbar(x="x", top="y", width=0.5, source=source)
     if x_range:
         plot.x_range.factors = x_range  # type: ignore[attr-defined]
-    # Add basic tooltips to show monthly totals
-    hover = HoverTool()
-    hover.tooltips = [
-        ("Month", "@months"),
-        ("Total", "£@values{0,0}"),  # Format values with comma as thousand separator
-    ]
-    plot.add_tools(hover)
     return plot
 
 
@@ -598,10 +607,19 @@ def create_cost_recovery_plots(
     # Create bar plot for monthly charges
     bar_plot = create_bar_plot(
         title=("Total monthly charges"),
-        months=chart_months,
-        values=monthly_totals,
+        x=chart_months,
+        y=monthly_totals,
         x_range=(chart_months[-12:]),
+        x_label="Month-Year",
+        y_label="Total charge (£)",
     )
+    # Add basic tooltips to show monthly totals
+    hover = HoverTool()
+    hover.tooltips = [
+        ("Month", "@x"),
+        ("Total", "£@y{0,0}"),
+    ]
+    bar_plot.add_tools(hover)
     return timeseries_plot, bar_plot
 
 
