@@ -18,13 +18,13 @@ repos:
     hooks:
       - id: check-github-workflows
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.5
+    rev: v0.17.6
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.50.0
+    rev: v0.50.1
     hooks:
       - id: markdownlint-fix
   - repo: https://github.com/codespell-project/codespell
@@ -38,7 +38,7 @@ repos:
   # locally (`.venv/bin/djlint --version`) can make it flip-flop the same
   # lines back and forth across commits.
   - repo: https://github.com/djlint/djLint
-    rev: v1.50.4
+    rev: v1.54.0
     hooks:
       - id: djlint-reformat-django
       - id: djlint-django
