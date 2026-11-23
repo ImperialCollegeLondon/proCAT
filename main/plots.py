@@ -19,7 +19,6 @@ from bokeh.models import (  # type: ignore
     Span,
     TabPanel,
     Tabs,
-    VArea,
 )
 from bokeh.models.layouts import Row
 from bokeh.models.widgets import Button
@@ -48,35 +47,6 @@ class AnalyticsFigure:
 
     group: str
     """The group to which the plot belongs."""
-
-
-def add_varea_glyph(
-    plot: figure, df: pd.DataFrame, upper_trace: str, lower_trace: str, colour: str
-) -> None:
-    """Adds a varea glyph to add shading between traces.
-
-    The shading is applied when the upper trace is above the lower trace. If below,
-    no shading is applied. VArea creates this shading between two sets of y-values:
-    the element-wise maximum of the two traces and the lower trace. Otherwise, the
-    shading is applied whenever either trace is above the other.
-
-    Args:
-        plot: the plot to add the glyph to
-        df: pandas DataFrame containing trace data
-        upper_trace: the label of the upper trace
-        lower_trace: the label of the lower trace
-        colour: the colour to apply to the shading
-    """
-    source = ColumnDataSource(
-        {
-            "index": df["index"],
-            "y1": df[lower_trace],
-            "y2": df[upper_trace].combine(df[lower_trace], max),
-        }
-    )
-    plot.add_glyph(
-        source, VArea(x="index", y1="y1", y2="y2", fill_color=colour, fill_alpha=0.3)
-    )
 
 
 def create_bar_plot(
@@ -119,31 +89,25 @@ def create_bar_plot(
     return plot
 
 
-def create_timeseries_plot(  # type: ignore[explicit-any]
+def _create_timeseries_plot_base(  # type: ignore[explicit-any]
     title: str,
     traces: list[dict[str, Any]],
     x_range: tuple[datetime, datetime] | None = None,
-    vareas: tuple[tuple[tuple[str, str], str], ...] | None = None,
     height: int = 500,
-    legend_loc: str = "bottom_left",
-) -> figure:
-    """Creates a generic timeseries plot.
+) -> tuple[ColumnDataSource, figure]:
+    """Creates a generic timeseries base figure.
 
     Args:
-        title: plot title
+        title: plot title.
         traces: a list of dictionaries with keys for the 'timeseries' data, 'label' and
-            'colour'
+            'colour'.
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
-            plot
-        vareas: (optional) tuple of tuples, containing a tuple of trace labels to apply
-            shading between and the colour to use, e.g.
-            ((("Capacity", "Project effort"), "Green"), ...)
+            plot.
         height: Height of the plot in pixels. Defaults to 500.
-        legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
-            for valid options. Defaults to 'bottom_left'
 
     Returns:
-        Bokeh figure containing timeseries data.
+        - The data structure for the data to be plotted.
+        - The figure prepared for the plot.
     """
     # Create ColumnDataSource from trace data
     df = pd.DataFrame({trace["label"]: trace["timeseries"] for trace in traces})
@@ -166,11 +130,38 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     plot.yaxis.axis_label = "Value"
     plot.xaxis.axis_label = "Date"
 
+    return source, plot
+
+
+def create_timeseries_plot(  # type: ignore[explicit-any]
+    title: str,
+    traces: list[dict[str, Any]],
+    x_range: tuple[datetime, datetime] | None = None,
+    height: int = 500,
+    legend_loc: str = "bottom_left",
+) -> figure:
+    """Creates a timeseries plot.
+
+    Args:
+        title: plot title
+        traces: a list of dictionaries with keys for the 'timeseries' data, 'label' and
+            'colour'
+        x_range: (optional) tuple of datetimes to use as the x_range for the displayed
+            plot
+        height: Height of the plot in pixels. Defaults to 500.
+        legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
+            for valid options. Defaults to 'bottom_left'
+
+    Returns:
+        Bokeh figure containing timeseries data.
+    """
+    # Create the base figure
+    source, plot = _create_timeseries_plot_base(title, traces, x_range, height)
+
     # Now we add the data
     lines = []
-    tooltips = [
-        ("Date", "@{index}{%F}"),
-    ]
+    tooltips = [("Date", "@{index}{%F}")]
+
     hover_renderer = []
     for trace in traces:
         label = trace["label"]
@@ -203,11 +194,6 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
         )
         tooltips.append((label, f"@{{{label}}}{{0.00}}"))
 
-    # If provided, add varea shading between traces
-    if vareas:
-        for labels, colour in vareas:
-            add_varea_glyph(plot, df, labels[0], labels[1], colour)
-
     # The tooltip appears in the hover rendered ghost trace, if any, or the first trace
     # otherwise
     hover = HoverTool(
@@ -224,43 +210,163 @@ def create_timeseries_plot(  # type: ignore[explicit-any]
     return plot
 
 
-def create_capacity_planning_plot(
+def create_timeseries_stacked(  # type: ignore[explicit-any]
+    title: str,
+    traces: list[dict[str, Any]],
+    x_range: tuple[datetime, datetime] | None = None,
+    height: int = 500,
+    legend_loc: str = "bottom_left",
+) -> tuple[ColumnDataSource, figure]:
+    """Creates a generic timeseries plot with stacked data.
+
+    Args:
+        title: plot title.
+        traces: a list of dictionaries with keys for the 'timeseries' data, 'label' and
+            'colour'.
+        x_range: (optional) tuple of datetimes to use as the x_range for the displayed
+            plot.
+        height: Height of the plot in pixels. Defaults to 500.
+        legend_loc: (optional) Location of the legend within the plot. Check Bokeh docs
+            for valid options. Defaults to 'bottom_left'.
+
+    Returns:
+        - The data structure for the plotted data.
+        - The figure containing the plot.
+    """
+    source, plot = _create_timeseries_plot_base(title, traces, x_range, height)
+
+    data_to_stack = [trace["label"] for trace in traces]
+    colours = [trace["colour"] for trace in traces]
+    plot.varea_stack(
+        data_to_stack,
+        x="index",
+        source=source,
+        fill_color=colours,
+        fill_alpha=0.3,
+    )
+    plot.vline_stack(
+        data_to_stack,
+        x="index",
+        source=source,
+        line_width=2,
+        color=colours,
+        legend_label=data_to_stack,
+    )
+
+    plot.legend.location = legend_loc  # type: ignore[assignment]
+
+    return source, plot
+
+
+def _create_capacity_timeseries_plot(  # type: ignore[explicit-any]
+    title: str,
+    traces: list[dict[str, Any]],
+    aggregated_effort: pd.Series,
+    capacity: pd.Series,
+    x_range: tuple[datetime, datetime] | None = None,
+    height: int = 500,
+    legend_loc: str = "bottom_left",
+) -> figure:
+    """Create a stacked effort plot with remaining capacity and a capacity line.
+
+    Args:
+        title: plot title.
+        traces: effort traces to stack.
+        aggregated_effort: timeseries of summed effort (e.g. over project status or
+            project allocations).
+        capacity: capacity timeseries.
+        x_range: (optional) tuple of datetimes to use as the x_range.
+        height: Height of the plot in pixels. Defaults to 500.
+        legend_loc: Location of the legend within the plot. Defaults to 'bottom_left'.
+
+    Returns:
+        Bokeh figure with stacked effort, remaining capacity and total capacity line.
+    """
+    traces = traces.copy()
+    traces.append(
+        {
+            "timeseries": capacity.combine(aggregated_effort, max) - aggregated_effort,
+            "colour": "darkgreen",
+            "label": "Capacity",
+        }
+    )
+
+    source, plot = create_timeseries_stacked(
+        title=title,
+        traces=traces,
+        x_range=x_range,
+        height=height,
+        legend_loc=legend_loc,
+    )
+
+    # Add line to overlay total capacity. First remove last line added, which shows the
+    # "Capacity" trace generated above (i.e. combined capacity and aggregated effort).
+    plot.renderers.pop()
+
+    # Add total capacity to source, using aggregated_effort index to achieve consistent
+    # date ranges across plotted elements.
+    source.add(
+        pd.Series(capacity, index=aggregated_effort.index).tolist(), "Total capacity"
+    )
+    capacity_line = plot.line(
+        "index",
+        "Total capacity",
+        source=source,
+        line_width=2,
+        color=traces[-1]["colour"],
+        legend_label=traces[-1]["label"],
+    )
+
+    tooltips = [("Date", "@{index}{%F}")] + [
+        (trace["label"], f"@{{{trace['label']}}}{{0.00}}") for trace in traces
+    ]
+    plot.add_tools(
+        HoverTool(
+            tooltips=tooltips,
+            formatters={"@{index}": "datetime"},
+            renderers=[capacity_line],
+            mode="vline",
+        )
+    )
+
+    return plot
+
+
+def create_team_capacity_plot(
+    capacities: pd.DataFrame,
     start_date: datetime,
     end_date: datetime,
     x_range: tuple[datetime, datetime] | None = None,
-) -> tuple[figure, list[figure]]:
-    """Generates all the time series data and creates the capacity planning plot.
+) -> figure:
+    """Create capacity plot for the team.
 
-    Includes all business days between the selected start and end date, inclusive of
-    the start date. Timeseries for the effort (separate traces depending on project
-    status) and capacity (aggregated over all users) are calculated.
+    Includes all business days between the selected start and end date, inclusive of the
+    start date. Timeseries for the effort (separate traces depending on project status)
+    and capacity (aggregated over all users) are calculated.
 
     Args:
+        capacities: pandas dataframe containing team member's capacity timeseries
         start_date: datetime object representing the start of the plotting period
         end_date: datetime object representing the end of the plotting period
         x_range: (optional) tuple of datetimes to use as the x_range for the displayed
             plot
 
     Returns:
-        Bokeh figure containing timeseries data.
+        Bokeh figure containing team effort and capacity data.
     """
-    # Create overall capacity timeseries
-    capacities = timeseries.get_capacity_timeseries(start_date, end_date)
     aggregated_capacity = capacities.sum(axis=1)
-    traces = [
-        {"timeseries": aggregated_capacity, "colour": "darkgreen", "label": "Capacity"}
-    ]
 
     # Create individual effort timeseries according to project status
-    projects = (  # Traces are cumulative
-        ("Tentative", "firebrick", ["Tentative", "Confirmed", "Active", "Maintenance"]),
-        ("Confirmed", "orange", ["Confirmed", "Active", "Maintenance"]),
-        ("Maintenance", "purple", ["Active", "Maintenance"]),
-        ("Active", "navy", ["Active"]),
-    )
-    for status, colour, filter in projects:
+    traces: list[dict[str, Any]] = []  # type: ignore[explicit-any]
+    project_status_colour_map = {
+        "Active": "navy",
+        "Maintenance": "purple",
+        "Confirmed": "orange",
+        "Tentative": "firebrick",
+    }
+    for status, colour in project_status_colour_map.items():
         effort_timeseries = timeseries.get_effort_timeseries(
-            start_date, end_date, filter
+            start_date, end_date, [status]
         )
         traces.append(
             {
@@ -270,74 +376,81 @@ def create_capacity_planning_plot(
             },
         )
 
-    # Apply area shading between select traces
-    vareas: tuple[tuple[tuple[str, str], str], ...] = (
-        (("Capacity", "Confirmed project effort"), "green"),
-        (("Maintenance project effort", "Active project effort"), "purple"),
-        (("Confirmed project effort", "Maintenance project effort"), "yellow"),
-        (("Tentative project effort", "Confirmed project effort"), "red"),
-    )
-
-    plot = create_timeseries_plot(
+    aggregated_effort = sum(trace["timeseries"] for trace in traces)
+    plot = _create_capacity_timeseries_plot(
         title="Project effort and team capacity over time",
         traces=traces,
+        aggregated_effort=aggregated_effort,
+        capacity=aggregated_capacity,
         x_range=x_range,
-        vareas=vareas,
     )
 
+    # Fix the y-axis lower limit at zero
+    max_y_val = max(aggregated_effort.max(), aggregated_capacity.max())
+    plot.y_range = Range1d(0, max_y_val * 1.05)  # type: ignore[arg-type]
+
+    return plot
+
+
+def create_individual_capacity_plots(
+    capacities: pd.DataFrame,
+    start_date: datetime,
+    end_date: datetime,
+    x_range: tuple[datetime, datetime] | None = None,
+) -> list[figure]:
+    """Create allocation plots for each individual team member.
+
+    Includes all business days between the selected start and end date, inclusive of the
+    start date. Timeseries for the allocation and capacity are calculated.
+
+    Args:
+        capacities: pandas dataframe containing team member's capacity timeseries
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
+        x_range: (optional) tuple of datetimes to use as the x_range for the displayed
+            plot
+
+    Returns:
+        List of Bokeh figures displaying allocation and capacity for each team member.
+    """
     allocations = timeseries.get_allocation_timeseries(start_date, end_date)
     individual_plots = []
-    vareas = (
-        (("Capacity", ""), "green"),
-        (("", "Capacity"), "red"),
-    )
 
-    # Assign each project its own colour
+    # Assign each project its own colour to show across all plots
     colours = cycle(PALETTE)
     project_colours: dict[str, str] = {}
 
     for name in capacities.columns:
-        traces = [
-            {
-                "timeseries": capacities[name],
-                "colour": "darkgreen",
-                "label": "Capacity",
-            }
-        ]
-        allocation = allocations[name]
-        all_projects = allocation.sum(axis=1)
-        traces.append(
-            {
-                "timeseries": all_projects,
-                "colour": "black",
-                "label": "",
-                "line_dash": "dashed",
-            }
-        )
+        individual_allocations = allocations[name]
+        traces = []
 
-        for project in allocation.columns:
+        for project in individual_allocations.columns:
+            # Assign project colour
             if project not in project_colours:
                 project_colours[project] = next(colours)
 
+            # Create trace for {name}'s allocation to this project
             traces.append(
                 {
-                    "timeseries": allocation[project],
+                    "timeseries": individual_allocations[project],
                     "colour": project_colours[project],
                     "label": project,
                 }
             )
-        individual_plots.append(
-            create_timeseries_plot(
-                title=name,
-                traces=traces,
-                x_range=x_range,
-                vareas=vareas,
-                height=150,
-                legend_loc="top_right",
-            )
+
+        plot = _create_capacity_timeseries_plot(
+            title=name,
+            traces=traces,
+            aggregated_effort=individual_allocations.sum(axis=1),
+            capacity=capacities[name],
+            x_range=x_range,
+            height=150,
+            legend_loc="top_right",
         )
 
-    return plot, individual_plots
+        individual_plots.append(plot)
+
+    return individual_plots
 
 
 def create_capacity_planning_layout() -> Row:
@@ -353,11 +466,14 @@ def create_capacity_planning_layout() -> Row:
     # Min and max dates are three years before and ahead of current date
     min_date, max_date = start - timedelta(days=1095), start + timedelta(days=1095)
 
-    # Get the plot to display (it is created with all data, but only the dates
-    # in the x_range provided are shown)
-    plot, individual_plots = create_capacity_planning_plot(
-        start_date=min_date, end_date=max_date, x_range=(start, end)
+    # Get the plot to display (it is created with all data, but only the dates in the
+    # x_range provided are shown)
+    capacities = timeseries.get_capacity_timeseries(min_date, max_date)
+    plot = create_team_capacity_plot(capacities, min_date, max_date, (start, end))
+    individual_plots = create_individual_capacity_plots(
+        capacities, min_date, max_date, (start, end)
     )
+
     plot.title.text_font_size = "20px"  # type: ignore[union-attr]
     plot.yaxis.axis_label = "Capacity and Effort (FTE)"
 
@@ -384,8 +500,7 @@ def create_capacity_planning_layout() -> Row:
             plt.xaxis.major_tick_line_color = None  # Hide tick marks
             plt.xaxis.minor_tick_line_color = None  # Hide minor ticks
 
-    # Create layout with common plot at the top and individual ones in a grid
-    # below
+    # Create layout with common plot at the top and individual ones in a grid below
     plot_layout = column(  # type: ignore[call-overload]
         [
             plot,
