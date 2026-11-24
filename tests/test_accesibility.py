@@ -92,7 +92,7 @@ def login(live_server, context):
 
 
 def compare_violations(
-    violations: list[dict], known: set[str], page_url: str
+    violations: list[dict[str, str]], known: set[str], page_url: str
 ) -> str | None:
     """Compare the violations reported by axe against the known failures.
 
