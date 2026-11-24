@@ -1,10 +1,11 @@
 """Tests for the utils module."""
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
+from django.conf import settings
 from django.utils import timezone
 
 
@@ -127,10 +128,10 @@ def test_get_current_and_last_month_start():
         get_current_and_last_month(date=date)
     )
     # Last month is May 2025
-    assert last_month_start == datetime(2025, 5, 1, tzinfo=UTC)
+    assert last_month_start == datetime(2025, 5, 1, tzinfo=settings.TZ)
     assert last_month_name == "May"
     # Current month is June 2025
-    assert current_month_start == datetime(2025, 6, 1, tzinfo=UTC)
+    assert current_month_start == datetime(2025, 6, 1, tzinfo=settings.TZ)
     assert current_month_name == "June"
 
 

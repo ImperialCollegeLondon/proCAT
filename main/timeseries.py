@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import cast
 
 import pandas as pd
@@ -17,7 +17,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce, Lead
 
-from procat.settings.settings import TIME_ZONE, WORKING_DAYS
+from procat.settings.settings import TIME_ZONE, TZ, WORKING_DAYS
 
 from . import models
 
@@ -74,7 +74,7 @@ def get_effort_timeseries(
         Pandas series of aggregated effort with date range as index.
     """
     dates = pd.date_range(
-        pd.Timestamp(start_date.date()), pd.Timestamp(end_date.date()), tz=UTC
+        pd.Timestamp(start_date.date()), pd.Timestamp(end_date.date()), tz=TZ
     )
 
     # filter Projects to ensure dates exist and overlap with timeseries dates
@@ -286,8 +286,8 @@ def get_cost_recovery_timeseries(
 
         # calculate the total time entries for the month, and work out the time logged
         # (recovered) per day across all projects
-        start_time = datetime.combine(month[0], time(0, 0), tzinfo=UTC)
-        end_time = datetime.combine(month[1], time(0, 0), tzinfo=UTC)
+        start_time = datetime.combine(month[0], time(0, 0), tzinfo=TZ)
+        end_time = datetime.combine(month[1], time(0, 0), tzinfo=TZ)
         entries = (
             models.TimeEntry.objects.filter(
                 start_time__gte=start_time, start_time__lt=end_time

@@ -3,13 +3,15 @@
 import csv
 import io
 from _csv import Writer
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import cast
 
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet, Sum
 from django.http import HttpResponse
 from django.utils import timezone
+
+from procat.settings.settings import TZ
 
 from . import models, utils
 from .models import Funding, Project
@@ -29,8 +31,8 @@ def get_actual_chargeable_days(
         A tuple of the number of chargeable days and list of pks of relevant time
             entries, or a tuple of None values if there are no time entries.
     """
-    start_time = datetime.combine(start_date, datetime.min.time(), tzinfo=UTC)
-    end_time = datetime.combine(end_date, datetime.min.time(), tzinfo=UTC)
+    start_time = datetime.combine(start_date, datetime.min.time(), tzinfo=TZ)
+    end_time = datetime.combine(end_date, datetime.min.time(), tzinfo=TZ)
 
     time_entries = models.TimeEntry.objects.filter(
         project=project,

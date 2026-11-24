@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from logging import getLogger
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -115,6 +116,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-gb"
 TIME_ZONE = "UTC"
+TZ = ZoneInfo(TIME_ZONE)
 USE_I18N = True
 USE_TZ = True
 
