@@ -78,9 +78,10 @@ def create_RSETeam_group(apps: Any, *args: Any) -> None:  # type: ignore [explic
 
     # Permissions have to be created before applying them
     for app_config in apps.get_app_configs():
+        original_models_module = getattr(app_config, "models_module", None)
         app_config.models_module = True
         create_permissions(app_config, verbosity=0)
-        app_config.models_module = None
+        app_config.models_module = original_models_module
 
     # Now we get the relevant permission and add it to the group
     view_project = apps.get_model("auth", "Permission").objects.get(
