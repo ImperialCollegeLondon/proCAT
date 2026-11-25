@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable
-from datetime import UTC, date, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Any, cast
 
 import pandas as pd
@@ -17,6 +17,7 @@ from django.utils import timezone
 
 from procat.settings.settings import (
     EFFORT_LEFT_THRESHOLD,
+    TZ,
     WEEKS_LEFT_THRESHOLD,
     WORKING_DAYS,
 )
@@ -432,7 +433,9 @@ class Project(Warning, models.Model):
             # starts should count towards the (non-maintenance) total_effort.
             if self.status == "Active" and (maint_phase := self.maintenance_phase()):
                 time_entries = time_entries.filter(
-                    start_time__lt=maint_phase.start_date
+                    start_time__lt=datetime.combine(
+                        maint_phase.start_date, time(0, 0), tzinfo=TZ
+                    )
                 )
 
             hours_logged = get_logged_hours(time_entries)[0]
@@ -442,7 +445,11 @@ class Project(Warning, models.Model):
         maint_phase = self.maintenance_phase()
         if maint_phase is None:
             return None
-        time_entries = self.timeentry_set.filter(start_time__gte=maint_phase.start_date)
+        time_entries = self.timeentry_set.filter(
+            start_time__gte=datetime.combine(
+                maint_phase.start_date, time(0, 0), tzinfo=TZ
+            )
+        )
         hours_logged = get_logged_hours(time_entries)[0]
         pro_rata_used_maint = maint_phase.days - maint_phase.expected_days_left
         left = maint_phase.days - max(pro_rata_used_maint, (hours_logged / 7))
@@ -550,7 +557,7 @@ class Project(Warning, models.Model):
         timerange = (
             timerange
             if timerange is not None
-            else pd.date_range(start=self.start_date, end=self.end_date, tz=UTC)
+            else pd.date_range(start=self.start_date, end=self.end_date, tz=TZ)
         )
         if self.phases.exists():
             return cast(  # type: ignore[explicit-any]
@@ -588,7 +595,7 @@ class Project(Warning, models.Model):
 
         # Actual excess full time equivalent needed to use those days over the time left
         excess_fte = days_to_fte(now.date(), self.end_date, excess_left)
-        output.loc[now : pd.Timestamp(self.end_date, tz=UTC)] = excess_fte
+        output.loc[now : pd.Timestamp(self.end_date, tz=TZ)] = excess_fte
 
         return output
 
@@ -1200,12 +1207,12 @@ class FullTimeEquivalent(models.Model):
             idx = timerange.copy()
             output = pd.Series(0.0, index=idx)
             output.loc[
-                pd.Timestamp(self.start_date, tz=UTC) : pd.Timestamp(
-                    self.end_date, tz=UTC
+                pd.Timestamp(self.start_date, tz=TZ) : pd.Timestamp(
+                    self.end_date, tz=TZ
                 )
             ] = self.value
         else:
-            idx = pd.date_range(start=self.start_date, end=self.end_date, tz=UTC)
+            idx = pd.date_range(start=self.start_date, end=self.end_date, tz=TZ)
             output = pd.Series(self.value, index=idx)
 
         return output

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import cast
 
 import pandas as pd
@@ -17,7 +17,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce, Lead
 
-from procat.settings.settings import TIME_ZONE, WORKING_DAYS
+from procat.settings.settings import TIME_ZONE, TZ, WORKING_DAYS
 
 from . import models
 
@@ -74,7 +74,7 @@ def get_effort_timeseries(
         Pandas series of aggregated effort with date range as index.
     """
     dates = pd.date_range(
-        pd.Timestamp(start_date.date()), pd.Timestamp(end_date.date()), tz=UTC
+        pd.Timestamp(start_date.date()), pd.Timestamp(end_date.date()), tz=TZ
     )
 
     # filter Projects to ensure dates exist and overlap with timeseries dates
@@ -98,14 +98,11 @@ def get_internal_effort_timeseries(
 ) -> pd.Series[float]:
     """Get the timeseries data for projects that are not included in MonthlyCharges.
 
-    This includes internal projects that are not charged to an external
-    funding source.
+    This includes internal projects that are not charged to an external funding source.
 
     Args:
-        start_date: datetime object representing the start of the
-            plotting period
-        end_date: datetime object representing the end of the
-            plotting period
+        start_date: datetime object representing the start of the plotting period
+        end_date: datetime object representing the end of the plotting period
 
     Returns:
         Pandas Series containing internal effort timeseries data.
@@ -140,8 +137,7 @@ def get_team_members_timeseries(
     The number of team members is time dependent.
 
     Args:
-        start_date: datetime object representing the start of the plotting
-            period
+        start_date: datetime object representing the start of the plotting period
         end_date: datetime object representing the end of the plotting period
 
     Returns:
@@ -288,10 +284,10 @@ def get_cost_recovery_timeseries(
         monthly_total = monthly_charges.aggregate(Sum("amount"))["amount__sum"]
         monthly_totals.append(float(monthly_total) if monthly_total else 0.0)
 
-        # calculate the total time entries for the month, and work out the time
-        # logged (recovered) per day across all projects
-        start_time = datetime.combine(month[0], datetime.min.time())
-        end_time = datetime.combine(month[1], datetime.min.time())
+        # calculate the total time entries for the month, and work out the time logged
+        # (recovered) per day across all projects
+        start_time = datetime.combine(month[0], time(0, 0), tzinfo=TZ)
+        end_time = datetime.combine(month[1], time(0, 0), tzinfo=TZ)
         entries = (
             models.TimeEntry.objects.filter(
                 start_time__gte=start_time, start_time__lt=end_time

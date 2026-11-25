@@ -12,7 +12,7 @@ from django.db.models.query import QuerySet
 from django.utils import timezone
 from django.utils.safestring import SafeString, mark_safe
 
-from procat.settings.settings import WORKING_DAYS
+from procat.settings.settings import TZ, WORKING_DAYS
 
 from . import models
 from .models import Funding, Project, TimeEntry
@@ -132,7 +132,7 @@ def get_current_and_last_month(
     if date is None:
         date = timezone.now()
 
-    current_month_start = datetime(year=date.year, month=date.month, day=1)
+    current_month_start = datetime(year=date.year, month=date.month, day=1, tzinfo=TZ)
     last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
 
     last_month_name = last_month_start.strftime("%B")
