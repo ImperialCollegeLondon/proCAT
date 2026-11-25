@@ -457,6 +457,7 @@ def create_individual_capacity_plots(
             legend_loc="top_right",
         )
 
+        plot.legend.nrows = 4
         individual_plots.append(plot)
 
     return individual_plots
@@ -876,7 +877,7 @@ def create_allocation_plot_for_project(
         "Allocations", traces, height=200, legend_loc="bottom_right"
     )
     plot.yaxis.axis_label = "FTE"
-    plot.legend.nrows = 1
+    plot.legend.nrows = 4
     if x_range:
         plot.x_range = x_range
     return plot
