@@ -530,6 +530,9 @@ class TestCapacityTimeseriesPlotting:
         assert plots[1] is green_plot
         assert plots[2] is blue_plot
 
+        for plot in plots:
+            assert plot.legend.nrows == 4
+
 
 def test_create_cost_recovery_plot(project, funding):
     """Test function to create the cost recovery plot."""
@@ -859,6 +862,7 @@ def test_create_allocation_plot_for_project_with_zero_allocations(phase):
     assert isinstance(plot, figure)
     legend_items = [item.label.value for item in plot.legend.items]
     assert legend_items == ["Project FTE"]
+    assert plot.legend.nrows == 4
 
 
 def test_create_allocation_plot_for_project_with_allocations(phase, user):
@@ -886,6 +890,7 @@ def test_create_allocation_plot_for_project_with_allocations(phase, user):
     assert "Project FTE" in legend_items
     assert str(user) in legend_items
     assert "Allocated FTE" in legend_items
+    assert plot.legend.nrows == 4
 
 
 def test_create_allocation_plot_for_project_without_dates(user, department):
